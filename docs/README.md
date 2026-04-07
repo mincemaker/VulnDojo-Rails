@@ -27,7 +27,7 @@
 | `css_injection` | CSS Injection via label color | xss | medium | CWE-79 |
 | `header_removal` | HTTP Security Headers Removed | headers | easy | CWE-693 |
 | `csp_disable` | Content Security Policy Disabled | headers | easy | CWE-693 |
-| `command_injection` | Command Injection via CSV export | injection | hard | CWE-78 |
+| `command_injection` | Command Injection via filename sanitization | injection | hard | CWE-78 |
 
 ---
 
@@ -320,19 +320,19 @@ curl -I http://localhost:3000/tasks
 
 ---
 
-### command_injection — Command Injection via CSV export
+### command_injection — Command Injection via filename sanitization
 
 ```bash
 VULN_CHALLENGES=command_injection bin/rails server -b 127.0.0.1
 ```
 
-`TasksController#export` が上書きされ、CSV ファイル名の生成にシェルコマンドが使われます。
+`TasksController#export` が上書きされ、CSV ファイル名の特殊文字除去にシェルコマンドが使われます。
 
 ```ruby
-filename = `echo #{name}_#{Date.current.strftime('%Y%m%d')}.csv`
+safe_name = `echo #{name} | tr -cd '[:alnum:]_-'`.strip
 ```
 
-`name` パラメータがシェルに展開されるため、任意のコマンドを実行できます。
+開発者が `tr` で英数字以外を取り除こうとしていますが、`$(whoami)` 等のコマンド置換は `tr` が処理する前にシェルが展開するため、任意のコマンドを実行できます。
 
 再現手順:
 1. CSV エクスポートを以下の URL でリクエスト
@@ -343,6 +343,6 @@ GET /tasks/export?name=$(whoami)
 
 2. レスポンスヘッダの `Content-Disposition` にコマンド実行結果が含まれる
 
-検出ポイント: `lib/vulnerabilities/challenges/command_injection.rb` — `` `echo #{name}_...` ``
+検出ポイント: `lib/vulnerabilities/challenges/command_injection.rb` — `` `echo #{name} | tr -cd '[:alnum:]_-'` ``
 
 参考: https://guides.rubyonrails.org/security.html#command-line-injection

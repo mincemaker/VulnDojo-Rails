@@ -7,12 +7,12 @@ module Vulnerabilities
     # ユーザ入力がシェルに渡る脆弱性を注入する
     class CommandInjection < Base
       metadata do
-        name        "Command Injection via CSV export"
+        name        "Command Injection via filename sanitization"
         category    :injection
         difficulty  :hard
-        description "CSVエクスポートのファイル名生成にシェルコマンドインジェクションの脆弱性があります。"
+        description "CSVエクスポートのファイル名サニタイズ処理にシェルが使われており、コマンドインジェクションが可能です。"
         hint        "CSVエクスポートの name パラメータを確認してください"
-        hint        "name=`id` や name=$(whoami) を試してみましょう"
+        hint        "name=$(whoami) を試してみましょう — ファイル名にコマンド実行結果が含まれます"
         cwe         "CWE-78"
         reference   "https://guides.rubyonrails.org/security.html#command-line-injection"
       end
@@ -35,12 +35,14 @@ module Vulnerabilities
               end
             end
 
-            # 脆弱性: ユーザ入力をシェルコマンドでファイル名生成に使用
+            # 脆弱性: ファイル名の特殊文字をシェル経由でサニタイズしようとしている
+            # tr で英数字以外を除去しているつもりが、$(whoami) 等のコマンド置換が先に展開される
             name = params[:name] || "tasks"
-            filename = `echo #{name}_#{Date.current.strftime('%Y%m%d')}.csv`
+            safe_name = `echo #{name} | tr -cd '[:alnum:]_-'`.strip
+            filename = "#{safe_name}_#{Date.current.strftime('%Y%m%d')}.csv"
 
             send_data csv_data,
-                      filename: filename.strip,
+                      filename: filename,
                       type: "text/csv; charset=utf-8"
           end
         end
