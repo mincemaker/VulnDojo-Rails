@@ -36,3 +36,7 @@
 
 # Generated vulnerable view templates (recreated at runtime from challenge code)
 /lib/vulnerabilities/views/
+
+# Local Copilot CLI settings (machine-specific)
+/.claude/
+/.github/
