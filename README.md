@@ -247,6 +247,17 @@ slug はクラス名を `underscore` したもの（`OpenRedirect` → `open_red
 
 ## 🧪 テスト
 
+### 事前準備
+
+E2E テストは各テスト内で Rails サーバーを **development** 環境として起動します。そのため、test DB に加えて development DB の初期化が必要です。
+
+```bash
+# 初回のみ（コンテナが起動済みの場合）
+docker compose exec web bin/rails db:prepare RAILS_ENV=development
+```
+
+`docker compose exec` の代わりに `docker compose run` を使う場合も同様です。この手順を省くとサブサーバーが起動直後にクラッシュし、`Timeout::Error: execution expired` で全 E2E テストが FAIL します。
+
 ### テストの実行
 
 ```bash
@@ -378,7 +389,7 @@ end
 ## ディレクトリ構成
 
 ```
-tsubame-rails/
+VulnDojo-Rails/
 ├── app/                                 # 安全なアプリケーションコード
 │   ├── controllers/
 │   │   ├── application_controller.rb     # 認証・安全リダイレクト
