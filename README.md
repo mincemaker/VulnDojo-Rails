@@ -91,18 +91,15 @@ VULN_CHALLENGES=xss_raw,sql_injection,csrf_skip bin/rails server -b 127.0.0.1
 ### アーキテクチャ
 
 ```
-app/ (安全なコード)              lib/vulnerabilities/ (注入レイヤー)
-┌──────────────────┐            ┌──────────────────────────────┐
-│ TasksController   │◄─ prepend ─┤ challenges/xss_raw.rb        │ html_safe でエスケープ無効化
-│ (安全な実装)      │◄─ prepend ─┤ challenges/sql_injection.rb  │ 文字列補間 SQL + 検索 UI 注入
-│                   │◄─ skip ────┤ challenges/csrf_skip.rb      │ CSRF 保護スキップ
-└──────────────────┘            └──────────────────────────────┘
-
-app/views/ (安全)                lib/vulnerabilities/views/ (脆弱)
-┌──────────────────┐            ┌──────────────────────────────┐
-│ tasks/show.erb    │◄─ prepend_view_path ─┤ tasks/show.erb    │
-│ tasks/index.erb   │◄──────────────────┤ tasks/index.erb   │
-└──────────────────┘            └──────────────────────────────┘
+app/ (安全なコード)                    lib/vulnerabilities/ (注入レイヤー)
+┌───────────────────────┐          ┌───────────────────────────────────┐
+│ TasksController       │◄─prepend─┤ xss_raw / sql_injection /     │
+│ SessionsController    │◄─prepend─┤ idor / mass_assignment /      │
+│ ApplicationController │◄─prepend─┤ open_redirect / command_inj  │
+│ Task (model)          │◄─eval────┤ regex_bypass/unsafe_upload   │
+│ Config                │◄─config──┤ header_removal/csp_disable/  │
+│                       │         │ log_leakage/session_fixation │
+└───────────────────────┘          └───────────────────────────────────┘
 ```
 
 `app/` 以下のコードには一切脆弱性がありません。
@@ -110,13 +107,15 @@ app/views/ (安全)                lib/vulnerabilities/views/ (脆弱)
 
 ### Ruby の仕組みの活用
 
-| 手法 | 用途 |
-|------|------|
-| `Module#prepend` | コントローラのアクションメソッドを上書き |
-| `prepend_view_path` | ビューテンプレートを脆弱版に差し替え |
-| `skip_forgery_protection` | クラスメソッド呼び出しで CSRF 無効化 |
-| `Singleton` Registry | チャレンジの登録・有効化を一元管理 |
-| `to_prepare` callback | dev 環境のクラスリロード時にも再注入 |
+| 手法 | 用途 | 使用チャレンジ |
+|------|------|------|
+| `Module#prepend` | コントローラのアクションメソッドを上書き | xss, sqli, idor, open_redirect, mass_assign, session_fix, cmd_inj |
+| `prepend_view_path` | ビューテンプレートを脆弱版に差し替え | xss_raw, sql_injection, css_injection |
+| `skip_forgery_protection` | クラスメソッド呼び出しで CSRF 無効化 | csrf_skip |
+| `class_eval` | モデルのバリデーションを差し替え | regex_bypass, unsafe_file_upload |
+| `config` 操作 | Rails 設定を変更 | header_removal, log_leakage, csp_disable |
+| `Singleton` Registry | チャレンジの登録・有効化を一元管理 | 全チャレンジ |
+| `to_prepare` callback | dev 環境のクラスリロード時にも再注入 | 全チャレンジ |
 
 ### 用意されているチャレンジ
 
@@ -125,6 +124,17 @@ app/views/ (安全)                lib/vulnerabilities/views/ (脆弱)
 | `xss_raw` | Stored XSS via html_safe | XSS | Easy | CWE-79 |
 | `sql_injection` | SQL Injection via search | Injection | Medium | CWE-89 |
 | `csrf_skip` | CSRF protection disabled | CSRF | Easy | CWE-352 |
+| `open_redirect` | Open Redirect via return_to | Redirect | Easy | CWE-601 |
+| `idor` | IDOR — Insecure Direct Object Reference | Authorization | Easy | CWE-639 |
+| `session_fixation` | Session Fixation — reset_session 無効化 | Session | Medium | CWE-384 |
+| `mass_assignment` | Mass Assignment via permit! | Authorization | Medium | CWE-915 |
+| `regex_bypass` | Regex Bypass — ^ vs \\A anchor | Validation | Medium | CWE-185 |
+| `unsafe_file_upload` | Unsafe File Upload — MIME validation disabled | Upload | Medium | CWE-434 |
+| `log_leakage` | Log Leakage — parameter filter disabled | Logging | Easy | CWE-532 |
+| `css_injection` | CSS Injection via style attribute | XSS | Medium | CWE-79 |
+| `header_removal` | HTTP Security Headers Removed | Headers | Easy | CWE-693 |
+| `csp_disable` | Content Security Policy Disabled | Headers | Easy | CWE-693 |
+| `command_injection` | Command Injection via CSV export | Injection | Hard | CWE-78 |
 
 ### 使い方の例
 
@@ -136,7 +146,7 @@ VULN_CHALLENGES=xss_raw bin/rails server -b 127.0.0.1
 VULN_CHALLENGES=xss_raw,sql_injection bin/rails server -b 127.0.0.1
 
 # 全部有効
-VULN_CHALLENGES=xss_raw,sql_injection,csrf_skip bin/rails server -b 127.0.0.1
+VULN_CHALLENGES=xss_raw,sql_injection,csrf_skip,open_redirect,idor,session_fixation,mass_assignment,regex_bypass,unsafe_file_upload,log_leakage,css_injection,header_removal,csp_disable,command_injection bin/rails server -b 127.0.0.1
 ```
 
 ---
@@ -209,13 +219,13 @@ slug はクラス名を `underscore` したもの（`OpenRedirect` → `open_red
 ### テストの実行
 
 ```bash
-# 全テスト実行
-bin/rails test test/integration/vulnerabilities/ -v
+# 全テスト実行 (35テスト, 91アサーション)
+bundle exec ruby -Itest -e "Dir['test/integration/vulnerabilities/*_test.rb'].each { |f| require File.expand_path(f) }"
 
 # 個別実行
-bin/rails test test/integration/vulnerabilities/xss_raw_test.rb -v
-bin/rails test test/integration/vulnerabilities/sql_injection_test.rb -v
-bin/rails test test/integration/vulnerabilities/csrf_skip_test.rb -v
+bundle exec ruby -Itest test/integration/vulnerabilities/xss_raw_test.rb
+bundle exec ruby -Itest test/integration/vulnerabilities/idor_test.rb
+# ... 他の *_test.rb も同様
 ```
 
 ### テストの仕組み
@@ -231,19 +241,24 @@ bin/rails test test/integration/vulnerabilities/csrf_skip_test.rb -v
 
 テストヘルパー (`e2e_helper.rb`) がユーザーのサインアップ・ログイン・セッション Cookie 管理・タスク作成を自動化します。
 
-### テスト一覧
+### テスト一覧 (35テスト)
 
-| チャレンジ | テスト名 | 種別 | 検証内容 |
-|-----------|---------|------|----------|
-| **XSS** | `SAFE: XSS payload is escaped in show page` | 🔴 RED | `<img>` が `&lt;img&gt;` にエスケープされる |
-| | `VULN: XSS payload is rendered as raw HTML` | 🟢 GREEN | `html_safe` で生 HTML が出力される |
-| **SQLi** | `SAFE: no search functionality, q parameter is ignored` | 🔴 RED | 検索ボックスなし、パラメータ無視 |
-| | `VULN: SQL injection via search returns all records` | 🟢 GREEN | `' OR 1=1 OR '` で全件取得 |
-| | `VULN: search box is present` | 🟢 GREEN | 脆弱な検索 UI が注入されている |
-| **CSRF** | `SAFE: POST without CSRF token is rejected (422)` | 🔴 RED | トークンなし → 422 |
-| | `SAFE: POST with valid CSRF token succeeds (302)` | 🔴 RED | トークンあり → 302（正常） |
-| | `VULN: POST without CSRF token succeeds (302)` | 🟢 GREEN | トークンなしでも 302（攻撃成功） |
-| | `VULN: task is actually created via CSRF attack` | 🟢 GREEN | タスクが実際に作成される |
+| チャレンジ | SAFEテスト | VULNテスト | ポート |
+|-----------|------|------|------|
+| xss_raw | XSSペイロードがエスケープされる | html_safeで生HTML出力 | 4010/4011 |
+| sql_injection | 検索機能なし、q無視 | `' OR 1=1`で全件取得 + 検索UI注入 | 4020/4021 |
+| csrf_skip | CSRFトークンなし→422 | トークンなしでタスク作成成功 | 4030/4031 |
+| open_redirect | 外部URLの return_to 無視 | 外部URLへリダイレクト | 4040/4041 |
+| idor | 他ユーザのタスクにアクセス不可 | Task.findで他ユーザのタスク閲覧可 | 4050/4051 |
+| session_fixation | reset_sessionで新Cookie発行 | reset_sessionなしでログイン | 4060/4061 |
+| mass_assignment | user_id変更不可 | permit!でuser_id上書き可能 | 4070/4071 |
+| regex_bypass | 改行URLを\\Aで拒否 | ^で改行URLが通過 | 4080/4081 |
+| unsafe_file_upload | exeファイル拒否 | MIME検証なしでexe通過 | 4090/4091 |
+| log_leakage | secret_noteが[FILTERED] | パラメータフィルタ無効で平文記録 | 4100/4101 |
+| css_injection | style属性に埋め込まない | descriptionがstyle属性に注入 | 4110/4111 |
+| header_removal | X-Frame-Options等存在 | セキュリティヘッダ欠落 | 4120/4121 |
+| csp_disable | CSPヘッダ存在 | CSP無効化 | 4130/4131 |
+| command_injection | nameパラメータ無視 | \$(whoami)がファイル名に出現 | 4140/4141 |
 
 ### 新しいチャレンジのテスト追加方法
 
@@ -341,16 +356,18 @@ tsubame-rails/
 │   ├── base.rb                          # チャレンジ基底クラス + DSL
 │   ├── registry.rb                      # Singleton レジストリ
 │   ├── engine.rb                        # ブートローダー
-│   ├── challenges/                      # 各チャレンジ実装
-│   │   ├── xss_raw.rb
-│   │   ├── sql_injection.rb
-│   │   └── csrf_skip.rb
+│   ├── challenges/                      # 14個のチャレンジ実装
+│   │   ├── xss_raw.rb               css_injection.rb
+│   │   ├── sql_injection.rb          command_injection.rb
+│   │   ├── csrf_skip.rb             open_redirect.rb
+│   │   ├── idor.rb                  session_fixation.rb
+│   │   ├── mass_assignment.rb        regex_bypass.rb
+│   │   ├── unsafe_file_upload.rb     log_leakage.rb
+│   │   └── header_removal.rb         csp_disable.rb
 │   └── views/tasks/                     # 脆弱なテンプレート（注入用）
-├── test/integration/vulnerabilities/     # E2E テスト
+├── test/integration/vulnerabilities/     # E2E テスト (35テスト, 91アサーション)
 │   ├── e2e_helper.rb                    # サーバー管理 + セッション管理
-│   ├── xss_raw_test.rb
-│   ├── sql_injection_test.rb
-│   └── csrf_skip_test.rb
+│   └── *_test.rb                        # 各チャレンジのE2Eテスト (14ファイル)
 ├── config/
 │   ├── initializers/
 │   │   ├── vulnerabilities.rb           # 注入の初期化
