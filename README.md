@@ -40,6 +40,37 @@ VULN_CHALLENGES=xss_raw,sql_injection,csrf_skip bin/rails server -b 127.0.0.1
 ブラウザで http://localhost:3000 → ログイン画面へリダイレクトされます。
 ダッシュボード http://localhost:3000/vulnerabilities で有効なチャレンジの状態を確認できます。
 
+## Docker (コンテナ) での起動
+
+```bash
+# 初回：イメージビルドと起動
+docker compose up --build
+
+# 別ターミナルでDBセットアップ（初回のみ）
+docker compose exec web ./bin/rails db:prepare
+docker compose exec web ./bin/rails db:seed  # デモユーザ作成
+
+# 2回目以降
+docker compose up
+```
+
+ブラウザで http://localhost:3000 にアクセスできます。
+
+脆弱性チャレンジを有効にするには `compose.yaml` の `environment` に追加します：
+
+```yaml
+environment:
+  RAILS_ENV: development
+  VULN_CHALLENGES: xss_raw,sql_injection
+```
+
+コンテナを停止・削除するには：
+
+```bash
+docker compose down        # 停止（DBデータは保持）
+docker compose down -v     # 停止＋ボリューム削除（DBリセット）
+```
+
 ---
 
 ## 🛡️ ベースアプリのセキュリティ機能
