@@ -11,6 +11,10 @@ class CsrfSkipTest < ActiveSupport::TestCase
     @vuln_server = ServerProcess.new(port: 4031, vuln_challenges: "csrf_skip")
     @safe_server.start!
     @vuln_server.start!
+
+    # 両方のサーバーでログインセッションを取得
+    @safe_cookie = setup_session(@safe_server)
+    @vuln_cookie = setup_session(@vuln_server)
   end
 
   teardown do
@@ -22,25 +26,23 @@ class CsrfSkipTest < ActiveSupport::TestCase
 
   test "SAFE: POST without CSRF token is rejected (422)" do
     body = URI.encode_www_form("task[title]" => "Hacked Task")
-    res = @safe_server.post("/tasks", body: body)
+    # ログイン済みセッションを使うが、CSRFトークンなし
+    res = @safe_server.post("/tasks", body: body, headers: { "Cookie" => @safe_cookie })
 
     assert_equal "422", res.code, "POST without CSRF token must be rejected"
   end
 
   test "SAFE: POST with valid CSRF token succeeds (302)" do
-    # フォームを取得してトークン付きで送信
-    get_res = @safe_server.get("/tasks/new")
+    get_res = @safe_server.get("/tasks/new", headers: { "Cookie" => @safe_cookie })
     token = extract_csrf_token(get_res.body)
-    cookie = get_res["set-cookie"]&.split(";")&.first
+    new_cookie = latest_cookie(get_res, @safe_cookie)
 
     body = URI.encode_www_form(
       "authenticity_token" => token,
       "task[title]" => "Legit Task"
     )
-    headers = {}
-    headers["Cookie"] = cookie if cookie
 
-    res = @safe_server.post("/tasks", body: body, headers: headers)
+    res = @safe_server.post("/tasks", body: body, headers: { "Cookie" => new_cookie })
     assert_equal "302", res.code, "POST with valid CSRF token must succeed"
   end
 
@@ -48,17 +50,17 @@ class CsrfSkipTest < ActiveSupport::TestCase
 
   test "VULN: POST without CSRF token succeeds (302)" do
     body = URI.encode_www_form("task[title]" => "CSRF Attack!")
-    res = @vuln_server.post("/tasks", body: body)
+    # ログイン済みセッションを使うが、CSRFトークンなし
+    res = @vuln_server.post("/tasks", body: body, headers: { "Cookie" => @vuln_cookie })
 
     assert_equal "302", res.code, "POST without CSRF token must succeed (CSRF protection disabled)"
   end
 
   test "VULN: task is actually created via CSRF attack" do
     body = URI.encode_www_form("task[title]" => "CSRF Created Task")
-    @vuln_server.post("/tasks", body: body)
+    @vuln_server.post("/tasks", body: body, headers: { "Cookie" => @vuln_cookie })
 
-    # 一覧ページで確認
-    res = @vuln_server.get("/tasks")
+    res = @vuln_server.get("/tasks", headers: { "Cookie" => @vuln_cookie })
     assert_includes res.body, "CSRF Created Task", "Task must be created via CSRF attack"
   end
 end

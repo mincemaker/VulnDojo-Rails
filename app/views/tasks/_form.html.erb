@@ -1,4 +1,4 @@
-<%= form_with(model: task, class: "card") do |form| %>
+<%= form_with(model: task, class: "card", multipart: true) do |form| %>
   <% if task.errors.any? %>
     <div class="errors">
       <strong><%= task.errors.count %>件のエラーがあります:</strong>
@@ -23,6 +23,26 @@
   <div class="form-group">
     <%= form.label :due_date, "期限" %>
     <%= form.date_field :due_date %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :url, "URL" %>
+    <%= form.url_field :url, placeholder: "https://example.com" %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :secret_note, "秘密メモ" %>
+    <%= form.text_area :secret_note, rows: 2, placeholder: "ログに記録されない機密情報" %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :attachment, "添付ファイル" %>
+    <%= form.file_field :attachment %>
+    <% if task.persisted? && task.attachment.attached? %>
+      <div class="attachment-info" style="margin-top: 6px;">
+        📎 現在: <%= task.attachment.filename %>
+      </div>
+    <% end %>
   </div>
 
   <div class="form-group">

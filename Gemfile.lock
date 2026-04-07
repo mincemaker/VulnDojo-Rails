@@ -83,6 +83,7 @@ GEM
     addressable (2.9.0)
       public_suffix (>= 2.0.2, < 8.0)
     base64 (0.3.0)
+    bcrypt (3.1.22)
     benchmark (0.5.0)
     bigdecimal (4.1.1)
     bindex (0.8.1)
@@ -130,9 +131,7 @@ GEM
     marcel (1.1.0)
     matrix (0.4.3)
     mini_mime (1.1.5)
-    minitest (6.0.3)
-      drb (~> 2.0)
-      prism (~> 1.5)
+    minitest (5.27.0)
     mutex_m (0.3.0)
     net-imap (0.6.3)
       date
@@ -230,8 +229,10 @@ PLATFORMS
   x86_64-linux-gnu
 
 DEPENDENCIES
+  bcrypt (~> 3.1.7)
   capybara
   debug
+  minitest (~> 5.16)
   nokogiri
   puma (>= 5.0)
   rails (~> 7.1.5)
