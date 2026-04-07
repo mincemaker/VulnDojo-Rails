@@ -1,0 +1,69 @@
+<div class="top-bar">
+  <h2>🔓 脆弱性チャレンジダッシュボード</h2>
+</div>
+
+<div class="card" style="margin-bottom: 16px; background: #fef3c7; border-left: 4px solid #f59e0b;">
+  <strong>⚠️ この機能は脆弱性診断の学習用です。</strong><br>
+  環境変数 <code>VULN_CHALLENGES</code> で有効にしたチャレンジがアプリに脆弱性を注入します。<br>
+  <code style="background:#fff; padding:2px 6px; border-radius:4px;">VULN_CHALLENGES=xss_raw,sql_injection bin/rails server</code>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>状態</th>
+      <th>チャレンジ</th>
+      <th>カテゴリ</th>
+      <th>難易度</th>
+      <th>CWE</th>
+      <th>説明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @challenges.each do |slug, klass| %>
+      <% meta = klass.meta || {} %>
+      <tr>
+        <td>
+          <% if @registry.enabled?(slug) %>
+            <span class="badge badge-done">🔴 有効</span>
+          <% else %>
+            <span class="badge badge-todo">⚪ 無効</span>
+          <% end %>
+        </td>
+        <td><strong><%= meta[:name] || slug %></strong></td>
+        <td><code><%= meta[:category] %></code></td>
+        <td>
+          <% case meta[:difficulty] %>
+          <% when :easy %>
+            🟢 Easy
+          <% when :medium %>
+            🟡 Medium
+          <% when :hard %>
+            🔴 Hard
+          <% end %>
+        </td>
+        <td><code><%= meta[:cwe] %></code></td>
+        <td><%= meta[:description] %></td>
+      </tr>
+      <% if @registry.enabled?(slug) && meta[:hints].present? %>
+        <tr>
+          <td></td>
+          <td colspan="5" style="font-size:0.85rem; color:#6b7280;">
+            <details>
+              <summary>💡 ヒントを見る</summary>
+              <ol style="margin:8px 0 0 20px;">
+                <% meta[:hints].each do |hint| %>
+                  <li><%= hint %></li>
+                <% end %>
+              </ol>
+            </details>
+          </td>
+        </tr>
+      <% end %>
+    <% end %>
+  </tbody>
+</table>
+
+<div style="margin-top: 16px;">
+  <%= link_to "← タスク一覧に戻る", root_path, class: "btn btn-secondary" %>
+</div>
