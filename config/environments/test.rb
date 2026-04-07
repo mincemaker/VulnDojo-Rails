@@ -31,8 +31,8 @@ Rails.application.configure do
   # Render exception templates for rescuable exceptions and raise for other exceptions.
   config.action_dispatch.show_exceptions = :rescuable
 
-  # Disable request forgery protection in test environment.
-  config.action_controller.allow_forgery_protection = false
+  # E2Eテストで CSRF 検証を確認するため有効化
+  config.action_controller.allow_forgery_protection = true
 
   # Print deprecation notices to the stderr.
   config.active_support.deprecation = :stderr

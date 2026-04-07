@@ -1,0 +1,51 @@
+<div class="top-bar">
+  <h2>タスク一覧</h2>
+  <%= link_to "\u2795 \u65b0\u898f\u4f5c\u6210", new_task_path, class: "btn btn-primary" %>
+</div>
+
+<div class="card" style="margin-bottom: 16px;">
+  <%= form_with(url: tasks_path, method: :get, local: true) do |f| %>
+    <div style="display:flex; gap:8px;">
+      <%= f.text_field :q, value: params[:q], placeholder: "\u30bf\u30b9\u30af\u3092\u691c\u7d22...", style: "flex:1; padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:1rem;" %>
+      <%= f.submit "\u691c\u7d22", class: "btn btn-primary" %>
+    </div>
+  <% end %>
+</div>
+
+<% if @tasks.any? %>
+  <table>
+    <thead>
+      <tr>
+        <th>タイトル</th>
+        <th>状態</th>
+        <th>期限</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @tasks.order(created_at: :desc).each do |task| %>
+        <tr>
+          <td><%= link_to task.title, task_path(task) %></td>
+          <td>
+            <% if task.completed? %>
+              <span class="badge badge-done">✅ 完了</span>
+            <% else %>
+              <span class="badge badge-todo">⏳ 未完了</span>
+            <% end %>
+          </td>
+          <td><%= task.due_date&.strftime("%Y-%m-%d") || "\u2014" %></td>
+          <td>
+            <div class="actions">
+              <%= link_to "\u7de8\u96c6", edit_task_path(task), class: "btn btn-secondary" %>
+              <%= button_to "\u524a\u9664", task_path(task), method: :delete, class: "btn btn-danger", form: { data: { turbo_confirm: "\u524a\u9664\u3057\u3066\u3088\u308d\u3057\u3044\u3067\u3059\u304b\uff1f" } } %>
+            </div>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <div class="card" style="text-align:center; color:#6b7280;">
+    <p><%= params[:q].present? ? "\u691c\u7d22\u7d50\u679c\u304c\u898b\u3064\u304b\u308a\u307e\u305b\u3093\u3067\u3057\u305f" : "\u30bf\u30b9\u30af\u304c\u307e\u3060\u3042\u308a\u307e\u305b\u3093\u3002\u300c\u65b0\u898f\u4f5c\u6210\u300d\u304b\u3089\u8ffd\u52a0\u3057\u307e\u3057\u3087\u3046\uff01" %></p>
+  </div>
+<% end %>
