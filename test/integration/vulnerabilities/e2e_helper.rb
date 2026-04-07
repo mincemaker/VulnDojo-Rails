@@ -15,15 +15,16 @@ module E2EHelper
   class ServerProcess
     attr_reader :port, :pid
 
-    def initialize(port:, vuln_challenges: "")
+    def initialize(port:, vuln_challenges: "", rails_env: "test")
       @port = port
       @vuln_challenges = vuln_challenges
+      @rails_env = rails_env
       @pid = nil
     end
 
     def start!
       env = {
-        "RAILS_ENV" => "test",
+        "RAILS_ENV" => @rails_env,
         "VULN_CHALLENGES" => @vuln_challenges,
         "SECRET_KEY_BASE" => "test_secret_key_base_for_e2e_testing_only_1234567890",
       }
