@@ -17,8 +17,13 @@ module Vulnerabilities
       end
 
       def apply!
-        # デフォルトセキュリティヘッダを空にする
-        Rails.application.config.action_dispatch.default_headers = {}
+        # レスポンス送信後にセキュリティヘッダを削除する
+        ApplicationController.after_action do
+          response.headers.delete("X-Frame-Options")
+          response.headers.delete("X-Content-Type-Options")
+          response.headers.delete("X-Permitted-Cross-Domain-Policies")
+          response.headers.delete("Referrer-Policy")
+        end
       end
     end
   end
