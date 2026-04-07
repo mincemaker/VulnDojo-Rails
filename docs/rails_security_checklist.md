@@ -97,7 +97,7 @@
   ```ruby
   # app/controllers/tasks_controller.rb
   def task_params
-    params.require(:task).permit(:title, :description, :completed, :due_date, :url, :secret_note, :attachment)
+    params.require(:task).permit(:title, :description, :completed, :due_date, :url, :secret_note, :attachment, :color)
   end
 
   # Use in actions — note user_id is NEVER permitted
@@ -609,7 +609,7 @@ end
 
 # 4. ✅ Strong parameters (app/controllers/tasks_controller.rb)
 def task_params
-  params.require(:task).permit(:title, :description, :completed, :due_date, :url, :secret_note, :attachment)
+  params.require(:task).permit(:title, :description, :completed, :due_date, :url, :secret_note, :attachment, :color)
 end
 
 # 5. ✅ Session fixation prevention (app/controllers/sessions_controller.rb)

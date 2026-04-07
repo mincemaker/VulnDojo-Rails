@@ -261,7 +261,7 @@ docker compose exec web bin/rails db:prepare RAILS_ENV=development
 ### テストの実行
 
 ```bash
-# コンテナ内で全テスト実行 (41テスト, 103アサーション)
+# コンテナ内で全テスト実行 (41テスト, 100アサーション)
 docker compose exec web bundle exec rake test
 
 # 個別実行
@@ -382,6 +382,7 @@ end
 | `user_id` | integer | 所有者（外部キー） |
 | `url` | string | 関連 URL |
 | `secret_note` | text | 秘密メモ（ログフィルタリング対象） |
+| `color` | string | ラベルカラー（16進カラーコード） |
 | `attachment` | Active Storage | 添付ファイル |
 
 ---
