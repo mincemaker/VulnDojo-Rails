@@ -60,4 +60,7 @@ Rails.application.configure do
 
   # Raise error when a before_action's only/except options reference missing actions
   config.action_controller.raise_on_missing_callback_actions = true
+
+  # DNS rebinding 攻撃対策: 許可するホストを明示的に制限 (§7.8.1)
+  config.hosts = ["localhost", "127.0.0.1", "::1"]
 end
