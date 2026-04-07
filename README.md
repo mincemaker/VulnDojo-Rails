@@ -1,19 +1,21 @@
 # 📋 タスク管理 — 脆弱性診断学習プラットフォーム
 
-Rails 製のシンプルな CRUD アプリに、**環境変数ひとつで脆弱性を注入できる仕組み**を組み込んだ学習用プラットフォームです。
+Rails 製の CRUD アプリに、**環境変数ひとつで脆弱性を注入できる仕組み**を組み込んだ学習用プラットフォームです。
 
-- ベースのアプリは安全な実装
+- ベースのアプリは [Rails セキュリティガイド](https://guides.rubyonrails.org/security.html) に準拠した安全な実装
 - `VULN_CHALLENGES` 環境変数で、Ruby のメタプログラミング（`Module#prepend`、`prepend_view_path` 等）を使い脆弱性を動的に上書き注入
 - 学習対象者に「どこに脆弱性があるか」を見つけさせる演習に使えます
 
 ## 技術スタック
 
 | 項目 | 値 |
-|------|----|
+|------|-----|
 | Ruby | 3.2.3 |
-| Rails | 7.1 |
+| Rails | 7.1.6 |
 | DB | SQLite3 |
 | サーバー | Puma |
+| 認証 | bcrypt (`has_secure_password`) |
+| ファイル添付 | Active Storage (Disk) |
 
 ---
 
@@ -22,6 +24,7 @@ Rails 製のシンプルな CRUD アプリに、**環境変数ひとつで脆弱
 ```bash
 bundle install
 bin/rails db:prepare
+bin/rails db:seed   # デモユーザ作成: demo@example.com / password123
 ```
 
 ## 起動
@@ -34,8 +37,52 @@ bin/rails server -b 127.0.0.1
 VULN_CHALLENGES=xss_raw,sql_injection,csrf_skip bin/rails server -b 127.0.0.1
 ```
 
-ブラウザで http://localhost:3000 を開く。  
-ダッシュボード http://localhost:3000/vulnerabilities で有効なチャレンジの状態を確認できる。
+ブラウザで http://localhost:3000 → ログイン画面へリダイレクトされます。
+ダッシュボード http://localhost:3000/vulnerabilities で有効なチャレンジの状態を確認できます。
+
+---
+
+## 🛡️ ベースアプリのセキュリティ機能
+
+ベースのアプリは脆弱性なしの安全な実装です。以下の対策が組み込まれています。
+
+### 認証・セッション
+
+| 対策 | 実装箇所 |
+|------|----------|
+| `has_secure_password` (bcrypt) | `User` モデル |
+| ログイン/サインアップ時 `reset_session` | `SessionsController`, `UsersController` |
+| `before_action :require_login` | `ApplicationController` |
+
+### IDOR 防止（権限昇格防止）
+
+```ruby
+# 全アクションで所有者スコープ
+@task = current_user.tasks.find(params[:id])
+```
+
+### 入力検証
+
+| フィールド | バリデーション |
+|----------|----------------|
+| `title` | `presence: true` |
+| `url` | `format: { with: /\Ahttps?:\/\/.+\z/ }` — `\A\z` アンカーで正規表現バイパス防止 |
+| `attachment` | MIME ホワイトリスト + 10MB 上限 |
+| `email` | 形式・一意性検証 |
+| `password` | 8文字以上 |
+
+### その他の対策
+
+| 対策 | 説明 |
+|------|------|
+| Strong Parameters | 許可リスト方式 (`permit`) |
+| CSRF 保護 | `protect_from_forgery` + `csrf_meta_tags` |
+| 安全なリダイレクト | `safe_redirect_to`: 内部パスのみ許可 (`/` 始まり、`//` 非始まり) |
+| ログフィルタリング | `secret_note` がログに `[FILTERED]` と表示 |
+| CSV エクスポート | `CSV.generate` 使用（shell 不使用） |
+| CSP ヘッダー | `config/initializers/content_security_policy.rb` |
+| Host Authorization | `config.hosts` で localhost のみ許可 |
+| セキュリティヘッダー | X-Frame-Options, X-Content-Type-Options 等 |
 
 ---
 
@@ -54,11 +101,11 @@ app/ (安全なコード)              lib/vulnerabilities/ (注入レイヤー)
 app/views/ (安全)                lib/vulnerabilities/views/ (脆弱)
 ┌──────────────────┐            ┌──────────────────────────────┐
 │ tasks/show.erb    │◄─ prepend_view_path ─┤ tasks/show.erb    │
-│ tasks/index.erb   │◄────────────────────┤ tasks/index.erb   │
+│ tasks/index.erb   │◄──────────────────┤ tasks/index.erb   │
 └──────────────────┘            └──────────────────────────────┘
 ```
 
-`app/` 以下のコードには一切脆弱性がありません。  
+`app/` 以下のコードには一切脆弱性がありません。
 `lib/vulnerabilities/` の注入レイヤーが、起動時に安全なコードを**上書き**します。
 
 ### Ruby の仕組みの活用
@@ -116,15 +163,14 @@ module Vulnerabilities
       end
 
       def apply!
-        # ここで脆弱性を注入する
-        # 利用できるヘルパーメソッド:
-        #   prepend_to(klass, mod) - Module#prepend でメソッドを上書き
-        #   add_routes { ... }     - ルートを動的追加
-        #   configure_app { ... }  - Rails 設定を変更
-
         vuln_module = Module.new do
-          def redirect_after_create
-            redirect_to params[:return_to] || root_path  # ← 脆弱性: 未検証リダイレクト
+          def create
+            @task = current_user.tasks.build(task_params)
+            if @task.save
+              redirect_to params[:return_to] || @task  # ← 脆弱性: 未検証リダイレクト
+            else
+              render :new, status: :unprocessable_entity
+            end
           end
         end
         prepend_to TasksController, vuln_module
@@ -135,8 +181,6 @@ end
 ```
 
 ### 2. メタデータ DSL
-
-`metadata` ブロックで以下を定義できます:
 
 | メソッド | 必須 | 説明 |
 |---------|------|------|
@@ -150,11 +194,9 @@ end
 
 ### 3. 自動登録
 
-ファイルを配置するだけで、起動時に `Vulnerabilities::Engine` が自動で読み込み・登録します。  
-追加の設定は不要です。
+ファイルを配置するだけで、起動時に `Vulnerabilities::Engine` が自動で読み込み・登録します。
 
 ```bash
-# 新しいチャレンジを有効にして起動
 VULN_CHALLENGES=open_redirect bin/rails server -b 127.0.0.1
 ```
 
@@ -182,10 +224,12 @@ bin/rails test test/integration/vulnerabilities/csrf_skip_test.rb -v
 
 ```
  テストプロセス
-    ├── ServerProcess (port:4010, VULN_CHALLENGES="")      ← 安全なサーバー
-    ├── ServerProcess (port:4011, VULN_CHALLENGES="xss_raw") ← 脆弱なサーバー
+    ├── ServerProcess (VULN_CHALLENGES="")           ← 安全なサーバー
+    ├── ServerProcess (VULN_CHALLENGES="xss_raw")    ← 脆弱なサーバー
     └── Net::HTTP で両方にリクエスト → レスポンスを比較
 ```
+
+テストヘルパー (`e2e_helper.rb`) がユーザーのサインアップ・ログイン・セッション Cookie 管理・タスク作成を自動化します。
 
 ### テスト一覧
 
@@ -203,8 +247,6 @@ bin/rails test test/integration/vulnerabilities/csrf_skip_test.rb -v
 
 ### 新しいチャレンジのテスト追加方法
 
-`test/integration/vulnerabilities/` にテストファイルを追加します。
-
 ```ruby
 # test/integration/vulnerabilities/open_redirect_test.rb
 require "test_helper"
@@ -214,7 +256,6 @@ class OpenRedirectTest < ActiveSupport::TestCase
   include E2EHelper
 
   setup do
-    # ポート番号は他のテストと被らないように選ぶ (4000番台)
     @safe_server = ServerProcess.new(port: 4040, vuln_challenges: "")
     @vuln_server = ServerProcess.new(port: 4041, vuln_challenges: "open_redirect")
     @safe_server.start!
@@ -226,14 +267,12 @@ class OpenRedirectTest < ActiveSupport::TestCase
     @vuln_server.stop!
   end
 
-  # 🔴 RED: 安全な状態では攻撃が通らない
   test "SAFE: redirect to external URL is blocked" do
-    # ... 安全であることを検証
+    # ...
   end
 
-  # 🟢 GREEN: 脆弱な状態では攻撃が通る
   test "VULN: redirect to external URL succeeds" do
-    # ... 脆弱性が存在することを検証
+    # ...
   end
 end
 ```
@@ -244,10 +283,37 @@ end
 |---------|------|
 | `ServerProcess.new(port:, vuln_challenges:)` | テスト用サーバーの定義 |
 | `server.start!` / `server.stop!` | サーバーの起動・停止 |
-| `server.get(path)` | HTTP GET リクエスト |
+| `server.get(path, headers:)` | HTTP GET リクエスト |
 | `server.post(path, body:, headers:)` | HTTP POST リクエスト |
-| `create_task_via_form(server, title:)` | CSRF トークン付きでタスクを作成 |
+| `setup_session(server)` | ユーザー作成・ログインしてセッション Cookie を返す |
+| `create_task_via_form(server, title:, cookie:)` | CSRF トークン付きでタスクを作成 |
 | `extract_csrf_token(html)` | HTML からトークンを抽出 |
+| `latest_cookie(response, fallback)` | レスポンスから最新のセッション Cookie を取得 |
+
+---
+
+## データモデル
+
+### User
+
+| フィールド | 型 | 説明 |
+|----------|------|------|
+| `name` | string | ユーザー名（一意） |
+| `email` | string | メールアドレス（一意、小文字化） |
+| `password_digest` | string | bcrypt ハッシュ |
+
+### Task
+
+| フィールド | 型 | 説明 |
+|----------|------|------|
+| `title` | string | タイトル（必須） |
+| `description` | text | 説明 |
+| `completed` | boolean | 完了フラグ |
+| `due_date` | date | 期限 |
+| `user_id` | integer | 所有者（外部キー） |
+| `url` | string | 関連 URL |
+| `secret_note` | text | 秘密メモ（ログフィルタリング対象） |
+| `attachment` | Active Storage | 添付ファイル |
 
 ---
 
@@ -255,49 +321,50 @@ end
 
 ```
 tsubame-rails/
-├── app/                            # 安全なアプリケーションコード
+├── app/                                 # 安全なアプリケーションコード
 │   ├── controllers/
-│   │   ├── application_controller.rb
-│   │   ├── tasks_controller.rb     # CRUD (Strong Parameters, CSRF 保護付き)
-│   │   └── vulnerabilities_controller.rb  # ダッシュボード
+│   │   ├── application_controller.rb     # 認証・安全リダイレクト
+│   │   ├── sessions_controller.rb        # ログイン/ログアウト
+│   │   ├── users_controller.rb           # ユーザー登録
+│   │   ├── tasks_controller.rb           # CRUD + CSVエクスポート + 添付ファイル
+│   │   └── vulnerabilities_controller.rb # ダッシュボード
 │   ├── models/
-│   │   └── task.rb                 # バリデーション付きモデル
+│   │   ├── user.rb                       # has_secure_password
+│   │   └── task.rb                       # バリデーション + Active Storage
 │   └── views/
-│       ├── layouts/application.html.erb
-│       ├── tasks/                  # 安全なテンプレート (エスケープ済み)
-│       └── vulnerabilities/dashboard.html.erb
-├── lib/vulnerabilities/            # 脆弱性注入レイヤー
-│   ├── base.rb                     # チャレンジ基底クラス + DSL
-│   ├── registry.rb                 # Singleton レジストリ
-│   ├── engine.rb                   # ブートローダー
-│   ├── challenges/                 # 各チャレンジ実装
+│       ├── layouts/application.html.erb  # ナビ + ログイン状態表示
+│       ├── sessions/new.html.erb         # ログインフォーム
+│       ├── users/new.html.erb            # サインアップフォーム
+│       ├── tasks/                        # 安全なテンプレート
+│       └── vulnerabilities/              # ダッシュボード
+├── lib/vulnerabilities/                 # 脆弱性注入レイヤー
+│   ├── base.rb                          # チャレンジ基底クラス + DSL
+│   ├── registry.rb                      # Singleton レジストリ
+│   ├── engine.rb                        # ブートローダー
+│   ├── challenges/                      # 各チャレンジ実装
 │   │   ├── xss_raw.rb
 │   │   ├── sql_injection.rb
 │   │   └── csrf_skip.rb
-│   └── views/tasks/                # 脆弱なテンプレート (注入用)
-├── test/integration/vulnerabilities/  # E2E テスト
-│   ├── e2e_helper.rb               # テスト用サーバー管理
+│   └── views/tasks/                     # 脆弱なテンプレート（注入用）
+├── test/integration/vulnerabilities/     # E2E テスト
+│   ├── e2e_helper.rb                    # サーバー管理 + セッション管理
 │   ├── xss_raw_test.rb
 │   ├── sql_injection_test.rb
 │   └── csrf_skip_test.rb
-├── config/initializers/
-│   ├── vulnerabilities.rb          # 注入の初期化
-│   └── content_security_policy.rb  # CSP ヘッダー設定
+├── config/
+│   ├── initializers/
+│   │   ├── vulnerabilities.rb           # 注入の初期化
+│   │   ├── content_security_policy.rb   # CSP ヘッダー
+│   │   └── filter_parameter_logging.rb  # ログフィルタ (含 secret_note)
+│   ├── storage.yml                      # Active Storage 設定
+│   └── routes.rb                        # 認証 + CRUD + エクスポート
 └── docs/
-    └── rails_security_checklist.md # Rails セキュリティガイド準拠チェックリスト
+    └── rails_security_checklist.md       # Rails セキュリティガイド準拠チェックリスト
 ```
 
 ---
 
 ## セキュリティ
 
-ベースのアプリは [Rails セキュリティガイド](https://guides.rubyonrails.org/security.html) に準拠して実装しています。  
+ベースのアプリは [Rails セキュリティガイド](https://guides.rubyonrails.org/security.html) に準拠して実装しています。
 詳細は `docs/rails_security_checklist.md` を参照してください。
-
-- CSRF 保護（`protect_from_forgery`）
-- Strong Parameters（許可リスト方式）
-- XSS 対策（ERB の自動エスケープ）
-- SQL Injection 対策（ActiveRecord のパラメータ化クエリ）
-- Content-Security-Policy ヘッダー
-- Host Authorization（DNS rebinding 対策）
-- セキュリティヘッダー（X-Frame-Options, X-Content-Type-Options 等）
