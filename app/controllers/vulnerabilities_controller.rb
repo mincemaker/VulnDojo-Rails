@@ -3,6 +3,5 @@
 class VulnerabilitiesController < ApplicationController
   def dashboard
     @registry = Vulnerabilities::Registry.instance
-    @challenges = @registry.all_challenges
   end
 end

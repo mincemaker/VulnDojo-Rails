@@ -28,8 +28,8 @@ class TasksController < ApplicationController
     @task = current_user.tasks.build(task_params)
 
     if @task.save
-      safe_redirect_to params[:return_to], fallback: @task
       flash[:notice] = "タスクを作成しました。"
+      safe_redirect_to params[:return_to], fallback: @task
     else
       render :new, status: :unprocessable_entity
     end
@@ -38,8 +38,8 @@ class TasksController < ApplicationController
   # PATCH/PUT /tasks/1
   def update
     if @task.update(task_params)
-      safe_redirect_to params[:return_to], fallback: @task
       flash[:notice] = "タスクを更新しました。"
+      safe_redirect_to params[:return_to], fallback: @task
     else
       render :edit, status: :unprocessable_entity
     end

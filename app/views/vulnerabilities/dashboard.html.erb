@@ -20,7 +20,7 @@
     </tr>
   </thead>
   <tbody>
-    <% @challenges.each do |slug, klass| %>
+    <% @registry.all_challenges.each do |slug, klass| %>
       <% meta = klass.meta || {} %>
       <tr>
         <td>
