@@ -3,11 +3,14 @@
 require "net/http"
 require "uri"
 require "timeout"
+require "securerandom"
 
 # E2E テスト用ヘルパー
 # 脆弱性 ON/OFF の別プロセスで Rails サーバーを起動し HTTP で検証する
 module E2EHelper
   BASE_PORT = 4000
+
+  TEST_USER_PASSWORD = "password123"
 
   class ServerProcess
     attr_reader :port, :pid
@@ -41,14 +44,14 @@ module E2EHelper
 
     def stop!
       return unless @pid
-      # プロセスグループごと停止
       Process.kill("TERM", -Process.getpgid(@pid))
     rescue Errno::ESRCH, Errno::EPERM
-      # already gone
     ensure
       Process.wait(@pid) rescue nil
       @pid = nil
     end
+
+    # --- HTTP メソッド: cookie 自動追跡 ---
 
     def get(path, headers: {})
       uri = URI("http://127.0.0.1:#{@port}#{path}")
@@ -69,6 +72,13 @@ module E2EHelper
       end
     end
 
+    def delete(path, headers: {})
+      uri = URI("http://127.0.0.1:#{@port}#{path}")
+      req = Net::HTTP::Delete.new(uri)
+      headers.each { |k, v| req[k] = v }
+      Net::HTTP.start(uri.host, uri.port) { |http| http.request(req) }
+    end
+
     private
 
     def wait_for_ready!
@@ -83,30 +93,94 @@ module E2EHelper
     end
   end
 
-  # テスト用タスクを作成し id を返す
-  def create_task_via_form(server, title:, description: "")
-    # まず GET でフォームを取得して CSRF トークンを取る
-    res = server.get("/tasks/new")
-    token = extract_csrf_token(res.body)
-    cookie = res["set-cookie"]&.split(";")&.first
+  # テスト用ユーザを作成してログインし、セッションCookieを返す
+  def setup_session(server)
+    suffix = "#{server.port}_#{SecureRandom.hex(6)}"
+    email = "e2e_#{suffix}@example.com"
+    name  = "tester_#{suffix}"
+
+    # 1) GET /signup
+    res1 = server.get("/signup")
+    cookie = latest_cookie(res1)
+    token = extract_csrf_token(res1.body)
+
+    # 2) POST /signup
+    body = URI.encode_www_form(
+      "authenticity_token" => token,
+      "user[name]"         => name,
+      "user[email]"        => email,
+      "user[password]"     => TEST_USER_PASSWORD,
+      "user[password_confirmation]" => TEST_USER_PASSWORD
+    )
+    res2 = server.post("/signup", body: body, headers: { "Cookie" => cookie })
+    cookie = latest_cookie(res2, cookie)
+
+    if res2.code == "302"
+      return cookie
+    end
+
+    # サインアップ失敗 → ログイン
+    res3 = server.get("/login")
+    cookie = latest_cookie(res3)
+    token = extract_csrf_token(res3.body)
+
+    body = URI.encode_www_form(
+      "authenticity_token" => token,
+      "email"     => email,
+      "password"  => TEST_USER_PASSWORD
+    )
+    res4 = server.post("/login", body: body, headers: { "Cookie" => cookie })
+    latest_cookie(res4, cookie)
+  end
+
+  # テスト用タスクを作成し id と cookie を返す
+  def create_task_via_form(server, title:, description: "", cookie: nil)
+    cookie ||= setup_session(server)
+
+    # GET /tasks/new
+    res1 = server.get("/tasks/new", headers: { "Cookie" => cookie })
+    cookie = latest_cookie(res1, cookie)
+
+    if res1.code == "302"
+      cookie = setup_session(server)
+      res1 = server.get("/tasks/new", headers: { "Cookie" => cookie })
+      cookie = latest_cookie(res1, cookie)
+    end
+
+    token = extract_csrf_token(res1.body)
 
     body = URI.encode_www_form(
       "authenticity_token" => token,
       "task[title]" => title,
       "task[description]" => description
     )
-    headers = {}
-    headers["Cookie"] = cookie if cookie
 
-    post_res = server.post("/tasks", body: body, headers: headers)
-    # 302 redirect to /tasks/:id
-    if post_res["location"]
-      post_res["location"].match(%r{/tasks/(\d+)})[1].to_i
+    res2 = server.post("/tasks", body: body, headers: { "Cookie" => cookie })
+    cookie = latest_cookie(res2, cookie)
+
+    task_id = nil
+    if res2["location"]
+      m = res2["location"].match(%r{/tasks/(\d+)})
+      task_id = m[1].to_i if m
     end
+    { id: task_id, cookie: cookie }
   end
 
   def extract_csrf_token(html)
-    match = html.match(/name="authenticity_token"\s+value="([^"]+)"/)
-    match[1] if match
+    # フォームの hidden field からトークンを取得（metaタグではなく）
+    # <input type="hidden" name="authenticity_token" value="..." autocomplete="off" />
+    tokens = html.scan(/name="authenticity_token"\s+value="([^"]+)"\s+autocomplete/)
+    # autocomplete付きの最後のトークンを使う（メインフォームのもの）
+    tokens.last&.first
+  end
+
+  # レスポンスから最新のセッションcookieを取得。なければfallbackを返す。
+  def latest_cookie(response, fallback = nil)
+    raw = response["set-cookie"]
+    if raw
+      raw.split(";").first
+    else
+      fallback
+    end
   end
 end

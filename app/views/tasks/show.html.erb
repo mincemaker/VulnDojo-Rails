@@ -25,6 +25,31 @@
     <div><%= @task.due_date&.strftime("%Y-%m-%d") || "—" %></div>
   </div>
 
+  <% if @task.url.present? %>
+    <div class="detail-row">
+      <div class="label">URL</div>
+      <div><%= link_to @task.url, @task.url, target: "_blank", rel: "noopener noreferrer" %></div>
+    </div>
+  <% end %>
+
+  <% if @task.secret_note.present? %>
+    <div class="detail-row">
+      <div class="label">秘密メモ</div>
+      <div><%= @task.secret_note %></div>
+    </div>
+  <% end %>
+
+  <% if @task.attachment.attached? %>
+    <div class="detail-row">
+      <div class="label">添付ファイル</div>
+      <div class="attachment-info">
+        📎 <%= @task.attachment.filename %>
+        (<%= number_to_human_size(@task.attachment.byte_size) %>)
+        <%= link_to "ダウンロード", download_attachment_task_path(@task), class: "btn btn-secondary btn-sm" %>
+      </div>
+    </div>
+  <% end %>
+
   <div class="actions" style="margin-top: 20px;">
     <%= link_to "編集", edit_task_path(@task), class: "btn btn-primary" %>
     <%= link_to "一覧に戻る", tasks_path, class: "btn btn-secondary" %>
