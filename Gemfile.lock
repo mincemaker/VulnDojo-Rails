@@ -80,6 +80,7 @@ GEM
       mutex_m
       securerandom (>= 0.3)
       tzinfo (~> 2.0)
+    ansi (1.6.0)
     base64 (0.3.0)
     bcrypt (3.1.22)
     benchmark (0.5.0)
@@ -120,6 +121,11 @@ GEM
     marcel (1.1.0)
     mini_mime (1.1.5)
     minitest (5.27.0)
+    minitest-reporters (1.8.0)
+      ansi
+      builder
+      minitest (>= 5.0, < 7)
+      ruby-progressbar
     mutex_m (0.3.0)
     net-imap (0.6.3)
       date
@@ -189,6 +195,7 @@ GEM
       tsort
     reline (0.6.3)
       io-console (~> 0.5)
+    ruby-progressbar (1.13.0)
     securerandom (0.4.1)
     sqlite3 (2.9.2-x86_64-linux-gnu)
     stringio (3.2.0)
@@ -216,6 +223,7 @@ DEPENDENCIES
   bcrypt (~> 3.1.7)
   debug
   minitest (~> 5.16)
+  minitest-reporters
   nokogiri
   puma (>= 5.0)
   rails (~> 7.1.5)

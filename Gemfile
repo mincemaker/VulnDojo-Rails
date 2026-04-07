@@ -28,6 +28,7 @@ end
 
 group :test do
   gem "nokogiri"
+  gem "minitest-reporters"
 end
 
 group :development do
