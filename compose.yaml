@@ -12,6 +12,7 @@ services:
     environment:
       RAILS_ENV: development
       RAILS_LOG_TO_STDOUT: "true"
+      VULN_CHALLENGES: ${VULN_CHALLENGES:-}
     stdin_open: true
     tty: true
 
