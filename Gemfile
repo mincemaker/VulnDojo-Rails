@@ -29,6 +29,7 @@ end
 group :test do
   gem "nokogiri"
   gem "minitest-reporters"
+  gem "ferrum", "~> 0.15"
 end
 
 group :development do

@@ -40,11 +40,17 @@ VULN_CHALLENGES=xss_raw bin/rails server -b 127.0.0.1
 ```
 
 タスクの `show` テンプレートが差し替えられ、タイトルが `@task.title.html_safe` で出力されます。
-ERB の自動エスケープが無効になるため、タイトルに含まれた HTML/JavaScript がそのままブラウザで実行されます。
+ERB の自動エスケープが無効になるため、タイトルに含まれた HTML タグがそのまま DOM に挿入されます。
 
 再現手順:
-1. タスクを新規作成し、タイトルに `<script>alert('XSS')</script>` を入力
-2. タスク詳細ページを開くとスクリプトが実行される
+1. タスクを新規作成し、タイトルに `<img src=x onerror="alert('XSS')">` を入力
+2. タスク詳細ページを開くと img 要素が DOM に挿入される
+
+> ベースアプリには CSP (`script-src: 'self'`) が設定されているため、インラインイベントハンドラ (`onerror` 等) の実行はブラウザによりブロックされます。JS を実際に実行させるには `csp_disable` と組み合わせてください。
+
+```bash
+VULN_CHALLENGES=xss_raw,csp_disable bin/rails server -b 127.0.0.1
+```
 
 検出ポイント: `lib/vulnerabilities/challenges/xss_raw.rb` — `@task.title.html_safe`
 

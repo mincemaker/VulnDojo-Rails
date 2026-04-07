@@ -250,29 +250,33 @@ slug はクラス名を `underscore` したもの（`OpenRedirect` → `open_red
 ### テストの実行
 
 ```bash
-# 全テスト実行 (35テスト, 91アサーション)
-bundle exec ruby -Itest -e "Dir['test/integration/vulnerabilities/*_test.rb'].each { |f| require File.expand_path(f) }"
+# コンテナ内で全テスト実行 (41テスト, 103アサーション)
+docker compose exec web bundle exec rake test
 
 # 個別実行
-bundle exec ruby -Itest test/integration/vulnerabilities/xss_raw_test.rb
-bundle exec ruby -Itest test/integration/vulnerabilities/idor_test.rb
-# ... 他の *_test.rb も同様
+docker compose exec web bundle exec ruby -Itest test/integration/vulnerabilities/xss_raw_test.rb
+docker compose exec web bundle exec ruby -Itest test/integration/vulnerabilities/xss_raw_browser_test.rb
 ```
 
 ### テストの仕組み
 
-各テストは **別プロセスで Rails サーバーを2台起動**（SAFE 用 / VULN 用）し、`Net::HTTP` で HTTP リクエストを送って検証します。
+各テストは **別プロセスで Rails サーバーを2台起動**（SAFE 用 / VULN 用）し検証します。
+
+HTTP テスト (`*_test.rb`) は `Net::HTTP` でレスポンスを検証します。ブラウザテスト (`*_browser_test.rb`) は Ferrum (Chrome DevTools Protocol) でヘッドレス Chromium を操作し、JS 実行・DOM 状態・計算済みスタイルをブラウザレベルで検証します。
 
 ```
  テストプロセス
-    ├── ServerProcess (VULN_CHALLENGES="")           ← 安全なサーバー
-    ├── ServerProcess (VULN_CHALLENGES="xss_raw")    ← 脆弱なサーバー
-    └── Net::HTTP で両方にリクエスト → レスポンスを比較
+    ├── ServerProcess (VULN_CHALLENGES="")       ← 安全なサーバー
+    ├── ServerProcess (VULN_CHALLENGES="xss_raw") ← 脆弱なサーバー
+    ├── Net::HTTP で両方にリクエスト → レスポンスを比較  (HTTPテスト)
+    └── Ferrum (Chromium) でページを開いて DOM/JS を検証 (ブラウザテスト)
 ```
 
-テストヘルパー (`e2e_helper.rb`) がユーザーのサインアップ・ログイン・セッション Cookie 管理・タスク作成を自動化します。
+テストヘルパー (`e2e_helper.rb`) がユーザーのサインアップ・ログイン・セッション Cookie 管理・タスク作成を自動化します。`browser_helper.rb` は `e2e_helper.rb` を継承し Ferrum のブラウザ操作を追加します。
 
-### テスト一覧 (35テスト)
+### テスト一覧 (41テスト)
+
+#### HTTP テスト (35テスト)
 
 | チャレンジ | SAFEテスト | VULNテスト | ポート |
 |-----------|------|------|------|
@@ -290,6 +294,14 @@ bundle exec ruby -Itest test/integration/vulnerabilities/idor_test.rb
 | header_removal | X-Frame-Options等存在 | セキュリティヘッダ欠落 | 4120/4121 |
 | csp_disable | CSPヘッダ存在 | CSP無効化 | 4130/4131 |
 | command_injection | nameパラメータ無視 | \$(whoami)がファイル名に出現 | 4140/4141 |
+
+#### ブラウザテスト — Ferrum (Chromium) (6テスト)
+
+| チャレンジ | SAFEテスト | VULNテスト | ポート |
+|-----------|------|------|------|
+| xss_raw (browser) | img[onerror] 要素が DOM に存在しない | html_safe で img[onerror] が DOM に挿入される | 4200/4201 |
+| css_injection (browser) | #task-description 要素が存在しない | getComputedStyle で background:red が適用済み | 4202/4203 |
+| csp_disable (browser) | xss_raw + CSP → onerror が実行されない | xss_raw + csp_disable → window.__xss が true | 4204/4205 |
 
 ### 新しいチャレンジのテスト追加方法
 
@@ -396,9 +408,11 @@ tsubame-rails/
 │   │   ├── unsafe_file_upload.rb     log_leakage.rb
 │   │   └── header_removal.rb         csp_disable.rb
 │   └── views/tasks/                     # 脆弱なテンプレート（注入用）
-├── test/integration/vulnerabilities/     # E2E テスト (35テスト, 91アサーション)
-│   ├── e2e_helper.rb                    # サーバー管理 + セッション管理
-│   └── *_test.rb                        # 各チャレンジのE2Eテスト (14ファイル)
+├── test/integration/vulnerabilities/     # E2E テスト (41テスト, 103アサーション)
+│   ├── e2e_helper.rb                    # サーバー管理 + セッション管理 (HTTP)
+│   ├── browser_helper.rb                # Ferrum ブラウザ操作ヘルパー
+│   ├── *_test.rb                        # HTTP レベル E2E テスト (14ファイル)
+│   └── *_browser_test.rb               # ブラウザレベル E2E テスト (3ファイル)
 ├── config/
 │   ├── initializers/
 │   │   ├── vulnerabilities.rb           # 注入の初期化
