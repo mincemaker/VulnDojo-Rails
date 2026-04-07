@@ -9,9 +9,9 @@ module Vulnerabilities
         name        "Session Fixation — reset_session 無効化"
         category    :session
         difficulty  :medium
-        description "ログイン時にセッションIDが再生成されません。セッション固定化攻撃が可能です。"
-        hint        "ログイン前後でセッションCookieの値が変わるか確認してください"
-        hint        "reset_session が呼ばれていないため、攻撃者が事前にセットしたIDがそのまま使われます"
+        description "ログイン時に reset_session が呼ばれないため、攻撃者が事前に取得したセッションIDを被害者に踏ませることでセッション固定化攻撃が成立します。"
+        hint        "ログイン前のセッションID（_session_id）を取得し、そのIDで被害者をログインさせてみましょう"
+        hint        "reset_session がないとサーバー側のセッションレコードにuser_idが書き込まれ、攻撃者のIDが認証済みになります"
         cwe         "CWE-384"
         reference   "https://guides.rubyonrails.org/security.html#session-fixation"
       end

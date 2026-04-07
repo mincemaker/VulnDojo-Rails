@@ -145,10 +145,10 @@
 ### Vulnerability: Session Data Exposure/Tampering
 **Risk**: Sensitive data leakage or session replay attacks.
 
-> **✅ このアプリでの実装**: Rails encrypted `CookieStore` (default). Session stores only `user_id`. Secrets managed via `config/credentials.yml.enc`.
+> **✅ このアプリでの実装**: `ActiveRecordStore` (`activerecord-session_store` gem). Session ID is stored server-side in the `sessions` table; only a token is sent in the cookie. Session stores only `user_id`. Secrets managed via `config/credentials.yml.enc`.
 
 **Mitigations**:
-- ✅ Rails 7.1 uses encrypted `CookieStore` by default - keep this
+- ✅ Uses `ActiveRecordStore` — session data is stored server-side, not in the cookie
 - ✅ Ensure `secret_key_base` is set in `config/credentials.yml.enc`:
   ```bash
   bin/rails credentials:edit

