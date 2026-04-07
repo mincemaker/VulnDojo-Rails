@@ -91,6 +91,6 @@ class TasksController < ApplicationController
 
   # Strong Parameters: 許可リスト方式
   def task_params
-    params.require(:task).permit(:title, :description, :completed, :due_date, :url, :secret_note, :attachment)
+    params.require(:task).permit(:title, :description, :completed, :due_date, :url, :secret_note, :attachment, :color)
   end
 end

@@ -135,7 +135,7 @@ module E2EHelper
   end
 
   # テスト用タスクを作成し id と cookie を返す
-  def create_task_via_form(server, title:, description: "", cookie: nil)
+  def create_task_via_form(server, title:, description: "", color: nil, cookie: nil)
     cookie ||= setup_session(server)
 
     # GET /tasks/new
@@ -150,11 +150,14 @@ module E2EHelper
 
     token = extract_csrf_token(res1.body)
 
-    body = URI.encode_www_form(
+    params_hash = {
       "authenticity_token" => token,
       "task[title]" => title,
       "task[description]" => description
-    )
+    }
+    params_hash["task[color]"] = color if color
+
+    body = URI.encode_www_form(params_hash)
 
     res2 = server.post("/tasks", body: body, headers: { "Cookie" => cookie })
     cookie = latest_cookie(res2, cookie)

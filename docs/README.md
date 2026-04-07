@@ -24,7 +24,7 @@
 | `regex_bypass` | Regex Bypass — ^ vs \A anchor | validation | medium | CWE-185 |
 | `unsafe_file_upload` | Unsafe File Upload — MIME validation disabled | upload | medium | CWE-434 |
 | `log_leakage` | Log Leakage — parameter filter disabled | logging | easy | CWE-532 |
-| `css_injection` | CSS Injection via style attribute | xss | medium | CWE-79 |
+| `css_injection` | CSS Injection via label color | xss | medium | CWE-79 |
 | `header_removal` | HTTP Security Headers Removed | headers | easy | CWE-693 |
 | `csp_disable` | Content Security Policy Disabled | headers | easy | CWE-693 |
 | `command_injection` | Command Injection via CSV export | injection | hard | CWE-78 |
@@ -248,25 +248,25 @@ VULN_CHALLENGES=log_leakage bin/rails server -b 127.0.0.1
 
 ---
 
-### css_injection — CSS Injection via style attribute
+### css_injection — CSS Injection via label color
 
 ```bash
 VULN_CHALLENGES=css_injection bin/rails server -b 127.0.0.1
 ```
 
-タスクの `show` テンプレートが差し替えられ、`@task.description` が `style` 属性に直接埋め込まれます。
+タスクの `show` テンプレートが差し替えられ、ラベルカラー (`@task.color`) がバリデーションなしで `style` 属性に直接埋め込まれます。
 CSS を使ったページ改ざんや、ブラウザによってはデータ窃取が可能になります。
 
 再現手順:
-1. タスクの説明に以下を入力して保存
+1. タスク作成・編集フォームの「ラベルカラー」欄に以下を入力して保存
 
 ```
-background:red;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999
+red;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999
 ```
 
 2. タスク詳細ページを開くとページ全体が赤く塗りつぶされる
 
-検出ポイント: `lib/vulnerabilities/challenges/css_injection.rb` — `style="<%= @task.description %>"`
+検出ポイント: `lib/vulnerabilities/challenges/css_injection.rb` — `style="border-left: 4px solid <%= @task.color %>"`
 
 参考: https://guides.rubyonrails.org/security.html#css-injection
 

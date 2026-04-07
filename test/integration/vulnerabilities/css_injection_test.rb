@@ -6,7 +6,7 @@ require_relative "e2e_helper"
 class CssInjectionTest < ActiveSupport::TestCase
   include E2EHelper
 
-  CSS_PAYLOAD = "background:red; color:white"
+  CSS_PAYLOAD = "red; background:blue"
 
   setup do
     @safe_server = ServerProcess.new(port: 4110, vuln_challenges: "")
@@ -20,22 +20,23 @@ class CssInjectionTest < ActiveSupport::TestCase
     @vuln_server.stop!
   end
 
-  test "SAFE: description is not embedded in style attribute" do
-    result = create_task_via_form(@safe_server, title: "CSS test", description: CSS_PAYLOAD)
+  test "SAFE: color is not embedded unvalidated in style attribute" do
+    result = create_task_via_form(@safe_server, title: "CSS test", color: CSS_PAYLOAD)
     assert result[:id]
 
     res = @safe_server.get("/tasks/#{result[:id]}", headers: { "Cookie" => result[:cookie] })
-    # 安全なテンプレートでは description が style 属性に埋め込まれない
-    refute_match(/style="background:red/, res.body,
-      "Description should NOT appear in a style attribute")
+    # 安全なテンプレートでは不正なカラー値が style 属性に埋め込まれない
+    # (#rrggbb 形式でないため match? が false となりスパンが非表示)
+    refute_match(/style="border-left: 4px solid red; background:blue/, res.body,
+      "Injected CSS should NOT appear unescaped in style attribute")
   end
 
-  test "VULN: description is embedded in style attribute (CSS injection)" do
-    result = create_task_via_form(@vuln_server, title: "CSS test", description: CSS_PAYLOAD)
+  test "VULN: color is embedded unvalidated in style attribute (CSS injection)" do
+    result = create_task_via_form(@vuln_server, title: "CSS test", color: CSS_PAYLOAD)
     assert result[:id]
 
     res = @vuln_server.get("/tasks/#{result[:id]}", headers: { "Cookie" => result[:cookie] })
-    assert_match(/style="background:red/, res.body,
-      "Description should appear in style attribute (CSS injection vulnerability)")
+    assert_match(/border-left: 4px solid red; background:blue/, res.body,
+      "Injected CSS should appear in style attribute (CSS injection vulnerability)")
   end
 end

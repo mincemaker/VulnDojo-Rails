@@ -3,15 +3,15 @@
 module Vulnerabilities
   module Challenges
     # チャレンジ11: CSS Injection
-    # タスクの description を style 属性として出力し、CSSインジェクションを可能にする
+    # タスクのラベルカラーを style 属性にバリデーションなしで埋め込み、CSSインジェクションを可能にする
     class CssInjection < Base
       metadata do
-        name        "CSS Injection via style attribute"
+        name        "CSS Injection via label color"
         category    :xss
         difficulty  :medium
-        description "タスクの説明が style 属性にそのまま埋め込まれ、CSSインジェクションが可能です。"
-        hint        "タスク詳細ページの説明が style 属性として使われています"
-        hint        "説明に 'background:red' を入れてページの見た目が変わるか確認しましょう"
+        description "タスクのラベルカラーがバリデーションされずに style 属性に直接埋め込まれ、CSSインジェクションが可能です。"
+        hint        "タスクのラベルカラーが style 属性として使われています"
+        hint        "カラーに 'red; background:blue' を入れてページの見た目が変わるか確認しましょう"
         cwe         "CWE-79"
         reference   "https://guides.rubyonrails.org/security.html#css-injection"
       end
@@ -26,7 +26,7 @@ module Vulnerabilities
         vuln_view_path = Rails.root.join("lib/vulnerabilities/views")
         FileUtils.mkdir_p(vuln_view_path.join("tasks"))
 
-        # show テンプレート: description を style 属性に埋め込む
+        # show テンプレート: color をバリデーションなしで style 属性に埋め込む
         template = <<~'ERB'
           <div class="card">
             <div class="detail-row">
@@ -36,10 +36,15 @@ module Vulnerabilities
 
             <div class="detail-row">
               <div class="label">説明</div>
-              <div id="task-description" style="<%= @task.description %>">
-                <%= @task.description.present? ? @task.description : "—" %>
-              </div>
+              <div><%= @task.description.present? ? @task.description : "—" %></div>
             </div>
+
+            <% if @task.color.present? %>
+              <div class="detail-row" id="task-color-indicator" style="border-left: 4px solid <%= @task.color %>; padding-left: 8px;">
+                <div class="label">ラベルカラー</div>
+                <div><%= @task.color %></div>
+              </div>
+            <% end %>
 
             <div class="detail-row">
               <div class="label">状態</div>

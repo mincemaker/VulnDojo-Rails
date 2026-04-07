@@ -341,7 +341,7 @@
 ### Vulnerability: Malicious CSS with JavaScript
 **Risk**: JavaScript execution via CSS (older browsers: IE, Safari) or CSS-based attacks.
 
-> **✅ このアプリでの実装**: No user-controlled CSS. Styles are defined in the layout and static stylesheets. CSP includes `style_src :self, :unsafe_inline` (inline styles used for layout only, not user content).
+> **✅ このアプリでの実装**: The task label color is user-controlled but validated against `/\A#[0-9a-fA-F]{3,6}\z/` before embedding in a `style` attribute. Only valid hex color codes are rendered inline; arbitrary CSS is rejected. CSP includes `style_src :self, :unsafe_inline` (required for the safe color swatch display).
 
 **Mitigations**:
 - ❌ **NEVER** allow user-controlled CSS:

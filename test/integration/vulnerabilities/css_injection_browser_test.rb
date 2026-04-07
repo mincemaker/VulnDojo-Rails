@@ -9,7 +9,7 @@ require_relative "browser_helper"
 class CssInjectionBrowserTest < ActiveSupport::TestCase
   include BrowserHelper
 
-  CSS_PAYLOAD = "background:red; color:white"
+  CSS_PAYLOAD = "red; background:blue"
 
   setup do
     @safe_server = ServerProcess.new(port: 4202, vuln_challenges: "")
@@ -25,30 +25,32 @@ class CssInjectionBrowserTest < ActiveSupport::TestCase
     @vuln_server.stop!
   end
 
-  test "SAFE: description CSS payload is not embedded as style attribute" do
+  test "SAFE: color CSS payload is not injected into style attribute" do
     cookie = browser_login(@safe_server)
-    result = create_task_via_form(@safe_server, title: "CSS test", description: CSS_PAYLOAD, cookie: cookie)
+    result = create_task_via_form(@safe_server, title: "CSS test", color: CSS_PAYLOAD, cookie: cookie)
     assert result[:id], "Task should be created"
 
     @browser.goto("http://127.0.0.1:#{@safe_server.port}/tasks/#{result[:id]}")
 
-    # 安全なテンプレートには id="task-description" が存在しない
-    element_exists = @browser.evaluate("!!document.getElementById('task-description')")
-    refute element_exists, "Safe template must NOT have #task-description with style injection"
+    # 安全なテンプレートには id="task-color-indicator" が存在しない
+    # (不正なカラー値は match? で弾かれスパンが非表示のため)
+    element_exists = @browser.evaluate("!!document.getElementById('task-color-indicator')")
+    refute element_exists, "Safe template must NOT have #task-color-indicator with injected style"
   end
 
-  test "VULN: description CSS payload is applied as computed style in browser" do
+  test "VULN: color CSS payload is applied as computed style in browser" do
     cookie = browser_login(@vuln_server)
-    result = create_task_via_form(@vuln_server, title: "CSS test", description: CSS_PAYLOAD, cookie: cookie)
+    result = create_task_via_form(@vuln_server, title: "CSS test", color: CSS_PAYLOAD, cookie: cookie)
     assert result[:id], "Task should be created"
 
     @browser.goto("http://127.0.0.1:#{@vuln_server.port}/tasks/#{result[:id]}")
 
-    # style="background:red" が埋め込まれ、ブラウザが実際に背景色を適用したことを確認
-    bg_color = @browser.evaluate(
-      "getComputedStyle(document.getElementById('task-description')).backgroundColor"
+    # style="border-left: 4px solid red; background:blue" が埋め込まれ、
+    # ブラウザが実際に border-left-color を適用したことを確認
+    border_color = @browser.evaluate(
+      "getComputedStyle(document.getElementById('task-color-indicator')).borderLeftColor"
     )
-    assert_equal "rgb(255, 0, 0)", bg_color,
-      "Background MUST be red: CSS payload was injected into style attribute"
+    assert_equal "rgb(255, 0, 0)", border_color,
+      "Border-left MUST be red: CSS payload was injected into style attribute"
   end
 end
