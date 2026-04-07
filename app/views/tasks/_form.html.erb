@@ -1,0 +1,37 @@
+<%= form_with(model: task, class: "card") do |form| %>
+  <% if task.errors.any? %>
+    <div class="errors">
+      <strong><%= task.errors.count %>件のエラーがあります:</strong>
+      <ul>
+        <% task.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="form-group">
+    <%= form.label :title, "タイトル" %>
+    <%= form.text_field :title %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :description, "説明" %>
+    <%= form.text_area :description %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :due_date, "期限" %>
+    <%= form.date_field :due_date %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :completed, "完了" %>
+    <%= form.check_box :completed %>
+  </div>
+
+  <div class="actions">
+    <%= form.submit "保存", class: "btn btn-primary" %>
+    <%= link_to "キャンセル", tasks_path, class: "btn btn-secondary" %>
+  </div>
+<% end %>
