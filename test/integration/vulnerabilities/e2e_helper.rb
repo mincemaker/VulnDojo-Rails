@@ -8,12 +8,10 @@ require "securerandom"
 # E2E テスト用ヘルパー
 # 脆弱性 ON/OFF の別プロセスで Rails サーバーを起動し HTTP で検証する
 module E2EHelper
-  BASE_PORT = 4000
-
   TEST_USER_PASSWORD = "password123"
 
   class ServerProcess
-    attr_reader :port, :pid
+    attr_reader :port
 
     def initialize(port:, vuln_challenges: "", rails_env: "test")
       @port = port
