@@ -22,9 +22,11 @@ module Vulnerabilities
           def index
             if params[:q].present?
               # ↓ 脆弱性: 文字列補間による SQL インジェクション
-              @tasks = Task.where("title LIKE '%#{params[:q]}%'")
+              # current_user.tasks を使わず Task.where(...) にすることで、
+              # 文字列結合部分で AND などを使い、意図的に全ユーザー分を取得できる余地を残す
+              @tasks = Task.where("user_id = #{current_user.id} AND title LIKE '%#{params[:q]}%'")
             else
-              @tasks = Task.all
+              @tasks = current_user.tasks.order(created_at: :desc)
             end
           end
         end

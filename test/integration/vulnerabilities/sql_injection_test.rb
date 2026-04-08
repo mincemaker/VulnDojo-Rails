@@ -14,11 +14,17 @@ class SqlInjectionTest < ActiveSupport::TestCase
     @safe_server.start!
     @vuln_server.start!
 
-    # 両方にテストデータを作成
-    @safe_cookie = create_task_via_form(@safe_server, title: "Secret Task A")[:cookie]
-    create_task_via_form(@safe_server, title: "Public Task B", cookie: @safe_cookie)
-    @vuln_cookie = create_task_via_form(@vuln_server, title: "Secret Task A")[:cookie]
-    create_task_via_form(@vuln_server, title: "Public Task B", cookie: @vuln_cookie)
+    # User A と User B をそれぞれ別セッションで作成
+    # User A のタスクは User B からは（正常なら）見えないはずのデータ
+    @safe_cookie_a  = setup_session(@safe_server)
+    create_task_via_form(@safe_server, title: "UserA Private Task", cookie: @safe_cookie_a)
+    @safe_cookie_b  = setup_session(@safe_server)
+    create_task_via_form(@safe_server, title: "UserB Private Task", cookie: @safe_cookie_b)
+
+    @vuln_cookie_a  = setup_session(@vuln_server)
+    create_task_via_form(@vuln_server, title: "UserA Private Task", cookie: @vuln_cookie_a)
+    @vuln_cookie_b  = setup_session(@vuln_server)
+    create_task_via_form(@vuln_server, title: "UserB Private Task", cookie: @vuln_cookie_b)
   end
 
   teardown do
@@ -26,32 +32,45 @@ class SqlInjectionTest < ActiveSupport::TestCase
     @vuln_server.stop!
   end
 
-  test "SAFE: no search functionality, q parameter is ignored" do
+  test "SAFE: search query parameter is ignored completely" do
     res = @safe_server.get("/tasks?q=#{URI.encode_www_form_component(SQLI_PAYLOAD)}",
-                           headers: { "Cookie" => @safe_cookie })
+                           headers: { "Cookie" => @safe_cookie_a })
     body = res.body
 
     refute_includes body, 'name="q"', "Search box must NOT exist in safe mode"
-    assert_includes body, "Secret Task A"
-    assert_includes body, "Public Task B"
+    # User A は自分のタスクしか見えない
+    assert_includes body, "UserA Private Task"
+    refute_includes body, "UserB Private Task"
   end
 
-  test "VULN: SQL injection via search returns all records" do
-    res_normal = @vuln_server.get("/tasks?q=#{URI.encode_www_form_component('Secret')}",
-                                  headers: { "Cookie" => @vuln_cookie })
-    assert_includes res_normal.body, "Secret Task A"
-    refute_includes res_normal.body, "Public Task B"
-
-    res_sqli = @vuln_server.get("/tasks?q=#{URI.encode_www_form_component(SQLI_PAYLOAD)}",
-                                headers: { "Cookie" => @vuln_cookie })
-    body = res_sqli.body
-
-    assert_includes body, "Secret Task A", "SQLi must return all records"
-    assert_includes body, "Public Task B", "SQLi must return all records"
-  end
-
-  test "VULN: search box is present" do
-    res = @vuln_server.get("/tasks", headers: { "Cookie" => @vuln_cookie })
+  test "VULN: search functionality is available on index page" do
+    res = @vuln_server.get("/tasks", headers: { "Cookie" => @vuln_cookie_a })
     assert_includes res.body, 'name="q"', "Search box must exist in vulnerable mode"
+  end
+
+  test "VULN: empty search query properly scopes tasks to current user" do
+    res = @vuln_server.get("/tasks", headers: { "Cookie" => @vuln_cookie_a })
+    body = res.body
+    assert_includes body, "UserA Private Task"
+    refute_includes body, "UserB Private Task",
+                    "Implementation error: index without q must be scoped to current_user"
+  end
+
+  test "VULN: normal search does not leak other users tasks even if queried" do
+    # User A が他人のタスク（UserB）を検索してもヒットしないことを確認
+    res = @vuln_server.get("/tasks?q=#{URI.encode_www_form_component('UserB')}",
+                           headers: { "Cookie" => @vuln_cookie_a })
+    refute_includes res.body, "UserB Private Task",
+                    "Normal search must NOT leak another user's tasks even when specifically searched"
+  end
+
+  test "VULN: SQL injection payload bypasses user scope and leaks data" do
+    res = @vuln_server.get("/tasks?q=#{URI.encode_www_form_component(SQLI_PAYLOAD)}",
+                           headers: { "Cookie" => @vuln_cookie_a })
+    body = res.body
+
+    assert_includes body, "UserA Private Task", "Own task must appear"
+    assert_includes body, "UserB Private Task",
+                    "SQLi must leak UserB's task that UserA should never see"
   end
 end
