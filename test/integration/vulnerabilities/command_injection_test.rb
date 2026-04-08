@@ -28,7 +28,8 @@ class CommandInjectionTest < ActiveSupport::TestCase
 
     # Safe version ignores name param entirely
     content_disposition = res["content-disposition"]
-    refute_match(/exedev/, content_disposition.to_s,
+    current_user = `whoami`.strip
+    refute_match(/#{Regexp.escape(current_user)}/, content_disposition.to_s,
       "Shell command output should NOT appear in filename")
   end
 
@@ -43,7 +44,7 @@ class CommandInjectionTest < ActiveSupport::TestCase
     content_disposition = res["content-disposition"]
     # whoami returns the current user (e.g., "exedev")
     current_user = `whoami`.strip
-    assert_match(/#{current_user}/, content_disposition.to_s,
+    assert_match(/#{Regexp.escape(current_user)}/, content_disposition.to_s,
       "Shell command output should appear in filename (command injection vulnerability)")
   end
 end

@@ -27,7 +27,7 @@ class CssInjectionTest < ActiveSupport::TestCase
     res = @safe_server.get("/tasks/#{result[:id]}", headers: { "Cookie" => result[:cookie] })
     # 安全なテンプレートでは不正なカラー値が style 属性に埋め込まれない
     # (#rrggbb 形式でないため match? が false となりスパンが非表示)
-    refute_match(/style="border-left: 4px solid red; background:blue/, res.body,
+    refute_match(/border-left: 4px solid #{CSS_PAYLOAD}/, res.body,
       "Injected CSS should NOT appear unescaped in style attribute")
   end
 
@@ -36,7 +36,7 @@ class CssInjectionTest < ActiveSupport::TestCase
     assert result[:id]
 
     res = @vuln_server.get("/tasks/#{result[:id]}", headers: { "Cookie" => result[:cookie] })
-    assert_match(/border-left: 4px solid red; background:blue/, res.body,
+    assert_match(/border-left: 4px solid #{CSS_PAYLOAD}/, res.body,
       "Injected CSS should appear in style attribute (CSS injection vulnerability)")
   end
 end
