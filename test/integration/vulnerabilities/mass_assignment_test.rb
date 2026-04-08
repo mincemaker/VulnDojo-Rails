@@ -79,30 +79,35 @@ class MassAssignmentTest < ActiveSupport::TestCase
   end
 
   # updated_at を任意の値に上書きできるかを検証する
-  # show ページに updated_at が表示されるようになったため、視覚的にも確認可能
+  # タスク作成直後の現在時刻を基準に10年前へ改ざんできるかを確認する
+  # 更新時刻は作成日時より前にはならないため、10年前の年月を表示させることができれば改ざん成功とみなす
   def attempt_updated_at_overwrite(server)
     cookie = setup_session(server)
     result = create_task_via_form(server, title: "Timestamp Task", cookie: cookie)
     cookie = result[:cookie]
     task_id = result[:id]
 
+    # タスクの実際の updated_at から10年前を計算
+    backdated     = Task.find(task_id).updated_at - 10.years
+    backdated_str = backdated.strftime("%Y-%m-%d %H:%M:%S")
+    backdated_ym  = backdated.strftime("%Y-%m")  # TZ ±数時間では年月は変わらない
+
     # Get edit page for CSRF token
     res = server.get("/tasks/#{task_id}/edit", headers: { "Cookie" => cookie })
     cookie = latest_cookie(res, cookie)
     token = extract_csrf_token(res.body)
 
-    injected_time = "2000-01-01 00:00:00"
     body = URI.encode_www_form(
       "authenticity_token" => token,
       "_method"            => "patch",
       "task[title]"        => "Timestamp Task",
-      "task[updated_at]"   => injected_time
+      "task[updated_at]"   => backdated_str
     )
     server.post("/tasks/#{task_id}", body: body, headers: { "Cookie" => cookie })
 
-    # show ページで updated_at の表示値を確認
+    # show ページで年月が10年前になっているか確認
     res = server.get("/tasks/#{task_id}", headers: { "Cookie" => cookie })
-    res.body.include?(injected_time)
+    res.body.include?(backdated_ym)
   end
 
   test "SAFE: updated_at parameter is ignored by strong parameters" do
