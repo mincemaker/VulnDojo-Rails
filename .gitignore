@@ -40,3 +40,6 @@
 # Local Copilot CLI settings (machine-specific)
 /.claude/
 /.github/
+
+# Ignore Serena files.
+.serena/
