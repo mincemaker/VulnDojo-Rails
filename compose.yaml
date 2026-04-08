@@ -13,6 +13,7 @@ services:
       RAILS_ENV: development
       RAILS_LOG_TO_STDOUT: "true"
       VULN_CHALLENGES: ${VULN_CHALLENGES:-}
+      TZ: ${TZ:-Asia/Tokyo}
     stdin_open: true
     tty: true
 
