@@ -64,6 +64,7 @@ module Vulnerabilities
                   <th>タイトル</th>
                   <th>状態</th>
                   <th>期限</th>
+                  <th>更新日時</th>
                   <th>操作</th>
                 </tr>
               </thead>
@@ -79,6 +80,7 @@ module Vulnerabilities
                       <% end %>
                     </td>
                     <td><%= task.due_date&.strftime("%Y-%m-%d") || "\u2014" %></td>
+                    <td><%= task.updated_at.strftime("%Y-%m-%d %H:%M:%S") %></td>
                     <td>
                       <div class="actions">
                         <%= link_to "\u7de8\u96c6", edit_task_path(task), class: "btn btn-secondary" %>

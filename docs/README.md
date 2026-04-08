@@ -186,11 +186,24 @@ VULN_CHALLENGES=mass_assignment bin/rails server -b 127.0.0.1
 ```
 
 `task_params` が `params.require(:task).permit!` に差し替えられます。
-全パラメータが許可されるため、`user_id` などの保護属性も変更できます。
+全パラメータが許可されるため、`user_id` や `updated_at` などの保護属性も変更できます。
 
-再現手順:
+タスクの show / index ページには `updated_at`（更新日時）が表示されるため、タイムスタンプの上書きが成功したかどうかを画面で確認できます。
+
+再現手順 — user_id の上書き:
 1. タスク更新リクエストに `task[user_id]=2` を追加して送信
 2. タスクの所有者が別ユーザーに変更される
+
+再現手順 — updated_at の上書き:
+1. タスク更新リクエストに `task[updated_at]=2000-01-01 00:00:00` を追加して送信
+
+```bash
+curl -X PATCH http://localhost:3000/tasks/1 \
+  -d "task[title]=test&task[updated_at]=2000-01-01+00:00:00" \
+  -H "Cookie: <session_cookie>"
+```
+
+2. タスク詳細ページの「更新日時」が `2000-01-01 00:00:00` になっていれば成功
 
 検出ポイント: `lib/vulnerabilities/challenges/mass_assignment.rb` — `params.require(:task).permit!`
 

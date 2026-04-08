@@ -57,6 +57,16 @@ module Vulnerabilities
               <div><%= @task.due_date&.strftime("%Y-%m-%d") || "—" %></div>
             </div>
 
+            <div class="detail-row">
+              <div class="label">作成日時</div>
+              <div><%= @task.created_at.strftime("%Y-%m-%d %H:%M:%S") %></div>
+            </div>
+
+            <div class="detail-row">
+              <div class="label">更新日時</div>
+              <div><%= @task.updated_at.strftime("%Y-%m-%d %H:%M:%S") %></div>
+            </div>
+
             <div class="actions" style="margin-top: 20px;">
               <%= link_to "編集", edit_task_path(@task), class: "btn btn-primary" %>
               <%= link_to "一覧に戻る", tasks_path, class: "btn btn-secondary" %>

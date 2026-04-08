@@ -37,6 +37,16 @@
     <div><%= @task.due_date&.strftime("%Y-%m-%d") || "—" %></div>
   </div>
 
+  <div class="detail-row">
+    <div class="label">作成日時</div>
+    <div><%= @task.created_at.strftime("%Y-%m-%d %H:%M:%S") %></div>
+  </div>
+
+  <div class="detail-row">
+    <div class="label">更新日時</div>
+    <div><%= @task.updated_at.strftime("%Y-%m-%d %H:%M:%S") %></div>
+  </div>
+
   <% if @task.url.present? %>
     <div class="detail-row">
       <div class="label">URL</div>

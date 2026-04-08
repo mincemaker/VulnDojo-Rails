@@ -13,6 +13,7 @@
         <th>タイトル</th>
         <th>状態</th>
         <th>期限</th>
+        <th>更新日時</th>
         <th>📎</th>
         <th>操作</th>
       </tr>
@@ -29,6 +30,7 @@
             <% end %>
           </td>
           <td><%= task.due_date&.strftime("%Y-%m-%d") || "—" %></td>
+          <td><%= task.updated_at.strftime("%Y-%m-%d %H:%M:%S") %></td>
           <td><%= task.attachment.attached? ? "📎" : "" %></td>
           <td>
             <div class="actions">

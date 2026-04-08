@@ -77,4 +77,41 @@ class MassAssignmentTest < ActiveSupport::TestCase
     result = attempt_user_id_overwrite(@vuln_server)
     assert result[:stolen], "user_id should be overwritable with permit! (mass assignment vulnerability)"
   end
+
+  # updated_at を任意の値に上書きできるかを検証する
+  # show ページに updated_at が表示されるようになったため、視覚的にも確認可能
+  def attempt_updated_at_overwrite(server)
+    cookie = setup_session(server)
+    result = create_task_via_form(server, title: "Timestamp Task", cookie: cookie)
+    cookie = result[:cookie]
+    task_id = result[:id]
+
+    # Get edit page for CSRF token
+    res = server.get("/tasks/#{task_id}/edit", headers: { "Cookie" => cookie })
+    cookie = latest_cookie(res, cookie)
+    token = extract_csrf_token(res.body)
+
+    injected_time = "2000-01-01 00:00:00"
+    body = URI.encode_www_form(
+      "authenticity_token" => token,
+      "_method"            => "patch",
+      "task[title]"        => "Timestamp Task",
+      "task[updated_at]"   => injected_time
+    )
+    server.post("/tasks/#{task_id}", body: body, headers: { "Cookie" => cookie })
+
+    # show ページで updated_at の表示値を確認
+    res = server.get("/tasks/#{task_id}", headers: { "Cookie" => cookie })
+    res.body.include?(injected_time)
+  end
+
+  test "SAFE: updated_at parameter is ignored by strong parameters" do
+    overwritten = attempt_updated_at_overwrite(@safe_server)
+    refute overwritten, "updated_at should NOT be overwritable with strong parameters"
+  end
+
+  test "VULN: updated_at can be overwritten via permit!" do
+    overwritten = attempt_updated_at_overwrite(@vuln_server)
+    assert overwritten, "updated_at should be overwritable with permit! (mass assignment vulnerability)"
+  end
 end
