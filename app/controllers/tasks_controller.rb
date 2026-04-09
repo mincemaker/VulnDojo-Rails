@@ -5,9 +5,16 @@ require "csv"
 class TasksController < ApplicationController
   before_action :set_task, only: %i[show edit update destroy download_attachment]
 
+  ALLOWED_VIEW_TYPES = %w[todo_tasks done_tasks].freeze
+
   # GET /tasks
   def index
-    @tasks = current_user.tasks.order(created_at: :desc)
+    @view_type = ALLOWED_VIEW_TYPES.include?(params[:view_type]) ? params[:view_type] : nil
+    @tasks = case @view_type
+             when "todo_tasks" then current_user.tasks.where(completed: false)
+             when "done_tasks" then current_user.tasks.where(completed: true)
+             else current_user.tasks
+             end.order(created_at: :desc)
   end
 
   # GET /tasks/1
