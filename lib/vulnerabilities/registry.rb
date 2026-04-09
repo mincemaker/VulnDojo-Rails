@@ -56,8 +56,13 @@ module Vulnerabilities
 
     def load_from_env!
       # VULN_CHALLENGES=xss_raw,sql_injection の形式
-      slugs = ENV.fetch("VULN_CHALLENGES", "").split(",").map(&:strip).reject(&:empty?)
-      slugs.each { |s| enable(s) }
+      # VULN_CHALLENGES=all で全チャレンジを有効化
+      raw = ENV.fetch("VULN_CHALLENGES", "").strip
+      if raw == "all"
+        @challenges.keys.each { |s| enable(s) }
+      else
+        raw.split(",").map(&:strip).reject(&:empty?).each { |s| enable(s) }
+      end
     end
   end
 end
