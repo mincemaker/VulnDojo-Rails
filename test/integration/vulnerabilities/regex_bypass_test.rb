@@ -11,15 +11,8 @@ class RegexBypassTest < ActiveSupport::TestCase
   LEGIT_URL  = "https://example.com"
 
   setup do
-    @safe_server = ServerProcess.new(port: 4080, vuln_challenges: "")
-    @vuln_server = ServerProcess.new(port: 4081, vuln_challenges: "regex_bypass")
-    @safe_server.start!
-    @vuln_server.start!
-  end
-
-  teardown do
-    @safe_server.stop!
-    @vuln_server.stop!
+    @safe_server = ServerPool.acquire(vuln_challenges: "")
+    @vuln_server = ServerPool.acquire(vuln_challenges: "regex_bypass")
   end
 
   def create_task_with_url(server, url:)

@@ -20,15 +20,8 @@ class SessionFixationTest < ActiveSupport::TestCase
   #    攻撃者: ATTACKER_IDのCookieで認証済みページにアクセス → 302（ログインページへ）
 
   setup do
-    @safe_server = ServerProcess.new(port: 4060, vuln_challenges: "")
-    @vuln_server = ServerProcess.new(port: 4061, vuln_challenges: "session_fixation")
-    @safe_server.start!
-    @vuln_server.start!
-  end
-
-  teardown do
-    @safe_server.stop!
-    @vuln_server.stop!
+    @safe_server = ServerPool.acquire(vuln_challenges: "")
+    @vuln_server = ServerPool.acquire(vuln_challenges: "session_fixation")
   end
 
   # 被害者ユーザを作成してログアウトし、認証情報（email/password）を返す

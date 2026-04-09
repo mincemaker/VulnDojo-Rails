@@ -7,15 +7,8 @@ class MassAssignmentTest < ActiveSupport::TestCase
   include E2EHelper
 
   setup do
-    @safe_server = ServerProcess.new(port: 4070, vuln_challenges: "")
-    @vuln_server = ServerProcess.new(port: 4071, vuln_challenges: "mass_assignment")
-    @safe_server.start!
-    @vuln_server.start!
-  end
-
-  teardown do
-    @safe_server.stop!
-    @vuln_server.stop!
+    @safe_server = ServerPool.acquire(vuln_challenges: "")
+    @vuln_server = ServerPool.acquire(vuln_challenges: "mass_assignment")
   end
 
   # User A がタスクを作成し、User B がタスクを作成し、

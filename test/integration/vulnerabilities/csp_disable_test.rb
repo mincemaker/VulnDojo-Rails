@@ -7,15 +7,8 @@ class CspDisableTest < ActiveSupport::TestCase
   include E2EHelper
 
   setup do
-    @safe_server = ServerProcess.new(port: 4130, vuln_challenges: "")
-    @vuln_server = ServerProcess.new(port: 4131, vuln_challenges: "csp_disable")
-    @safe_server.start!
-    @vuln_server.start!
-  end
-
-  teardown do
-    @safe_server.stop!
-    @vuln_server.stop!
+    @safe_server = ServerPool.acquire(vuln_challenges: "")
+    @vuln_server = ServerPool.acquire(vuln_challenges: "csp_disable")
   end
 
   test "SAFE: Content-Security-Policy header is present" do

@@ -13,17 +13,13 @@ class XssRawBrowserTest < ActiveSupport::TestCase
   include BrowserHelper
 
   setup do
-    @safe_server = ServerProcess.new(port: 4200, vuln_challenges: "")
-    @vuln_server = ServerProcess.new(port: 4201, vuln_challenges: "xss_raw")
-    @safe_server.start!
-    @vuln_server.start!
+    @safe_server = ServerPool.acquire(vuln_challenges: "")
+    @vuln_server = ServerPool.acquire(vuln_challenges: "xss_raw")
     browser_setup
   end
 
   teardown do
     browser_teardown
-    @safe_server.stop!
-    @vuln_server.stop!
   end
 
   test "SAFE: XSS payload is escaped — no malicious img element in DOM" do

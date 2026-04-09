@@ -9,15 +9,8 @@ class OpenRedirectTest < ActiveSupport::TestCase
   EVIL_URL = "https://evil.example.com/phishing"
 
   setup do
-    @safe_server = ServerProcess.new(port: 4040, vuln_challenges: "")
-    @vuln_server = ServerProcess.new(port: 4041, vuln_challenges: "open_redirect")
-    @safe_server.start!
-    @vuln_server.start!
-  end
-
-  teardown do
-    @safe_server.stop!
-    @vuln_server.stop!
+    @safe_server = ServerPool.acquire(vuln_challenges: "")
+    @vuln_server = ServerPool.acquire(vuln_challenges: "open_redirect")
   end
 
   test "SAFE: external return_to is ignored, redirects to task" do

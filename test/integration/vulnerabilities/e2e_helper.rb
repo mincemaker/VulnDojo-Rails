@@ -4,6 +4,7 @@ require "net/http"
 require "uri"
 require "timeout"
 require "securerandom"
+require "socket"
 
 # E2E テスト用ヘルパー
 # 脆弱性 ON/OFF の別プロセスで Rails サーバーを起動し HTTP で検証する
@@ -185,4 +186,44 @@ module E2EHelper
       fallback
     end
   end
+
+  # テストスイート全体でサーバーインスタンスを共有するプール
+  # VULN_CHALLENGES + rails_env の組み合わせで一意にキャッシュし、
+  # 同一構成のサーバーは起動をスキップして再利用する
+  class ServerPool
+    @mutex = Mutex.new
+    @servers = {}
+
+    class << self
+      def acquire(vuln_challenges: "", rails_env: "test")
+        key = "#{vuln_challenges}|#{rails_env}"
+        @mutex.synchronize do
+          @servers[key] ||= begin
+            port = allocate_port
+            server = ServerProcess.new(port: port, vuln_challenges: vuln_challenges, rails_env: rails_env)
+            server.start!
+            server
+          end
+        end
+      end
+
+      def shutdown_all
+        @mutex.synchronize do
+          @servers.each_value(&:stop!)
+          @servers.clear
+        end
+      end
+
+      private
+
+      def allocate_port
+        server = TCPServer.new("127.0.0.1", 0)
+        port = server.addr[1]
+        server.close
+        port
+      end
+    end
+  end
 end
+
+Minitest.after_run { E2EHelper::ServerPool.shutdown_all }

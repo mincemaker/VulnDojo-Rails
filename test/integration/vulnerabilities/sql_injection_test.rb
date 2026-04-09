@@ -9,10 +9,8 @@ class SqlInjectionTest < ActiveSupport::TestCase
   SQLI_PAYLOAD = "' OR 1=1 OR '"
 
   setup do
-    @safe_server = ServerProcess.new(port: 4020, vuln_challenges: "")
-    @vuln_server = ServerProcess.new(port: 4021, vuln_challenges: "sql_injection")
-    @safe_server.start!
-    @vuln_server.start!
+    @safe_server = ServerPool.acquire(vuln_challenges: "")
+    @vuln_server = ServerPool.acquire(vuln_challenges: "sql_injection")
 
     # User A と User B をそれぞれ別セッションで作成
     # User A のタスクは User B からは（正常なら）見えないはずのデータ
@@ -25,11 +23,6 @@ class SqlInjectionTest < ActiveSupport::TestCase
     create_task_via_form(@vuln_server, title: "UserA Private Task", cookie: @vuln_cookie_a)
     @vuln_cookie_b  = setup_session(@vuln_server)
     create_task_via_form(@vuln_server, title: "UserB Private Task", cookie: @vuln_cookie_b)
-  end
-
-  teardown do
-    @safe_server.stop!
-    @vuln_server.stop!
   end
 
   test "SAFE: normal search returns matching results scoped to current user" do

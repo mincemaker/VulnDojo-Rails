@@ -7,15 +7,8 @@ class HeaderRemovalTest < ActiveSupport::TestCase
   include E2EHelper
 
   setup do
-    @safe_server = ServerProcess.new(port: 4120, vuln_challenges: "")
-    @vuln_server = ServerProcess.new(port: 4121, vuln_challenges: "header_removal")
-    @safe_server.start!
-    @vuln_server.start!
-  end
-
-  teardown do
-    @safe_server.stop!
-    @vuln_server.stop!
+    @safe_server = ServerPool.acquire(vuln_challenges: "")
+    @vuln_server = ServerPool.acquire(vuln_challenges: "header_removal")
   end
 
   test "SAFE: security headers are present" do
