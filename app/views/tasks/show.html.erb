@@ -1,25 +1,12 @@
 <div class="card">
-  <div class="detail-row">
-    <div class="label">タイトル</div>
-    <div><%= @task.title %></div>
-  </div>
+  <%= render 'task_title' %>
 
   <div class="detail-row">
     <div class="label">説明</div>
     <div><%= @task.description.present? ? @task.description : "—" %></div>
   </div>
 
-  <% if @task.color.present? %>
-    <div class="detail-row">
-      <div class="label">ラベルカラー</div>
-      <div>
-        <% if @task.color.match?(/\A#[0-9a-fA-F]{3,6}\z/) %>
-          <span style="display:inline-block; width:16px; height:16px; background-color:<%= @task.color %>; border:1px solid #ccc; border-radius:3px; vertical-align:middle;"></span>
-        <% end %>
-        <%= @task.color %>
-      </div>
-    </div>
-  <% end %>
+  <%= render 'task_color' %>
 
   <div class="detail-row">
     <div class="label">状態</div>
