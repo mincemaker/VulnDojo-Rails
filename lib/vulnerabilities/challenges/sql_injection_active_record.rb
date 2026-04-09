@@ -20,24 +20,25 @@ module Vulnerabilities
 
       def apply!
         vuln_module = Module.new do
-          def index
-            view_type = params[:view_type].presence || "todo_tasks"
+          # set_view_type を上書き: 不正な view_type もそのまま通す（ホワイトリスト検証なし）
+          def set_view_type
+            @view_type = params[:view_type].presence || "todo_tasks"
+          end
 
+          # set_task_scope を上書き: from() に @view_type を直接渡す（SQL インジェクション）
+          # 開発者の意図: view_type で CTE 名を切り替えてフィルタリング
+          # 脆弱性: from() に view_type を直接渡しているため、任意の SQL 断片が注入できる
+          #   例) view_type=tasks → WITH 句を無視して tasks テーブル全体を参照
+          def set_task_scope
             base = current_user.tasks.select(
               :id, :title, :user_id, :completed, :due_date, :updated_at, :created_at
             )
-
-            # Rails 7.1+ with() でユーザースコープ済み CTE を構築する
-            # 開発者の意図: view_type で CTE 名を切り替えてフィルタリング
-            # 脆弱性: from() に view_type を直接渡しているため、任意の SQL 断片が注入できる
-            #   例) view_type=tasks → WITH 句を無視して tasks テーブル全体を参照
-            @view_type = view_type
             @tasks = Task.with(
               todo_tasks: base.where(completed: false),
               done_tasks: base.where(completed: true)
-            ).from(view_type).select("*")
+            ).from(@view_type).select("*")
           rescue ActiveRecord::StatementInvalid
-            @tasks = current_user.tasks.order(created_at: :desc)
+            @tasks = current_user.tasks
           end
         end
         prepend_to TasksController, vuln_module

@@ -17,65 +17,18 @@ module Vulnerabilities
       end
 
       def apply!
-        # show テンプレートを脆弱版に差し替える。
-        # テンプレート内で直接 html_safe を呼ぶことで XSS を再現。
-        inject_vulnerable_show_template!
-      end
-
-      private
-
-      def inject_vulnerable_show_template!
         vuln_view_path = Rails.root.join("lib/vulnerabilities/views")
         FileUtils.mkdir_p(vuln_view_path.join("tasks"))
 
-        # 脆弱なテンプレート: title を html_safe でエスケープなし表示
+        # 脆弱な partial のみ注入: title を html_safe でエスケープなし表示
         template = <<~'ERB'
-          <div class="card">
-            <div class="detail-row">
-              <div class="label">タイトル</div>
-              <div><%= @task.title.html_safe %></div>
-            </div>
-
-            <div class="detail-row">
-              <div class="label">説明</div>
-              <div><%= @task.description.present? ? @task.description : "—" %></div>
-            </div>
-
-            <div class="detail-row">
-              <div class="label">状態</div>
-              <div>
-                <% if @task.completed? %>
-                  <span class="badge badge-done">✅ 完了</span>
-                <% else %>
-                  <span class="badge badge-todo">⏳ 未完了</span>
-                <% end %>
-              </div>
-            </div>
-
-            <div class="detail-row">
-              <div class="label">期限</div>
-              <div><%= @task.due_date&.strftime("%Y-%m-%d") || "—" %></div>
-            </div>
-
-            <div class="detail-row">
-              <div class="label">作成日時</div>
-              <div><%= @task.created_at.strftime("%Y-%m-%d %H:%M:%S") %></div>
-            </div>
-
-            <div class="detail-row">
-              <div class="label">更新日時</div>
-              <div><%= @task.updated_at.strftime("%Y-%m-%d %H:%M:%S") %></div>
-            </div>
-
-            <div class="actions" style="margin-top: 20px;">
-              <%= link_to "編集", edit_task_path(@task), class: "btn btn-primary" %>
-              <%= link_to "一覧に戻る", tasks_path, class: "btn btn-secondary" %>
-              <%= button_to "削除", task_path(@task), method: :delete, class: "btn btn-danger" %>
-            </div>
+          <div class="detail-row">
+            <div class="label">タイトル</div>
+            <div><%= @task.title.html_safe %></div>
           </div>
         ERB
 
-        File.write(vuln_view_path.join("tasks/show.html.erb"), template)
+        File.write(vuln_view_path.join("tasks/_task_title.html.erb"), template)
         ActionController::Base.prepend_view_path(vuln_view_path.to_s)
       end
     end
