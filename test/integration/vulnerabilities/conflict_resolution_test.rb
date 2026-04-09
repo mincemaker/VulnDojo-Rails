@@ -33,7 +33,7 @@ class ConflictResolutionTest < ActiveSupport::TestCase
     @registry.instance_variable_set(:@conflict_log, [])
   end
 
-  test "同じ slot を持つチャレンジの conflict が検出される" do
+  test "conflict is detected when two challenges claim the same slot" do
     @registry.send(:resolve_conflicts!)
 
     assert_equal 1, @registry.conflict_log.size
@@ -43,7 +43,7 @@ class ConflictResolutionTest < ActiveSupport::TestCase
     assert_equal 1, entry[:losers].size
   end
 
-  test "conflict 解決後は一方だけが active に残る" do
+  test "only one challenge remains active after conflict resolution" do
     @registry.send(:resolve_conflicts!)
 
     assert_equal 1, @registry.active_slugs.size
