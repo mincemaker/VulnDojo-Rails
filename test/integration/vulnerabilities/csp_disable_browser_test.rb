@@ -19,17 +19,13 @@ class CspDisableBrowserTest < ActiveSupport::TestCase
   setup do
     # safe_server: xss_raw のみ (CSP 有効) — html_safe でペイロードが DOM に挿入されるが CSP がブロック
     # vuln_server: xss_raw + csp_disable — CSP なしで onerror が実行される完全な exploit chain
-    @safe_server = ServerProcess.new(port: 4204, vuln_challenges: "xss_raw")
-    @vuln_server = ServerProcess.new(port: 4205, vuln_challenges: "xss_raw,csp_disable")
-    @safe_server.start!
-    @vuln_server.start!
+    @safe_server = ServerPool.acquire(vuln_challenges: "xss_raw")
+    @vuln_server = ServerPool.acquire(vuln_challenges: "xss_raw,csp_disable")
     browser_setup
   end
 
   teardown do
     browser_teardown
-    @safe_server.stop!
-    @vuln_server.stop!
   end
 
   test "SAFE: CSP blocks inline event handler even when html_safe is active" do

@@ -9,15 +9,8 @@ class XssRawTest < ActiveSupport::TestCase
   XSS_PAYLOAD = '<img src=x onerror=alert("XSS")>'
 
   setup do
-    @safe_server = ServerProcess.new(port: 4010, vuln_challenges: "")
-    @vuln_server = ServerProcess.new(port: 4011, vuln_challenges: "xss_raw")
-    @safe_server.start!
-    @vuln_server.start!
-  end
-
-  teardown do
-    @safe_server.stop!
-    @vuln_server.stop!
+    @safe_server = ServerPool.acquire(vuln_challenges: "")
+    @vuln_server = ServerPool.acquire(vuln_challenges: "xss_raw")
   end
 
   test "SAFE: XSS payload is escaped in show page" do

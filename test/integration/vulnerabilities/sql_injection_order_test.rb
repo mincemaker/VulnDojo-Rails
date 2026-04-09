@@ -13,10 +13,8 @@ class SqlInjectionOrderTest < ActiveSupport::TestCase
   BLIND_INJECTION_PAYLOAD = "(CASE WHEN 1=1 THEN title ELSE created_at END)"
 
   setup do
-    @safe_server = ServerProcess.new(port: 4024, vuln_challenges: "")
-    @vuln_server = ServerProcess.new(port: 4025, vuln_challenges: "sql_injection_order")
-    @safe_server.start!
-    @vuln_server.start!
+    @safe_server = ServerPool.acquire(vuln_challenges: "")
+    @vuln_server = ServerPool.acquire(vuln_challenges: "sql_injection_order")
 
     # "Apple" を先に、"Cherry" を後に作成する。
     # created_at DESC (デフォルト) では Cherry → Apple の順になる。
@@ -28,11 +26,6 @@ class SqlInjectionOrderTest < ActiveSupport::TestCase
     @vuln_cookie  = setup_session(@vuln_server)
     create_task_via_form(@vuln_server, title: "Apple Sorted Task", cookie: @vuln_cookie)
     create_task_via_form(@vuln_server, title: "Cherry Sorted Task", cookie: @vuln_cookie)
-  end
-
-  teardown do
-    @safe_server.stop!
-    @vuln_server.stop!
   end
 
   # --- SAFE モード ---

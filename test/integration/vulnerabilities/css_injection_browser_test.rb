@@ -12,17 +12,13 @@ class CssInjectionBrowserTest < ActiveSupport::TestCase
   CSS_PAYLOAD = "red; background:blue"
 
   setup do
-    @safe_server = ServerProcess.new(port: 4202, vuln_challenges: "")
-    @vuln_server = ServerProcess.new(port: 4203, vuln_challenges: "css_injection")
-    @safe_server.start!
-    @vuln_server.start!
+    @safe_server = ServerPool.acquire(vuln_challenges: "")
+    @vuln_server = ServerPool.acquire(vuln_challenges: "css_injection")
     browser_setup
   end
 
   teardown do
     browser_teardown
-    @safe_server.stop!
-    @vuln_server.stop!
   end
 
   test "SAFE: color CSS payload is not injected into style attribute" do

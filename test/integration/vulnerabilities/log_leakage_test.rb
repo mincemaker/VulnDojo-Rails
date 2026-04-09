@@ -10,15 +10,8 @@ class LogLeakageTest < ActiveSupport::TestCase
 
   setup do
     # development 環境で起動することでログ出力を有効化
-    @safe_server = ServerProcess.new(port: 4100, vuln_challenges: "", rails_env: "development")
-    @vuln_server = ServerProcess.new(port: 4101, vuln_challenges: "log_leakage", rails_env: "development")
-    @safe_server.start!
-    @vuln_server.start!
-  end
-
-  teardown do
-    @safe_server.stop!
-    @vuln_server.stop!
+    @safe_server = ServerPool.acquire(vuln_challenges: "", rails_env: "development")
+    @vuln_server = ServerPool.acquire(vuln_challenges: "log_leakage", rails_env: "development")
   end
 
   def create_task_with_secret(server)

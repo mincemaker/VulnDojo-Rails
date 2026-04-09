@@ -7,15 +7,8 @@ class IdorTest < ActiveSupport::TestCase
   include E2EHelper
 
   setup do
-    @safe_server = ServerProcess.new(port: 4050, vuln_challenges: "")
-    @vuln_server = ServerProcess.new(port: 4051, vuln_challenges: "idor")
-    @safe_server.start!
-    @vuln_server.start!
-  end
-
-  teardown do
-    @safe_server.stop!
-    @vuln_server.stop!
+    @safe_server = ServerPool.acquire(vuln_challenges: "")
+    @vuln_server = ServerPool.acquire(vuln_challenges: "idor")
   end
 
   test "SAFE: cannot view another user's task" do

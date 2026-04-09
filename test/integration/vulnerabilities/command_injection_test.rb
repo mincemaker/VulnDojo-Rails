@@ -7,15 +7,8 @@ class CommandInjectionTest < ActiveSupport::TestCase
   include E2EHelper
 
   setup do
-    @safe_server = ServerProcess.new(port: 4140, vuln_challenges: "")
-    @vuln_server = ServerProcess.new(port: 4141, vuln_challenges: "command_injection")
-    @safe_server.start!
-    @vuln_server.start!
-  end
-
-  teardown do
-    @safe_server.stop!
-    @vuln_server.stop!
+    @safe_server = ServerPool.acquire(vuln_challenges: "")
+    @vuln_server = ServerPool.acquire(vuln_challenges: "command_injection")
   end
 
   test "SAFE: name parameter does not affect filename via shell" do

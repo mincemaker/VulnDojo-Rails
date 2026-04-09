@@ -9,15 +9,8 @@ class XssReflectedTest < ActiveSupport::TestCase
   XSS_PAYLOAD = '<script>alert("XSS")</script>'
 
   setup do
-    @safe_server = ServerProcess.new(port: 4030, vuln_challenges: "")
-    @vuln_server = ServerProcess.new(port: 4031, vuln_challenges: "xss_reflected")
-    @safe_server.start!
-    @vuln_server.start!
-  end
-
-  teardown do
-    @safe_server.stop!
-    @vuln_server.stop!
+    @safe_server = ServerPool.acquire(vuln_challenges: "")
+    @vuln_server = ServerPool.acquire(vuln_challenges: "xss_reflected")
   end
 
   test "SAFE: XSS payload in search query is escaped" do

@@ -7,10 +7,8 @@ class SqlInjectionActiveRecordTest < ActiveSupport::TestCase
   include E2EHelper
 
   setup do
-    @safe_server = ServerProcess.new(port: 4022, vuln_challenges: "")
-    @vuln_server = ServerProcess.new(port: 4023, vuln_challenges: "sql_injection_active_record")
-    @safe_server.start!
-    @vuln_server.start!
+    @safe_server = ServerPool.acquire(vuln_challenges: "")
+    @vuln_server = ServerPool.acquire(vuln_challenges: "sql_injection_active_record")
 
     # User A と User B をそれぞれ作成し、未完了タスクを1件ずつ登録する
     @safe_cookie_a = setup_session(@safe_server)
@@ -22,11 +20,6 @@ class SqlInjectionActiveRecordTest < ActiveSupport::TestCase
     create_task_via_form(@vuln_server, title: "UserA Todo Task", cookie: @vuln_cookie_a)
     @vuln_cookie_b = setup_session(@vuln_server)
     create_task_via_form(@vuln_server, title: "UserB Todo Task", cookie: @vuln_cookie_b)
-  end
-
-  teardown do
-    @safe_server.stop!
-    @vuln_server.stop!
   end
 
   # from() への直接注入: CTE スコープをバイパスして tasks テーブル全体を参照させる

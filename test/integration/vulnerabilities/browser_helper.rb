@@ -12,17 +12,11 @@ module BrowserHelper
   CHROMIUM_PATH = "/usr/bin/chromium"
 
   def browser_setup
-    @browser = Ferrum::Browser.new(
-      headless: true,
-      browser_path: CHROMIUM_PATH,
-      browser_options: { "no-sandbox": nil, "disable-dev-shm-usage": nil },
-      timeout: 15,
-      process_timeout: 20,
-    )
+    @browser = BrowserPool.acquire
   end
 
   def browser_teardown
-    @browser&.quit
+    @browser&.cookies&.clear
     @browser = nil
   end
 
@@ -44,4 +38,33 @@ module BrowserHelper
   def xss_executed?
     @browser.evaluate("!!window.__xss")
   end
+
+  # テストスイート全体で Ferrum ブラウザインスタンスを共有するプール
+  class BrowserPool
+    @mutex = Mutex.new
+    @browser = nil
+
+    class << self
+      def acquire
+        @mutex.synchronize do
+          @browser ||= Ferrum::Browser.new(
+            headless: true,
+            browser_path: CHROMIUM_PATH,
+            browser_options: { "no-sandbox": nil, "disable-dev-shm-usage": nil },
+            timeout: 15,
+            process_timeout: 20,
+          )
+        end
+      end
+
+      def shutdown
+        @mutex.synchronize do
+          @browser&.quit
+          @browser = nil
+        end
+      end
+    end
+  end
 end
+
+Minitest.after_run { BrowserHelper::BrowserPool.shutdown }

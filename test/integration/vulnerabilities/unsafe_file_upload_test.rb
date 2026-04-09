@@ -8,15 +8,8 @@ class UnsafeFileUploadTest < ActiveSupport::TestCase
   include E2EHelper
 
   setup do
-    @safe_server = ServerProcess.new(port: 4090, vuln_challenges: "")
-    @vuln_server = ServerProcess.new(port: 4091, vuln_challenges: "unsafe_file_upload")
-    @safe_server.start!
-    @vuln_server.start!
-  end
-
-  teardown do
-    @safe_server.stop!
-    @vuln_server.stop!
+    @safe_server = ServerPool.acquire(vuln_challenges: "")
+    @vuln_server = ServerPool.acquire(vuln_challenges: "unsafe_file_upload")
   end
 
   def upload_file(server, filename:, content:, content_type:)

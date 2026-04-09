@@ -7,19 +7,12 @@ class CsrfSkipTest < ActiveSupport::TestCase
   include E2EHelper
 
   setup do
-    @safe_server = ServerProcess.new(port: 4030, vuln_challenges: "")
-    @vuln_server = ServerProcess.new(port: 4031, vuln_challenges: "csrf_skip")
-    @safe_server.start!
-    @vuln_server.start!
+    @safe_server = ServerPool.acquire(vuln_challenges: "")
+    @vuln_server = ServerPool.acquire(vuln_challenges: "csrf_skip")
 
     # 両方のサーバーでログインセッションを取得
     @safe_cookie = setup_session(@safe_server)
     @vuln_cookie = setup_session(@vuln_server)
-  end
-
-  teardown do
-    @safe_server.stop!
-    @vuln_server.stop!
   end
 
   # ---- RED: 脆弱性 OFF では CSRF トークンなしの POST が拒否される ----

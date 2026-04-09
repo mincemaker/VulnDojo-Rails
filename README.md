@@ -268,7 +268,7 @@ docker compose exec web bin/rails db:prepare RAILS_ENV=development
 ### テストの実行
 
 ```bash
-# コンテナ内で全テスト実行 (67テスト, 170アサーション)
+# コンテナ内で全テスト実行 (61テスト, 156アサーション)
 docker compose exec web bundle exec rake test
 
 # 個別実行
@@ -278,51 +278,51 @@ docker compose exec web bundle exec ruby -Itest test/integration/vulnerabilities
 
 ### テストの仕組み
 
-各テストは **別プロセスで Rails サーバーを2台起動**（SAFE 用 / VULN 用）し検証します。
+各テストは **別プロセスで Rails サーバー**（SAFE 用 / VULN 用）を起動して検証します。`ServerPool` がサーバーインスタンスを `VULN_CHALLENGES` の値でキャッシュし、同一構成のサーバーはテストクラス間で共有・再利用されます。ポートは動的に割り当てられます。
 
 HTTP テスト (`*_test.rb`) は `Net::HTTP` でレスポンスを検証します。ブラウザテスト (`*_browser_test.rb`) は Ferrum (Chrome DevTools Protocol) でヘッドレス Chromium を操作し、JS 実行・DOM 状態・計算済みスタイルをブラウザレベルで検証します。
 
 ```
  テストプロセス
-    ├── ServerProcess (VULN_CHALLENGES="")       ← 安全なサーバー
-    ├── ServerProcess (VULN_CHALLENGES="xss_raw") ← 脆弱なサーバー
+    ├── ServerPool (VULN_CHALLENGES="")       ← 安全なサーバー（共有）
+    ├── ServerPool (VULN_CHALLENGES="xss_raw") ← 脆弱なサーバー（共有）
     ├── Net::HTTP で両方にリクエスト → レスポンスを比較  (HTTPテスト)
-    └── Ferrum (Chromium) でページを開いて DOM/JS を検証 (ブラウザテスト)
+    └── BrowserPool (Chromium) でページを開いて DOM/JS を検証 (ブラウザテスト)
 ```
 
 テストヘルパー (`e2e_helper.rb`) がユーザーのサインアップ・ログイン・セッション Cookie 管理・タスク作成を自動化します。`browser_helper.rb` は `e2e_helper.rb` を継承し Ferrum のブラウザ操作を追加します。
 
-### テスト一覧 (67テスト)
+### テスト一覧 (61テスト)
 
 #### HTTP テスト (49テスト)
 
-| チャレンジ | SAFEテスト | VULNテスト | ポート |
-|-----------|------|------|------|
-| xss_raw | XSSペイロードがエスケープされる | html_safeで生HTML出力 | 4010/4011 |
-| sql_injection | 検索機能なし、q無視 | `' OR 1=1`で全件取得 | 4020/4021 |
-| sql_injection_active_record | view_type をホワイトリスト検証 | view_type=tasks で CTE バイパス | 4022/4023 |
-| sql_injection_order | sort パラメータ無視 | sort=title で並び順変化・CASE WHEN 注入 | 4024/4025 |
-| xss_reflected | 検索キーワードがエスケープされる | 検索キーワードが生HTML反射 | 4030/4031 |
-| csrf_skip | CSRFトークンなし→422 | トークンなしでタスク作成成功 | 4030/4031 |
-| open_redirect | 外部URLの return_to 無視 | 外部URLへリダイレクト | 4040/4041 |
-| idor | 他ユーザのタスクにアクセス不可 | Task.findで他ユーザのタスク閲覧可 | 4050/4051 |
-| session_fixation | 攻撃者のCookieがログイン後に無効化 | 攻撃者のセッションIDで被害者セッションにアクセス可 | 4060/4061 |
-| mass_assignment | user_id変更不可 | permit!でuser_id上書き可能 | 4070/4071 |
-| regex_bypass | 改行URLを\\Aで拒否 | ^で改行URLが通過 | 4080/4081 |
-| unsafe_file_upload | exeファイル拒否 | MIME検証なしでexe通過 | 4090/4091 |
-| log_leakage | secret_noteが[FILTERED] | パラメータフィルタ無効で平文記録 | 4100/4101 |
-| css_injection | 不正なカラー値がstyle属性に埋め込まれない | colorがバリデーションなしでstyle属性に注入 | 4110/4111 |
-| header_removal | X-Frame-Options等存在 | セキュリティヘッダ欠落 | 4120/4121 |
-| csp_disable | CSPヘッダ存在 | CSP無効化 | 4130/4131 |
-| command_injection | nameパラメータ無視 | \$(whoami)がシェル展開されファイル名に出現 | 4140/4141 |
+| チャレンジ | SAFEテスト | VULNテスト |
+|-----------|------|------|
+| xss_raw | XSSペイロードがエスケープされる | html_safeで生HTML出力 |
+| sql_injection | 検索機能なし、q無視 | `' OR 1=1`で全件取得 |
+| sql_injection_active_record | view_type をホワイトリスト検証 | view_type=tasks で CTE バイパス |
+| sql_injection_order | sort パラメータ無視 | sort=title で並び順変化・CASE WHEN 注入 |
+| xss_reflected | 検索キーワードがエスケープされる | 検索キーワードが生HTML反射 |
+| csrf_skip | CSRFトークンなし→422 | トークンなしでタスク作成成功 |
+| open_redirect | 外部URLの return_to 無視 | 外部URLへリダイレクト |
+| idor | 他ユーザのタスクにアクセス不可 | Task.findで他ユーザのタスク閲覧可 |
+| session_fixation | 攻撃者のCookieがログイン後に無効化 | 攻撃者のセッションIDで被害者セッションにアクセス可 |
+| mass_assignment | user_id変更不可 | permit!でuser_id上書き可能 |
+| regex_bypass | 改行URLを\\Aで拒否 | ^で改行URLが通過 |
+| unsafe_file_upload | exeファイル拒否 | MIME検証なしでexe通過 |
+| log_leakage | secret_noteが[FILTERED] | パラメータフィルタ無効で平文記録 |
+| css_injection | 不正なカラー値がstyle属性に埋め込まれない | colorがバリデーションなしでstyle属性に注入 |
+| header_removal | X-Frame-Options等存在 | セキュリティヘッダ欠落 |
+| csp_disable | CSPヘッダ存在 | CSP無効化 |
+| command_injection | nameパラメータ無視 | \$(whoami)がシェル展開されファイル名に出現 |
 
 #### ブラウザテスト — Ferrum (Chromium) (6テスト)
 
-| チャレンジ | SAFEテスト | VULNテスト | ポート |
-|-----------|------|------|------|
-| xss_raw (browser) | img[onerror] 要素が DOM に存在しない | html_safe で img[onerror] が DOM に挿入される | 4200/4201 |
-| css_injection (browser) | #task-color-indicator 要素が存在しない | getComputedStyle で borderLeftColor:red が適用済み | 4202/4203 |
-| csp_disable (browser) | xss_raw + CSP → onerror が実行されない | xss_raw + csp_disable → window.__xss が true | 4204/4205 |
+| チャレンジ | SAFEテスト | VULNテスト |
+|-----------|------|------|
+| xss_raw (browser) | img[onerror] 要素が DOM に存在しない | html_safe で img[onerror] が DOM に挿入される |
+| css_injection (browser) | #task-color-indicator 要素が存在しない | getComputedStyle で borderLeftColor:red が適用済み |
+| csp_disable (browser) | xss_raw + CSP → onerror が実行されない | xss_raw + csp_disable → window.__xss が true |
 
 ### 新しいチャレンジのテスト追加方法
 
@@ -335,15 +335,8 @@ class OpenRedirectTest < ActiveSupport::TestCase
   include E2EHelper
 
   setup do
-    @safe_server = ServerProcess.new(port: 4040, vuln_challenges: "")
-    @vuln_server = ServerProcess.new(port: 4041, vuln_challenges: "open_redirect")
-    @safe_server.start!
-    @vuln_server.start!
-  end
-
-  teardown do
-    @safe_server.stop!
-    @vuln_server.stop!
+    @safe_server = ServerPool.acquire(vuln_challenges: "")
+    @vuln_server = ServerPool.acquire(vuln_challenges: "open_redirect")
   end
 
   test "SAFE: redirect to external URL is blocked" do
@@ -356,12 +349,13 @@ class OpenRedirectTest < ActiveSupport::TestCase
 end
 ```
 
+`ServerPool` は同一構成のサーバーをテストクラス間で共有し、ポートを動的に割り当てます。teardown でのサーバー停止は不要です（スイート終了時に `Minitest.after_run` で一括停止されます）。
+
 `E2EHelper` が提供するユーティリティ:
 
 | メソッド | 説明 |
 |---------|------|
-| `ServerProcess.new(port:, vuln_challenges:)` | テスト用サーバーの定義 |
-| `server.start!` / `server.stop!` | サーバーの起動・停止 |
+| `ServerPool.acquire(vuln_challenges:)` | サーバーを取得（初回は起動、以降はキャッシュ再利用） |
 | `server.get(path, headers:)` | HTTP GET リクエスト |
 | `server.post(path, body:, headers:)` | HTTP POST リクエスト |
 | `setup_session(server)` | ユーザー作成・ログインしてセッション Cookie を返す |
