@@ -23,11 +23,38 @@ module Vulnerabilities
       raise NotImplementedError, "#{self.class}#apply! を実装してください"
     end
 
+    # apply! を dry-run して占有する slot キーの一覧を返す。
+    # prepend_to / inject_view をシングルトンメソッドで一時差し替えし、
+    # 実際の inject は行わずキーだけ記録する。
+    def claim!
+      slots = []
+      define_singleton_method(:prepend_to) do |klass, mod|
+        mod.instance_methods(false).each { |m| slots << "#{klass.name}##{m}" }
+      end
+      define_singleton_method(:inject_view) do |path, _content|
+        slots << "view:#{path}"
+      end
+      apply!
+      slots
+    ensure
+      singleton_class.remove_method(:prepend_to) rescue nil
+      singleton_class.remove_method(:inject_view) rescue nil
+    end
+
     private
 
     # コントローラに prepend でメソッドを差し込む
     def prepend_to(klass, mod)
       klass.prepend(mod)
+    end
+
+    # view パーシャルを lib/vulnerabilities/views/ 以下に書き込み、
+    # prepend_view_path でアプリのビューより優先させる。
+    def inject_view(relative_path, content)
+      vuln_view_path = Rails.root.join("lib/vulnerabilities/views")
+      FileUtils.mkdir_p(vuln_view_path.join(File.dirname(relative_path)))
+      File.write(vuln_view_path.join(relative_path), content)
+      ActionController::Base.prepend_view_path(vuln_view_path.to_s)
     end
 
     # 動的にルートを追加する

@@ -6,8 +6,9 @@ module Vulnerabilities
     include Singleton
 
     def initialize
-      @challenges = {}  # slug => klass
-      @active = Set.new # 有効な slug の集合
+      @challenges = {}   # slug => klass
+      @active = Set.new  # 有効な slug の集合
+      @conflict_log = [] # [{winner:, losers:, slot:}, ...]
     end
 
     # --- 登録 ---
@@ -43,11 +44,20 @@ module Vulnerabilities
       @active.to_a
     end
 
+    def conflict_log
+      @conflict_log.dup
+    end
+
     # --- 有効なチャレンジを適用 ---
 
     def apply_all!
+      # 前回起動時に inject されたビューファイルをクリア
+      # (古いファイルが prepend_view_path で意図せず優先されるのを防ぐ)
+      FileUtils.rm_f(Dir[Rails.root.join("lib/vulnerabilities/views/**/*.erb")])
+
+      resolve_conflicts!
       active_challenges.each do |klass|
-        Rails.logger.info "[Vuln] Applying challenge: #{klass.slug}"
+        $stdout.puts "[Vuln] Applying challenge: #{klass.slug}"
         klass.new.apply!
       end
     end
@@ -63,6 +73,35 @@ module Vulnerabilities
       else
         raw.split(",").map(&:strip).reject(&:empty?).each { |s| enable(s) }
       end
+    end
+
+    private
+
+    # claim! で各チャレンジの占有 slot を収集し、
+    # 同 slot を複数チャレンジが競合していたらランダムで1つを残す。
+    def resolve_conflicts!
+      @conflict_log = []
+
+      # slot => [slug, ...] マップを構築
+      slot_map = Hash.new { |h, k| h[k] = [] }
+      @active.each do |slug|
+        klass = @challenges[slug]
+        next unless klass
+        klass.new.claim!.each { |slot| slot_map[slot] << slug }
+      end
+
+      # 競合する slot ごとにランダムで winner を決定
+      losers = Set.new
+      slot_map.each do |slot, slugs|
+        next if slugs.size <= 1
+        winner = slugs.sample
+        defeated = slugs - [winner]
+        defeated.each { |s| losers.add(s) }
+        @conflict_log << { slot: slot, winner: winner, losers: defeated }
+        $stdout.puts "[Vuln] Conflict on #{slot}: #{winner} wins over #{defeated.join(', ')}"
+      end
+
+      losers.each { |s| @active.delete(s) }
     end
   end
 end

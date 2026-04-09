@@ -17,11 +17,7 @@ module Vulnerabilities
       end
 
       def apply!
-        vuln_view_path = Rails.root.join("lib/vulnerabilities/views")
-        FileUtils.mkdir_p(vuln_view_path.join("tasks"))
-
-        # 脆弱な partial のみ注入: color をバリデーションなしで style 属性に埋め込む
-        template = <<~'ERB'
+        inject_view "tasks/_task_color.html.erb", <<~'ERB'
           <% if @task.color.present? %>
             <div class="detail-row" id="task-color-indicator" style="border-left: 4px solid <%= @task.color %>; padding-left: 8px;">
               <div class="label">ラベルカラー</div>
@@ -29,9 +25,6 @@ module Vulnerabilities
             </div>
           <% end %>
         ERB
-
-        File.write(vuln_view_path.join("tasks/_task_color.html.erb"), template)
-        ActionController::Base.prepend_view_path(vuln_view_path.to_s)
       end
     end
   end

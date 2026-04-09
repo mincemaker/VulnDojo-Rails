@@ -17,19 +17,12 @@ module Vulnerabilities
       end
 
       def apply!
-        vuln_view_path = Rails.root.join("lib/vulnerabilities/views")
-        FileUtils.mkdir_p(vuln_view_path.join("tasks"))
-
-        # 脆弱な partial のみ注入: title を html_safe でエスケープなし表示
-        template = <<~'ERB'
+        inject_view "tasks/_task_title.html.erb", <<~'ERB'
           <div class="detail-row">
             <div class="label">タイトル</div>
             <div><%= @task.title.html_safe %></div>
           </div>
         ERB
-
-        File.write(vuln_view_path.join("tasks/_task_title.html.erb"), template)
-        ActionController::Base.prepend_view_path(vuln_view_path.to_s)
       end
     end
   end
