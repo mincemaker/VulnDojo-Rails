@@ -1,5 +1,8 @@
 # See https://git-scm.com/docs/gitattributes for more about git attribute files.
 
+# Normalize all text files to LF (overrides core.autocrlf=true on Windows)
+* text=auto eol=lf
+
 # Mark the database schema as having been generated.
 db/schema.rb linguist-generated
 
@@ -7,3 +10,9 @@ db/schema.rb linguist-generated
 vendor/* linguist-vendored
 config/credentials/*.yml.enc diff=rails_credentials
 config/credentials.yml.enc diff=rails_credentials
+
+# Enforce LF line endings for executable scripts
+bin/* eol=lf
+*.sh eol=lf
+Dockerfile eol=lf
+
