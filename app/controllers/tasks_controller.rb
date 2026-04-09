@@ -9,12 +9,10 @@ class TasksController < ApplicationController
 
   # GET /tasks
   def index
-    @view_type = ALLOWED_VIEW_TYPES.include?(params[:view_type]) ? params[:view_type] : nil
-    @tasks = case @view_type
-             when "todo_tasks" then current_user.tasks.where(completed: false)
-             when "done_tasks" then current_user.tasks.where(completed: true)
-             else current_user.tasks
-             end.order(created_at: :desc)
+    set_view_type
+    set_task_scope
+    apply_task_search
+    @tasks = @tasks.order(created_at: :desc)
   end
 
   # GET /tasks/1
@@ -90,6 +88,22 @@ class TasksController < ApplicationController
   end
 
   private
+
+  def set_view_type
+    @view_type = ALLOWED_VIEW_TYPES.include?(params[:view_type]) ? params[:view_type] : nil
+  end
+
+  def set_task_scope
+    @tasks = case @view_type
+             when "todo_tasks" then current_user.tasks.where(completed: false)
+             when "done_tasks" then current_user.tasks.where(completed: true)
+             else current_user.tasks
+             end
+  end
+
+  def apply_task_search
+    @tasks = @tasks.where("title LIKE ?", "%#{params[:q]}%") if params[:q].present?
+  end
 
   # 所有者スコープ: IDOR 防止
   def set_task
