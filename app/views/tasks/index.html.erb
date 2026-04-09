@@ -6,6 +6,21 @@
   </div>
 </div>
 
+<div style="display:flex; gap:8px; margin-bottom:16px;">
+  <%= link_to "すべて", tasks_path,
+        style: "padding:8px 16px; border-radius:6px; border:1px solid #d1d5db; text-decoration:none;
+                background:#{@view_type.nil? ? '#3b82f6' : '#fff'};
+                color:#{@view_type.nil? ? '#fff' : '#374151'};" %>
+  <%= link_to "⏳ 未完了", tasks_path(view_type: "todo_tasks"),
+        style: "padding:8px 16px; border-radius:6px; border:1px solid #d1d5db; text-decoration:none;
+                background:#{@view_type == 'todo_tasks' ? '#3b82f6' : '#fff'};
+                color:#{@view_type == 'todo_tasks' ? '#fff' : '#374151'};" %>
+  <%= link_to "✅ 完了済み", tasks_path(view_type: "done_tasks"),
+        style: "padding:8px 16px; border-radius:6px; border:1px solid #d1d5db; text-decoration:none;
+                background:#{@view_type == 'done_tasks' ? '#3b82f6' : '#fff'};
+                color:#{@view_type == 'done_tasks' ? '#fff' : '#374151'};" %>
+</div>
+
 <% if @tasks.any? %>
   <table>
     <thead>
