@@ -31,7 +31,7 @@ module Vulnerabilities
           #   例) view_type=tasks → WITH 句を無視して tasks テーブル全体を参照
           def set_task_scope
             base = current_user.tasks.select(
-              :id, :title, :user_id, :completed, :due_date, :updated_at, :created_at
+              :id, :title, :user_id, :completed, :due_date, :updated_at, :created_at, :color
             )
             @tasks = Task.with(
               todo_tasks: base.where(completed: false),
