@@ -28,6 +28,7 @@
 | `header_removal` | HTTP Security Headers Removed | headers | easy | CWE-693 |
 | `csp_disable` | Content Security Policy Disabled | headers | easy | CWE-693 |
 | `command_injection` | Command Injection via filename sanitization | injection | hard | CWE-78 |
+| `xss_stored_img` | Stored XSS via image caption | xss | easy | CWE-79 |
 
 ---
 
@@ -372,3 +373,28 @@ GET /tasks/export?name=$(whoami)
 検出ポイント: `lib/vulnerabilities/challenges/command_injection.rb` — `` `echo #{name} | tr -cd '[:alnum:]_-'` ``
 
 参考: https://guides.rubyonrails.org/security.html#command-line-injection
+
+---
+
+### xss_stored_img — Stored XSS via image caption
+
+```bash
+VULN_CHALLENGES=xss_stored_img bin/rails server -b 127.0.0.1
+```
+
+タスクの description が `html_safe` で出力され、imgタグ等のHTMLがそのまま挿入されます。
+
+再現手順:
+1. description に `<img src=x onerror="window.__xss=1">` などを入力してタスクを作成
+2. タスク詳細ページを開く
+
+> **CSP有効時（デフォルト）**: onerror等のインラインJSは発火しません（window.__xssはセットされない）。
+> **csp_disable有効時**: onerrorが実行され、window.__xss=1 となります。
+
+検出ポイント: `lib/vulnerabilities/challenges/xss_stored_img.rb` — `@task.description.html_safe`
+
+#### ブラウザテストについて
+`test/integration/vulnerabilities/xss_stored_img_browser_test.rb` では Ferrum を用いて「imgタグがDOMに存在するだけでなく、onerror等でJavaScriptが実際に実行されたか（window.__xssがセットされるか）」を検証しています。
+このため、CSP有効/無効の両方でテストし、JS実行の有無を自動で確認できます。
+
+参考: https://guides.rubyonrails.org/security.html#cross-site-scripting-xss
