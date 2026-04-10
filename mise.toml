@@ -1,2 +1,14 @@
 [tools]
 ruby = "3.2.3"
+
+[tasks.test]
+description = "Run all tests in container"
+run = "podman compose run --rm web bin/rails test"
+
+[tasks."test:integration"]
+description = "Run integration tests in container"
+run = "podman compose run --rm web bin/rails test test/integration/"
+
+[tasks."test:vulnerabilities"]
+description = "Run vulnerability integration tests in container"
+run = "podman compose run --rm web bin/rails test test/integration/vulnerabilities/"
