@@ -52,6 +52,13 @@
     <div class="detail-row">
       <div class="label">添付ファイル</div>
       <div class="attachment-info">
+        <% if @task.attachment.content_type.start_with?("image/") %>
+          <a href="<%= url_for(@task.attachment) %>" target="_blank" rel="noopener noreferrer">
+            <%= image_tag @task.attachment,
+                  style: "max-width: 100%; max-height: 400px; object-fit: contain; display: block; margin-bottom: 8px;",
+                  alt: @task.attachment.filename.to_s %>
+          </a>
+        <% end %>
         📎 <%= @task.attachment.filename %>
         (<%= number_to_human_size(@task.attachment.byte_size) %>)
         <%= link_to "ダウンロード", download_attachment_task_path(@task), class: "btn btn-secondary btn-sm" %>
