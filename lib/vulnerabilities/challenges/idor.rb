@@ -14,6 +14,7 @@ module Vulnerabilities
         hint        "set_task が current_user.tasks.find ではなく Task.find になっています"
         cwe         "CWE-639"
         reference   "https://guides.rubyonrails.org/security.html#unauthorized-viewing"
+        slot        "TasksController#set_task"
       end
 
       def apply!

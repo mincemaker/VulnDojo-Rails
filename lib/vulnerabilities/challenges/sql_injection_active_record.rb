@@ -16,6 +16,7 @@ module Vulnerabilities
         hint        "with() で作った CTE スコープはバイパスできます"
         cwe         "CWE-89"
         reference   "https://rails-sqli.org/#from"
+        slot        "TasksController#set_view_type", "TasksController#set_task_scope"
       end
 
       def apply!

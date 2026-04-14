@@ -14,6 +14,7 @@ module Vulnerabilities
         hint        "reset_session がないとサーバー側のセッションレコードにuser_idが書き込まれ、攻撃者のIDが認証済みになります"
         cwe         "CWE-384"
         reference   "https://guides.rubyonrails.org/security.html#session-fixation"
+        slot        "SessionsController#create"
       end
 
       def apply!

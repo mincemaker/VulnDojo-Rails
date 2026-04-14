@@ -209,6 +209,7 @@ module Vulnerabilities
         hint        "リダイレクト先のパラメータを確認してみましょう"
         cwe         "CWE-601"
         reference   "https://guides.rubyonrails.org/security.html#redirection"
+        slot        "TasksController#create"
       end
 
       def apply!
@@ -237,6 +238,7 @@ end
 | `category` | ○ | カテゴリ（`:xss`, `:injection`, `:csrf` 等） |
 | `difficulty` | ○ | 難易度（`:easy`, `:medium`, `:hard`） |
 | `description` | ○ | 概要説明 |
+| `slot` | ○ | 占有するスロット識別子。`prepend_to` で差し込むメソッドは `"ClassName#method_name"`、`inject_view` で書き換えるパスは `"view:path/to/partial.html.erb"` の形式で指定する。複数ある場合は `slot "A", "B"` または複数回呼び出す |
 | `hint` | | ヒント（複数回呼べる） |
 | `cwe` | | CWE 番号 |
 | `reference` | | 参考 URL |

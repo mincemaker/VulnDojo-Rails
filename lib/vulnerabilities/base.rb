@@ -23,22 +23,11 @@ module Vulnerabilities
       raise NotImplementedError, "#{self.class}#apply! を実装してください"
     end
 
-    # apply! を dry-run して占有する slot キーの一覧を返す。
-    # prepend_to / inject_view をシングルトンメソッドで一時差し替えし、
-    # 実際の inject は行わずキーだけ記録する。
+    # metadata の slot 宣言に基づき占有する slot キーの一覧を返す。
+    # apply! は呼ばないため副作用ゼロ。
+    # 全チャレンジは metadata ブロックで slot を宣言する必要がある。
     def claim!
-      slots = []
-      define_singleton_method(:prepend_to) do |klass, mod|
-        mod.instance_methods(false).each { |m| slots << "#{klass.name}##{m}" }
-      end
-      define_singleton_method(:inject_view) do |path, _content|
-        slots << "view:#{path}"
-      end
-      apply!
-      slots
-    ensure
-      singleton_class.remove_method(:prepend_to) rescue nil
-      singleton_class.remove_method(:inject_view) rescue nil
+      self.class.meta&.dig(:slots) || []
     end
 
     private
@@ -80,6 +69,7 @@ module Vulnerabilities
       def hint(val);        (@hash[:hints] ||= []) << val; end
       def cwe(val);         @hash[:cwe] = val; end
       def reference(val);   @hash[:reference] = val; end
+      def slot(*vals);      (@hash[:slots] ||= []).concat(vals); end
     end
   end
 end

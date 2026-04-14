@@ -15,6 +15,7 @@ module Vulnerabilities
         hint        "URLフィールドに\\njavascript:alert(1) のような値を入れてみましょう"
         cwe         "CWE-185"
         reference   "https://guides.rubyonrails.org/security.html#regular-expressions"
+        slot        "Task.url_format_validator"
       end
 
       def apply!

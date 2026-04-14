@@ -14,6 +14,7 @@ module Vulnerabilities
         hint        "<script>alert('XSS')</script> をタイトルに入れてみましょう"
         cwe         "CWE-79"
         reference   "https://guides.rubyonrails.org/security.html#cross-site-scripting-xss"
+        slot        "view:tasks/_task_title.html.erb"
       end
 
       def apply!

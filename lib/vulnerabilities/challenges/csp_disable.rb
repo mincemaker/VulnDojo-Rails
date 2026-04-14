@@ -14,6 +14,7 @@ module Vulnerabilities
         hint        "CSP がない場合、XSSの影響が大きくなります"
         cwe         "CWE-693"
         reference   "https://guides.rubyonrails.org/security.html#content-security-policy"
+        slot        "ApplicationController.content_security_policy"
       end
 
       def apply!

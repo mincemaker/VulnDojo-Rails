@@ -17,6 +17,9 @@ class ConflictResolutionTest < ActiveSupport::TestCase
     # xss_raw と同じ slot を狙うダミーチャレンジを登録
     dummy = Class.new(Vulnerabilities::Base) do
       define_singleton_method(:slug) { "xss_raw_v2_test_only" }
+      metadata do
+        slot "view:tasks/_task_title.html.erb"
+      end
       def apply!
         inject_view "tasks/_task_title.html.erb", "<div>dummy</div>"
       end

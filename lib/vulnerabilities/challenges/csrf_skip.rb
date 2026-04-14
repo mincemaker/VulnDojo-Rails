@@ -14,6 +14,7 @@ module Vulnerabilities
         hint        "curl で直接 POST してタスクが作成できるか試してみましょう"
         cwe         "CWE-352"
         reference   "https://guides.rubyonrails.org/security.html#cross-site-request-forgery-csrf"
+        slot        "TasksController.forgery_protection"
       end
 
       def apply!

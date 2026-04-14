@@ -16,6 +16,7 @@ module Vulnerabilities
         hint        "sort=(CASE WHEN 1=1 THEN title ELSE created_at END) でブラインド注入が可能です"
         cwe         "CWE-89"
         reference   "https://rails-sqli.org/#order"
+        slot        "TasksController#apply_task_search"
       end
 
       def apply!

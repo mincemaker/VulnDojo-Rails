@@ -14,6 +14,7 @@ module Vulnerabilities
         hint        "config.filter_parameters が空になっています"
         cwe         "CWE-532"
         reference   "https://guides.rubyonrails.org/security.html#logging"
+        slot        "Rails.filter_parameters"
       end
 
       def apply!
