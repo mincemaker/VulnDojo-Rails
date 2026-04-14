@@ -14,6 +14,7 @@ module Vulnerabilities
         hint        "カラーに 'red; background:blue' を入れてページの見た目が変わるか確認しましょう"
         cwe         "CWE-79"
         reference   "https://guides.rubyonrails.org/security.html#css-injection"
+        slot        "view:tasks/_task_color.html.erb"
       end
 
       def apply!

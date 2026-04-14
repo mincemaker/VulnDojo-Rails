@@ -14,6 +14,7 @@ module Vulnerabilities
         hint        "' OR 1=1-- を検索ボックスに入れてみましょう"
         cwe         "CWE-89"
         reference   "https://guides.rubyonrails.org/security.html#sql-injection"
+        slot        "TasksController#apply_task_search"
       end
 
       def apply!

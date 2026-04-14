@@ -14,6 +14,7 @@ module Vulnerabilities
         hint        "permit! は全パラメータを許可します"
         cwe         "CWE-915"
         reference   "https://guides.rubyonrails.org/security.html#mass-assignment"
+        slot        "TasksController#task_params"
       end
 
       def apply!

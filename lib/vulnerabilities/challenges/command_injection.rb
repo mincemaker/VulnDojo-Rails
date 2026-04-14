@@ -15,6 +15,7 @@ module Vulnerabilities
         hint        "name=$(whoami) を試してみましょう — ファイル名にコマンド実行結果が含まれます"
         cwe         "CWE-78"
         reference   "https://guides.rubyonrails.org/security.html#command-line-injection"
+        slot        "TasksController#export"
       end
 
       def apply!

@@ -12,6 +12,7 @@ module Vulnerabilities
         hint        "説明欄に <img src=x onerror=alert(1)> を入力して画像を添付してみましょう"
         cwe         "CWE-79"
         reference   "https://guides.rubyonrails.org/security.html#cross-site-scripting-xss"
+        slot        "view:tasks/_task_attachment.html.erb"
       end
 
       def apply!

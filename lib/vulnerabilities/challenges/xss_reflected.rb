@@ -14,6 +14,7 @@ module Vulnerabilities
         hint        "?q=<script>alert(1)</script> を URL に入れてみましょう"
         cwe         "CWE-79"
         reference   "https://guides.rubyonrails.org/security.html#cross-site-scripting-xss"
+        slot        "view:tasks/_search_label.html.erb"
       end
 
       def apply!

@@ -14,6 +14,7 @@ module Vulnerabilities
         hint        "MIMEタイプのホワイトリスト検証が無効になっています"
         cwe         "CWE-434"
         reference   "https://guides.rubyonrails.org/security.html#file-uploads"
+        slot        "Task.acceptable_attachment_validation"
       end
 
       def apply!

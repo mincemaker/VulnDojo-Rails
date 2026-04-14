@@ -14,6 +14,7 @@ module Vulnerabilities
         hint        "X-Content-Type-Options: nosniff が欠落しています"
         cwe         "CWE-693"
         reference   "https://guides.rubyonrails.org/security.html#default-headers"
+        slot        "ApplicationController.security_headers_after_action"
       end
 
       def apply!

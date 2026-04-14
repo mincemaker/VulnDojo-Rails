@@ -15,6 +15,7 @@ module Vulnerabilities
         hint        "return_to パラメータに外部URLを指定してみましょう"
         cwe         "CWE-601"
         reference   "https://guides.rubyonrails.org/security.html#redirection"
+        slot        "ApplicationController#safe_redirect_to"
       end
 
       def apply!
