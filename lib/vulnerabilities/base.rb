@@ -43,7 +43,6 @@ module Vulnerabilities
       vuln_view_path = Rails.root.join("lib/vulnerabilities/views")
       FileUtils.mkdir_p(vuln_view_path.join(File.dirname(relative_path)))
       File.write(vuln_view_path.join(relative_path), content)
-      ActionController::Base.prepend_view_path(vuln_view_path.to_s)
     end
 
     # 動的にルートを追加する

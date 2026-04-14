@@ -60,6 +60,15 @@ module Vulnerabilities
         $stdout.puts "[Vuln] Applying challenge: #{klass.slug}"
         klass.new.apply!
       end
+
+      vuln_view_path = Rails.root.join("lib/vulnerabilities/views").to_s
+      if Dir.exist?(vuln_view_path) && Dir.glob("#{vuln_view_path}/**/*.erb").any?
+        [ActionController::Base, *ActionController::Base.descendants].each do |ctrl|
+          next unless ctrl.respond_to?(:view_paths)
+          next if ctrl.view_paths.map(&:to_s).include?(vuln_view_path)
+          ctrl.prepend_view_path(vuln_view_path)
+        end
+      end
     end
 
     # --- 環境変数 or 設定ファイルから初期化 ---
