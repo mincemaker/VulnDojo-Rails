@@ -29,6 +29,7 @@
 | `csp_disable` | Content Security Policy Disabled | headers | easy | CWE-693 |
 | `command_injection` | Command Injection via filename sanitization | injection | hard | CWE-78 |
 | `xss_stored_img` | Stored XSS via image caption | xss | easy | CWE-79 |
+| `broken_auth_timing` | Timing Attack on Login (User Enumeration) | authentication | hard | CWE-208 |
 
 ---
 
@@ -398,3 +399,38 @@ VULN_CHALLENGES=xss_stored_img bin/rails server -b 127.0.0.1
 このため、CSP有効/無効の両方でテストし、JS実行の有無を自動で確認できます。
 
 参考: https://guides.rubyonrails.org/security.html#cross-site-scripting-xss
+
+---
+
+### broken_auth_timing — Timing Attack on Login (User Enumeration)
+
+```bash
+VULN_CHALLENGES=broken_auth_timing bin/rails server -b 127.0.0.1
+```
+
+`SessionsController#create` が差し替えられ、ユーザーが見つからない場合に bcrypt 比較をスキップして即 return します。
+存在するメールアドレスへのログイン試行は bcrypt のハッシュ計算（高コスト）を経由するため応答が遅く、
+存在しないアドレスは即座に返ります。このタイミング差からユーザー列挙が可能になります（CWE-208）。
+
+再現手順:
+1. 存在するメールアドレスと存在しないメールアドレスに対してログインを複数回試行し、応答時間を計測
+
+```bash
+# 存在するユーザー（bcrypt 比較あり → 遅い）
+time curl -s -X POST http://localhost:3000/login \
+  -d "email=alice@example.com&password=wrong&authenticity_token=TOKEN" \
+  -b "_session_id=COOKIE" -o /dev/null
+
+# 存在しないユーザー（bcrypt スキップ → 速い）
+time curl -s -X POST http://localhost:3000/login \
+  -d "email=nobody@example.com&password=wrong&authenticity_token=TOKEN" \
+  -b "_session_id=COOKIE" -o /dev/null
+```
+
+2. 存在しないユーザーへのレスポンスが明らかに速ければ、タイミング差によるユーザー列挙が成功
+
+> 安全な実装では `User.authenticate_by(email:, password:)` を使用します。ユーザーが存在しない場合もダミー bcrypt を実行して定数時間を保証します（`app/controllers/sessions_controller.rb`）。
+
+検出ポイント: `lib/vulnerabilities/challenges/broken_auth_timing.rb` — `find_by` → `unless user; return; end`（bcrypt スキップ）
+
+参考: https://owasp.org/www-community/attacks/Timing_attack
