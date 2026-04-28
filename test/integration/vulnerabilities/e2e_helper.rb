@@ -171,10 +171,19 @@ module E2EHelper
   end
 
   def extract_csrf_token(html)
-    # フォームの hidden field からトークンを取得（metaタグではなく）
-    # <input type="hidden" name="authenticity_token" value="..." autocomplete="off" />
-    tokens = html.scan(/name="authenticity_token"\s+value="([^"]+)"\s+autocomplete/)
-    # autocomplete付きの最後のトークンを使う（メインフォームのもの）
+    # 1) meta タグから取得を試みる (最も確実)
+    # <meta name="csrf-token" content="..." />
+    if html =~ /<meta name="csrf-token" content="([^"]+)"/
+      return $1
+    end
+
+    # 2) フォームの hidden field から取得を試みる (フォールバック)
+    # 属性の順序に依存しないように scan し、値だけを抽出する
+    tokens = html.scan(/<input[^>]+name="authenticity_token"[^>]+value="([^"]+)"/)
+    return tokens.last&.first if tokens.any?
+
+    # 逆の順序 (value, name) も考慮
+    tokens = html.scan(/<input[^>]+value="([^"]+)"[^>]+name="authenticity_token"/)
     tokens.last&.first
   end
 

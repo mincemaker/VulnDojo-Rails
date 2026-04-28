@@ -46,8 +46,19 @@ module Vulnerabilities
     end
 
     # 動的にルートを追加する
+    # draw(&block) はデフォルトで clear! → eval → finalize! の順に動くため、
+    # そのまま呼ぶと既存ルートが全消えになる。
+    # routes.prepend でブロックを @prepend に登録しておくと、
+    # ルート再ロード時の clear! でも再評価されて消えなくなる。
+    # さらに disable_clear_and_finalize = true で draw を呼ぶことで
+    # 即時評価しつつ既存ルートを保つ。
     def add_routes(&block)
-      Rails.application.routes.draw(&block)
+      routes = Rails.application.routes
+      routes.prepend(&block)  # clear! のたびに再評価されるよう登録
+      routes.disable_clear_and_finalize = true
+      routes.draw(&block)     # 現時点でも即時評価
+    ensure
+      routes.disable_clear_and_finalize = false
     end
 
     # 設定値を変更する
