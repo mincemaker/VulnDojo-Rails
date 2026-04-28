@@ -24,10 +24,13 @@ module Vulnerabilities
       end
 
       def apply!
-        # Task モデルのバリデーションを緩和する
-        # (開発者が外部サービスとの連携のために、うっかりスキーム制限のない正規表現に変えてしまった、という設定)
-        Task.clear_validators!
-        Task.validates :title, presence: true
+        # Task の URL バリデーターのみをピンポイントで差し替える
+        # (他のバリデーション: title presence, attachment サイズ/MIME 等はそのまま維持)
+        Task._validators[:url].reject! { |v| v.is_a?(ActiveModel::Validations::FormatValidator) }
+        Task._validate_callbacks.each do |cb|
+          next unless cb.filter.respond_to?(:attributes)
+          cb.filter.attributes.delete(:url) if cb.filter.is_a?(ActiveModel::Validations::FormatValidator)
+        end
         Task.validates :url, format: { with: /.*/ }, allow_blank: true
 
         vuln_module = Module.new do

