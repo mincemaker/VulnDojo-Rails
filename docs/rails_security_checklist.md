@@ -145,10 +145,12 @@
 ### Vulnerability: Session Data Exposure/Tampering
 **Risk**: Sensitive data leakage or session replay attacks.
 
-> **✅ このアプリでの実装**: `ActiveRecordStore` (`activerecord-session_store` gem). Session ID is stored server-side in the `sessions` table; only a token is sent in the cookie. Session stores only `user_id`. Secrets managed via `config/credentials.yml.enc`.
+> **✅ このアプリでの実装**: `config/initializers/session_store.rb` で `:cache_store` を使用。セッションデータは `Rails.cache` のバックエンド（開発/本番: Redis, テスト: MemoryStore）にサーバー側で保存され、Cookie にはセッション ID のみが入る。セッションには `user_id` のみ格納。Secrets は `config/credentials.yml.enc` で管理。
+> 
+> **⚠️ 注意**: SSRF チャレンジ (`ssrf`) が有効な場合、チャレンジ目的で `Rails.cache` が Redis に向けられセッションデータが Redis に書き込まれます。gopher:// スキームで Redis にアクセスするとセッションが漏洩することを学習できます。
 
 **Mitigations**:
-- ✅ Uses `ActiveRecordStore` — session data is stored server-side, not in the cookie
+- ✅ Uses `:cache_store` — session data is stored server-side via `Rails.cache`, not in the cookie
 - ✅ Ensure `secret_key_base` is set in `config/credentials.yml.enc`:
   ```bash
   bin/rails credentials:edit
@@ -719,3 +721,41 @@ end
 ---
 
 This checklist covers security concerns for a Rails 7.1 task management app with authentication (`has_secure_password`), owner-scoped data access, file attachments (Active Storage), and session management. Prioritize keeping authentication, IDOR prevention, strong parameters, CSRF protection, and file upload validation as your baseline security measures. Regularly audit dependencies and review new features against this checklist.
+
+---
+
+## 22. Server-Side Request Forgery (SSRF)
+
+### Vulnerability: Unvalidated External HTTP Requests
+**Risk**: Attackers trick the server into making requests to internal services (Redis, metadata endpoints, admin APIs) by supplying crafted URLs. Protocols like `gopher://` allow sending arbitrary TCP payloads, enabling attacks against Redis, Memcached, and other services.
+
+> **✅ このアプリでの実装**: URL プレビュー機能は実装されていません（ベースアプリに外部 HTTP リクエストを行うエンドポイントは存在しない）。`ssrf` チャレンジを有効にすると `curl` を使った脆弱な `preview_url` エンドポイントが注入され、gopher:// 経由で内部 Redis へのアクセスが可能になります。
+
+**Mitigations**:
+- ❌ **NEVER** pass user-supplied URLs directly to HTTP clients:
+  ```ruby
+  # UNSAFE — allows gopher://, file://, internal IPs
+  stdout, _, _ = Open3.capture3("curl -s #{user_url}")
+  URI.open(params[:url])
+  Net::HTTP.get(URI(params[:url]))
+  ```
+- ✅ Restrict allowed protocols and validate the URL before fetching:
+  ```ruby
+  # Validate scheme and host
+  uri = URI.parse(params[:url])
+  raise "Invalid scheme" unless %w[http https].include?(uri.scheme)
+  raise "Private address" if private_address?(uri.host)
+
+  # If using curl, restrict protocols explicitly
+  Open3.capture3("curl --proto '=https,http' --max-time 5 -s", uri.to_s)
+  ```
+- ✅ Block requests to private/loopback address ranges:
+  ```ruby
+  def private_address?(host)
+    addr = IPAddr.new(Resolv.getaddress(host))
+    addr.loopback? || addr.private?
+  end
+  ```
+- ✅ Use an allowlist of trusted domains if the feature only needs to reach known hosts
+- ⚠️ When Redis (or any TCP service) is used internally, ensure it is not reachable from the web process via non-HTTP protocols (`bind 127.0.0.1`, use auth, firewall rules)
+- ⚠️ Session data stored in Redis is a high-value target — if SSRF is possible, session hijacking follows. Keep Redis on a separate network segment from the web tier.
