@@ -56,7 +56,12 @@ module Vulnerabilities
       routes = Rails.application.routes
       routes.prepend(&block)  # clear! のたびに再評価されるよう登録
       routes.disable_clear_and_finalize = true
-      routes.draw(&block)     # 現時点でも即時評価
+      begin
+        routes.draw(&block)     # 現時点でも即時評価
+      rescue ArgumentError => e
+        # "Invalid route name, already in use" は無視する
+        raise e unless e.message.include?("already in use")
+      end
     ensure
       routes.disable_clear_and_finalize = false
     end

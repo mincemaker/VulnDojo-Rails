@@ -25,6 +25,16 @@ module Vulnerabilities
 
       def apply!
         vuln_module = Module.new do
+          def show
+            # プレビュー表示に必要なインラインJSのみを許可するため、
+            # このアクションのCSPポリシーにのみ 'unsafe-inline' を追加する
+            # (開発者がUIの動作を優先して最小限の緩和を行った、という設定)
+            if request.content_security_policy
+              request.content_security_policy.script_src(:self, :unsafe_inline)
+            end
+            super
+          end
+
           def preview_url
             # 開発者の言い訳:
             # 「Ruby の Net::HTTP や open-uri はタイムアウトの設定が面倒だし、
@@ -74,10 +84,71 @@ module Vulnerabilities
             <div class="detail-row">
               <div class="label">URLプレビュー</div>
               <div>
-                <%= form_with url: preview_url_task_path(@task), method: :post, local: true do |f| %>
-                  <%= hidden_field_tag :url, @task.url %>
-                  <%= f.submit "プレビュー取得", class: "btn btn-secondary" %>
-                <% end %>
+                <button id="fetch-preview-btn-<%= @task.id %>" 
+                        onclick="if(window.runPreview) { runPreview('<%= @task.id %>', '<%= preview_url_task_path(@task) %>', '<%= @task.url %>') } else { alert('Initializing... please try again.') }"
+                        class="btn btn-secondary btn-sm">プレビュー表示</button>
+                
+                <dialog id="preview-dialog-<%= @task.id %>" style="margin: auto; padding: 20px; border-radius: 8px; border: 1px solid #ccc; max-width: 600px; width: 100%; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+                  <style>
+                    #preview-dialog-<%= @task.id %>::backdrop { background: rgba(0,0,0,0.5); }
+                  </style>
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                    <h3 style="margin: 0;">プレビュー結果</h3>
+                    <button onclick="this.closest('dialog').close()" class="btn btn-secondary btn-sm">閉じる</button>
+                  </div>
+                  <div id="preview-loading-<%= @task.id %>" style="display: none; color: #666; padding: 20px; text-align: center;">読み込み中...</div>
+                  <div id="preview-content-<%= @task.id %>" style="display: none;">
+                    <h4 id="preview-title-<%= @task.id %>" style="margin-bottom: 8px; color: #2563eb; word-break: break-all;"></h4>
+                    <pre id="preview-body-<%= @task.id %>" style="background: #f8f9fa; padding: 12px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; font-size: 0.9rem; max-height: 300px; overflow-y: auto; border: 1px solid #e5e7eb;"></pre>
+                  </div>
+                  <div id="preview-error-<%= @task.id %>" style="display: none; color: #dc2626; padding: 12px; background: #fee2e2; border-radius: 4px; border: 1px solid #fca5a5;"></div>
+                </dialog>
+
+                <script>
+                  window.runPreview = async (taskId, previewPath, taskUrl) => {
+                    const dialog = document.getElementById(`preview-dialog-${taskId}`);
+                    const loadingDiv = document.getElementById(`preview-loading-${taskId}`);
+                    const contentDiv = document.getElementById(`preview-content-${taskId}`);
+                    const errorDiv = document.getElementById(`preview-error-${taskId}`);
+                    const titleEl = document.getElementById(`preview-title-${taskId}`);
+                    const bodyEl = document.getElementById(`preview-body-${taskId}`);
+
+                    if (!dialog) return;
+                    
+                    dialog.showModal();
+                    loadingDiv.style.display = 'block';
+                    contentDiv.style.display = 'none';
+                    errorDiv.style.display = 'none';
+                    
+                    try {
+                      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+                      const res = await fetch(previewPath, {
+                        method: 'POST',
+                        headers: { 
+                          'Content-Type': 'application/json',
+                          'X-CSRF-Token': csrfToken || ''
+                        },
+                        body: JSON.stringify({ url: taskUrl })
+                      });
+                      
+                      const json = await res.json();
+                      loadingDiv.style.display = 'none';
+                      
+                      if (res.ok) {
+                        contentDiv.style.display = 'block';
+                        titleEl.textContent = json.title || "(no title)";
+                        bodyEl.textContent = json.body || "";
+                      } else {
+                        errorDiv.style.display = 'block';
+                        errorDiv.textContent = json.error || "プレビューの取得に失敗しました";
+                      }
+                    } catch (err) {
+                      loadingDiv.style.display = 'none';
+                      errorDiv.style.display = 'block';
+                      errorDiv.textContent = "通信エラーが発生しました";
+                    }
+                  };
+                </script>
               </div>
             </div>
           <% end %>

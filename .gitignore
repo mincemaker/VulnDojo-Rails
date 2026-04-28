@@ -43,3 +43,6 @@
 
 # Ignore Serena files.
 .serena/
+
+# APM dependencies
+apm_modules/

