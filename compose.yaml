@@ -14,9 +14,18 @@ services:
       RAILS_LOG_TO_STDOUT: "true"
       VULN_CHALLENGES: ${VULN_CHALLENGES:-}
       TZ: ${TZ:-Asia/Tokyo}
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - redis
     stdin_open: true
     tty: true
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
 
 volumes:
   bundle_cache:
   sqlite_storage:
+  redis_data:

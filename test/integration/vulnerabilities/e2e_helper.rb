@@ -27,6 +27,7 @@ module E2EHelper
         "VULN_CHALLENGES" => @vuln_challenges,
         "SECRET_KEY_BASE" => "test_secret_key_base_for_e2e_testing_only_1234567890",
       }
+      system(env, "bundle", "exec", "rails", "db:prepare", chdir: Rails.root.to_s, exception: false)
       log = "/tmp/e2e_server_#{@port}.log"
       pid_file = "/tmp/e2e_server_#{@port}.pid"
       FileUtils.rm_f(pid_file)
