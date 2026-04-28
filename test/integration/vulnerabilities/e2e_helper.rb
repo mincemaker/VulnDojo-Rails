@@ -135,7 +135,7 @@ module E2EHelper
   end
 
   # テスト用タスクを作成し id と cookie を返す
-  def create_task_via_form(server, title:, description: "", color: nil, cookie: nil)
+  def create_task_via_form(server, title:, description: "", url: nil, color: nil, cookie: nil)
     cookie ||= setup_session(server)
 
     # GET /tasks/new
@@ -155,6 +155,7 @@ module E2EHelper
       "task[title]" => title,
       "task[description]" => description
     }
+    params_hash["task[url]"] = url if url
     params_hash["task[color]"] = color if color
 
     body = URI.encode_www_form(params_hash)

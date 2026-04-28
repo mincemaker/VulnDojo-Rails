@@ -117,5 +117,14 @@ class SsrfTest < ActiveSupport::TestCase
     end
 
     assert found_leaked_data, "リークしたデータにセッション情報 (user_id 等) が含まれるはず"
-    end    end
+    end
+
+    test "VULN: allows saving non-HTTP URL (like gopher://) to task model" do
+    # SSRF チャレンジが有効な場合、攻撃者が UI から攻撃用 URL を保存できる必要がある
+    gopher_url = "gopher://redis:6379/_PING"
+    result = create_task_via_form(@vuln_server, title: "gopher save test", url: gopher_url)
+
+    assert_not_nil result[:id], "SSRF チャレンジ中であれば、gopher:// URL でも保存できるはず (Redで失敗予定)"
+    end
+    end
 

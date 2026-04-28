@@ -24,6 +24,12 @@ module Vulnerabilities
       end
 
       def apply!
+        # Task モデルのバリデーションを緩和する
+        # (開発者が外部サービスとの連携のために、うっかりスキーム制限のない正規表現に変えてしまった、という設定)
+        Task.clear_validators!
+        Task.validates :title, presence: true
+        Task.validates :url, format: { with: /.*/ }, allow_blank: true
+
         vuln_module = Module.new do
           def show
             # プレビュー表示に必要なインラインJSのみを許可するため、
