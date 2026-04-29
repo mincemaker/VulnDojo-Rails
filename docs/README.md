@@ -433,4 +433,29 @@ time curl -s -X POST http://localhost:3000/login \
 
 検出ポイント: `lib/vulnerabilities/challenges/broken_auth_timing.rb` — `find_by` → `unless user; return; end`（bcrypt スキップ）
 
-参考: https://owasp.org/www-community/attacks/Timing_attack
+参考: 
+  - https://api.rubyonrails.org/v8.1/classes/ActiveRecord/SecurePassword/ClassMethods.html
+  - https://owasp.org/www-community/attacks/Timing_attack
+
+---
+
+## セキュアコーディングリファレンス
+
+### Rails セキュリティガイド
+
+- https://guides.rubyonrails.org/security.html
+
+### Rails 組み込みのセキュリティ機能
+
+| 機能 / メソッド | 用途 | リファレンス |
+|----------------|------|------------|
+| `User.authenticate_by(...)` | タイミング攻撃対策付き認証（ユーザー不在時もダミー bcrypt を実行） | [API](https://api.rubyonrails.org/classes/ActiveRecord/SecurePassword/ClassMethods.html#method-i-authenticate_by) |
+| `reset_session` | ログイン時のセッション固定（Session Fixation）対策 | [API](https://api.rubyonrails.org/classes/ActionDispatch/Request.html#method-i-reset_session) |
+| `params.expect(...)` / `params.permit(...)` | Strong Parameters によるマスアサインメント対策 | [ガイド](https://guides.rubyonrails.org/action_controller_overview.html#strong-parameters) |
+| `protect_from_forgery` | CSRF トークン検証（デフォルト有効） | [API](https://api.rubyonrails.org/classes/ActionController/RequestForgeryProtection/ClassMethods.html) |
+| `html_escape` / `h()` | 手動 HTML エスケープ（XSS 対策） | [セキュリティガイド](https://guides.rubyonrails.org/security.html#cross-site-scripting-xss) |
+| `sanitize(...)` | 許可タグ以外を除去する HTML サニタイズ | [API](https://api.rubyonrails.org/classes/ActionView/Helpers/SanitizeHelper.html) |
+| `content_security_policy` | CSP ヘッダの設定（インラインスクリプト制限など） | [セキュリティガイド](https://guides.rubyonrails.org/security.html#content-security-policy-header) |
+| `config.filter_parameters` | ログへの機密パラメータ出力を抑制 | [ガイド](https://guides.rubyonrails.org/configuring.html#config-filter-parameters) |
+| `config.action_dispatch.default_headers` | デフォルトセキュリティヘッダ（X-Frame-Options 等）の設定 | [ガイド](https://guides.rubyonrails.org/configuring.html#config-action-dispatch-default-headers) |
+| `SecureRandom.urlsafe_base64` | 推測困難なランダムトークン生成 | [Ruby docs](https://docs.ruby-lang.org/en/master/Random/Formatter.html#method-i-urlsafe_base64) |
