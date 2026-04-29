@@ -21,7 +21,7 @@ services:
     tty: true
 
   redis:
-    image: redis:7-alpine
+    image: docker.io/library/redis:7-alpine
     volumes:
       - redis_data:/data
 
