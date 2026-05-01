@@ -30,6 +30,15 @@ class XxeNokogiriTest < ActiveSupport::TestCase
 
     tasks_res = @safe_server.get("/tasks", headers: { "Cookie" => cookie })
     assert_match(/インポートしました/, tasks_res.body.force_encoding("UTF-8"))
+
+    # インポートされたタスクのIDを取得して詳細画面を確認
+    task_id = extract_task_id(tasks_res.body)
+    assert_not_nil task_id, "Imported task ID should be present"
+
+    detail_res = @safe_server.get("/tasks/#{task_id}", headers: { "Cookie" => cookie })
+    assert_equal "200", detail_res.code
+    assert_match(/Imported Task/, detail_res.body)
+    assert_match(/Task from XML import/, detail_res.body)
   end
 
   test "SAFE: XXE payload is not expanded" do
