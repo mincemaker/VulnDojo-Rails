@@ -138,7 +138,7 @@ class TasksController < ApplicationController
     end
 
     if errors.any?
-      flash.now[:alert] = "エラー: #{errors.join(", ")}"
+      flash[:alert] = "エラー: #{errors.join(", ")}"
     end
 
     redirect_to tasks_path
