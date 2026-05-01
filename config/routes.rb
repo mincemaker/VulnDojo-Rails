@@ -13,6 +13,9 @@ Rails.application.routes.draw do
     end
     collection do
       get :export
+      get :import_xml, to: "tasks#import_xml_form"
+      post :import_xml
+      get :download_xml_template
     end
   end
 

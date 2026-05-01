@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "csv"
+require "nokogiri"
 
 class TasksController < ApplicationController
   before_action :set_task, only: %i[show edit update destroy download_attachment]
@@ -85,6 +86,80 @@ class TasksController < ApplicationController
     else
       redirect_to @task, alert: "添付ファイルがありません。"
     end
+  end
+
+  # GET /tasks/import_xml
+  def import_xml_form
+  end
+
+  # POST /tasks/import_xml
+  def import_xml
+    unless params[:xml_file].present?
+      flash.now[:alert] = "XMLファイルを選択してください。"
+      return render :import_xml_form, status: :unprocessable_entity
+    end
+
+    xml_content = params[:xml_file].read
+    doc = Nokogiri::XML(xml_content)
+
+    if doc.errors.any?
+      flash.now[:alert] = "XMLの解析に失敗しました: #{doc.errors.first.message}"
+      return render :import_xml_form, status: :unprocessable_entity
+    end
+
+    imported = 0
+    errors = []
+
+    doc.css("tasks task").each do |task_node|
+      title = task_node.at_css("title")&.text&.strip
+      description = task_node.at_css("description")&.text&.strip
+      url = task_node.at_css("url")&.text&.strip
+
+      if title.blank?
+        errors << "タイトルが空のタスクをスキップしました"
+        next
+      end
+
+      task = current_user.tasks.new(
+        title: title,
+        description: description,
+        url: url.presence
+      )
+
+      if task.save
+        imported += 1
+      else
+        errors.concat(task.errors.full_messages)
+      end
+    end
+
+    if imported > 0
+      flash[:notice] = "#{imported}件のタスクをインポートしました。"
+    end
+
+    if errors.any?
+      flash[:alert] = "エラー: #{errors.join(", ")}"
+    end
+
+    redirect_to tasks_path
+  end
+
+  # GET /tasks/download_xml_template
+  def download_xml_template
+    template = <<~XML
+      <?xml version="1.0" encoding="UTF-8"?>
+      <tasks>
+        <task>
+          <title>タスクタイトル</title>
+          <description>タスクの説明</description>
+          <url>https://example.com</url>
+        </task>
+      </tasks>
+    XML
+
+    send_data template,
+              filename: "task_import_template.xml",
+              type: "application/xml; charset=utf-8"
   end
 
   private
