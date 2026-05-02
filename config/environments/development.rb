@@ -65,5 +65,5 @@ Rails.application.configure do
   config.active_storage.service = :local
 
   # DNS rebinding 攻撃対策: 許可するホストを明示的に制限 (§7.8.1)
-  config.hosts = ["localhost", "127.0.0.1", "::1"]
+  config.hosts = ["localhost", "127.0.0.1", "::1", "rails.localhost"]
 end

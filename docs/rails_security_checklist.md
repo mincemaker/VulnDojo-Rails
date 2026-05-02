@@ -275,7 +275,7 @@
 ### Vulnerability: CRLF Injection in HTTP Headers
 **Risk**: Attackers inject malicious headers or cause response splitting.
 
-> **✅ このアプリでの実装**: Host authorization configured in `config/environments/development.rb` with `config.hosts = ["localhost", "127.0.0.1", "::1"]`. Rails 7.1 escapes CRLF in `redirect_to` by default.
+> **✅ このアプリでの実装**: Host authorization configured in `config/environments/development.rb` with `config.hosts = ["localhost", "127.0.0.1", "::1", "rails.localhost"]`. Rails 7.1 escapes CRLF in `redirect_to` by default.
 
 **Mitigations**:
 - ✅ Rails 2.1.2+ escapes CRLF in `redirect_to` - ensure you're on Rails 7.1
@@ -287,7 +287,7 @@
 - ✅ Enable `ActionDispatch::HostAuthorization`:
   ```ruby
   # config/environments/development.rb
-  config.hosts = ["localhost", "127.0.0.1", "::1"]
+  config.hosts = ["localhost", "127.0.0.1", "::1", "rails.localhost"]
   ```
 
 ---
@@ -641,7 +641,7 @@ config.filter_parameters += [:passw, :secret, :token, :_key, :crypt, :salt,
 # base_uri :self, form_action :self, frame_ancestors :none
 
 # 11. ✅ Host authorization (config/environments/development.rb)
-config.hosts = ["localhost", "127.0.0.1", "::1"]
+config.hosts = ["localhost", "127.0.0.1", "::1", "rails.localhost"]
 
 # 12. ✅ Force SSL in production (config/environments/production.rb)
 config.force_ssl = true

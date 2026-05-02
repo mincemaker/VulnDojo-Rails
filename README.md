@@ -115,7 +115,7 @@ docker compose down -v     # 停止＋ボリューム削除（DBリセット）
 | ログフィルタリング | `secret_note` がログに `[FILTERED]` と表示 |
 | CSV エクスポート | `CSV.generate` 使用（shell 不使用） |
 | CSP ヘッダー | `config/initializers/content_security_policy.rb` |
-| Host Authorization | `config.hosts` で localhost のみ許可 |
+| Host Authorization | `config.hosts` で localhost, rails.localhost のみ許可 |
 | セキュリティヘッダー | X-Frame-Options, X-Content-Type-Options 等 |
 
 ---
