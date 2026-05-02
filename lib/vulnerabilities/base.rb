@@ -33,7 +33,16 @@ module Vulnerabilities
     private
 
     # コントローラに prepend でメソッドを差し込む
+    # 既に同じ slug のモジュールが prepend されている場合はスキップする
     def prepend_to(klass, mod)
+      slug = self.class.slug
+      # 既にこのチャレンジのモジュールが適用されているか確認
+      exists = klass.ancestors.any? do |ancestor|
+        ancestor.instance_variable_get(:@vuln_slug) == slug
+      end
+      return if exists
+
+      mod.instance_variable_set(:@vuln_slug, slug)
       klass.prepend(mod)
     end
 
@@ -46,19 +55,25 @@ module Vulnerabilities
     end
 
     # 動的にルートを追加する
-    # draw(&block) はデフォルトで clear! → eval → finalize! の順に動くため、
-    # そのまま呼ぶと既存ルートが全消えになる。
-    # routes.prepend でブロックを @prepend に登録しておくと、
-    # ルート再ロード時の clear! でも再評価されて消えなくなる。
-    # さらに disable_clear_and_finalize = true で draw を呼ぶことで
-    # 即時評価しつつ既存ルートを保つ。
     def add_routes(&block)
+      registry = Registry.instance
+      slug = self.class.slug
+      return if registry.route_applied?(slug)
+
       routes = Rails.application.routes
+      return unless routes
+
       routes.prepend(&block)  # clear! のたびに再評価されるよう登録
       routes.disable_clear_and_finalize = true
-      routes.draw(&block) rescue ArgumentError # ルート名重複は無視
+      begin
+        routes.draw(&block)
+      rescue ArgumentError => e
+        # ルート名重複は既に定義済みとして無視
+        raise e unless e.message.include?("Invalid route name, already in use")
+      end
+      registry.mark_route_applied(slug)
     ensure
-      routes.disable_clear_and_finalize = false
+      routes&.respond_to?(:disable_clear_and_finalize=) && routes.disable_clear_and_finalize = false
     end
 
     # 設定値を変更する
