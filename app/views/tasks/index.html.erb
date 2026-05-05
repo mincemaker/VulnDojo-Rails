@@ -1,6 +1,7 @@
 <div class="top-bar">
   <h2>タスク一覧</h2>
   <div class="actions">
+    <%= link_to "📤 XMLインポート", import_xml_tasks_path, class: "btn btn-secondary" %>
     <%= link_to "📥 CSVエクスポート", export_tasks_path(format: :csv), class: "btn btn-secondary" %>
     <%= link_to "➕ 新規作成", new_task_path, class: "btn btn-primary" %>
   </div>

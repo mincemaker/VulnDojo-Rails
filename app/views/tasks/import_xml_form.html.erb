@@ -1,0 +1,38 @@
+<div class="top-bar">
+  <h2>XMLインポート</h2>
+  <div class="actions">
+    <%= link_to "📋 テンプレートをダウンロード", download_xml_template_tasks_path(format: :xml), class: "btn btn-secondary" %>
+    <%= link_to "← 戻る", tasks_path, class: "btn btn-secondary" %>
+  </div>
+</div>
+
+<div class="card">
+  <h3>XMLファイルのアップロード</h3>
+  <p style="color: #6b7280; margin-bottom: 16px;">
+    タスクを一括インポートするには、XMLファイルをアップロードしてください。<br>
+    テンプレートファイルをダウンロードして、ご自身のタスクにカスタマイズできます。
+  </p>
+
+  <%= form_with url: import_xml_tasks_path, method: :post, local: true, multipart: true, class: "import-form" do |f| %>
+    <div class="form-group">
+      <%= f.file_field :xml_file, accept: ".xml,text/xml,application/xml", class: "form-control-file" %>
+    </div>
+
+    <div class="form-actions" style="margin-top: 16px;">
+      <%= f.submit "インポート", class: "btn btn-primary" %>
+    </div>
+  <% end %>
+</div>
+
+<div class="card" style="margin-top: 24px;">
+  <h3>XMLフォーマット例</h3>
+  <pre style="background: #f8f9fa; padding: 16px; border-radius: 4px; overflow-x: auto; font-size: 0.9rem; border: 1px solid #e5e7eb;">
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;tasks&gt;
+  &lt;task&gt;
+    &lt;title&gt;タスクタイトル&lt;/title&gt;
+    &lt;description&gt;タスクの説明&lt;/description&gt;
+    &lt;url&gt;https://example.com&lt;/url&gt;
+  &lt;/task&gt;
+&lt;/tasks&gt;</pre>
+</div>
