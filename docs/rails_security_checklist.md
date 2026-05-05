@@ -759,3 +759,32 @@ This checklist covers security concerns for a Rails 7.1 task management app with
 - ✅ Use an allowlist of trusted domains if the feature only needs to reach known hosts
 - ⚠️ When Redis (or any TCP service) is used internally, ensure it is not reachable from the web process via non-HTTP protocols (`bind 127.0.0.1`, use auth, firewall rules)
 - ⚠️ Session data stored in Redis is a high-value target — if SSRF is possible, session hijacking follows. Keep Redis on a separate network segment from the web tier.
+
+---
+
+## 23. XML External Entity (XXE) Injection
+
+### Vulnerability: External Entity Expansion in XML Parsing
+**Risk**: Attackers craft XML with `SYSTEM` entity declarations that cause the parser to read local files (`file:///etc/passwd`), internal HTTP resources, or trigger denial-of-service via recursive entity expansion ("Billion Laughs"). The parsed content is returned to the attacker via the application response.
+
+> **✅ このアプリでの実装**: XMLインポート機能は `Nokogiri::XML(xml_content)` をオプションなしで呼び出しており、外部エンティティ展開はデフォルトで無効（Nokogiri の安全なデフォルト設定）。`xxe_nokogiri` チャレンジを有効にすると `config.noent` が追加され、`file:///etc/passwd` 等のローカルファイルがタスクの description に書き込まれます。
+
+**Mitigations**:
+- ❌ **NEVER** enable `NOENT` (`config.noent`) on user-supplied XML:
+  ```ruby
+  # UNSAFE — expands SYSTEM entities, reads arbitrary files
+  doc = Nokogiri::XML(xml_content) { |c| c.noent }
+  ```
+- ✅ Parse with Nokogiri's safe defaults (no options block):
+  ```ruby
+  # SAFE — external entity expansion is disabled by default
+  doc = Nokogiri::XML(xml_content)
+  ```
+- ✅ Explicitly disable dangerous parse options for defense in depth:
+  ```ruby
+  # SAFE — explicit deny of entity expansion and DTD loading
+  doc = Nokogiri::XML(xml_content) { |c| c.nonet.nodtdattr }
+  ```
+- ⚠️ If using REXML (Ruby stdlib), call `REXML::Document.new` without enabling entity expansion; consider using Nokogiri instead as it defaults to safe settings
+- ✅ Validate that parsed content does not contain file-system paths before persisting to the database
+- ✅ Restrict file upload size to limit the impact of Billion Laughs (recursive entity) attacks
