@@ -1,5 +1,5 @@
 [tools]
-ruby = "3.2.3"
+ruby = "3.4.9"
 
 [tasks.test]
 description = "Run all tests in container"
