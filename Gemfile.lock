@@ -130,7 +130,9 @@ GEM
       net-smtp
     marcel (1.1.0)
     mini_mime (1.1.5)
-    minitest (5.27.0)
+    minitest (6.0.6)
+      drb (~> 2.0)
+      prism (~> 1.5)
     minitest-reporters (1.8.0)
       ansi
       builder
@@ -248,7 +250,7 @@ DEPENDENCIES
   csv
   debug
   ferrum (~> 0.15)
-  minitest (~> 5.16)
+  minitest (~> 6.0)
   minitest-reporters
   nokogiri
   puma (>= 5.0)
