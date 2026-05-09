@@ -1,7 +1,7 @@
 # syntax = docker/dockerfile:1
 
 # Make sure RUBY_VERSION matches the Ruby version in .ruby-version and Gemfile
-ARG RUBY_VERSION=3.2.3
+ARG RUBY_VERSION=3.4.9
 
 # Development stage
 FROM registry.docker.com/library/ruby:$RUBY_VERSION-slim as development
@@ -10,11 +10,13 @@ WORKDIR /rails
 
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y \
-      build-essential git pkg-config libsqlite3-dev curl \
+      build-essential git pkg-config libsqlite3-dev curl libyaml-dev \
       chromium && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 ENV BUNDLE_PATH="/usr/local/bundle"
+
+RUN gem install bundler:2.6.9
 
 COPY Gemfile Gemfile.lock ./
 RUN bundle install
