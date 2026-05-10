@@ -46,3 +46,6 @@
 
 # APM dependencies
 apm_modules/
+
+# Node.js dependencies
+node_modules/
