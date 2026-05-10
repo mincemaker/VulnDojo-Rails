@@ -37,8 +37,9 @@
 # Generated vulnerable view templates (recreated at runtime from challenge code)
 /lib/vulnerabilities/views/
 
-# Local Copilot CLI settings (machine-specific)
-/.claude/
+# Only track .claude/skills/ (ignore everything else in .claude/)
+/.claude/*
+!/.claude/skills/
 /.github/
 
 # Ignore Serena files.
