@@ -1,0 +1,8 @@
+{
+  "name": "vulndojo-rails",
+  "private": true,
+  "devDependencies": {
+    "@herb-tools/linter": "latest",
+    "@herb-tools/formatter": "latest"
+  }
+}

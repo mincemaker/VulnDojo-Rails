@@ -2,6 +2,7 @@
   <% if task.errors.any? %>
     <div class="errors">
       <strong><%= task.errors.count %>件のエラーがあります:</strong>
+
       <ul>
         <% task.errors.full_messages.each do |message| %>
           <li><%= message %></li>
@@ -38,6 +39,7 @@
   <div class="form-group">
     <%= form.label :attachment, "添付ファイル" %>
     <%= form.file_field :attachment %>
+
     <% if task.persisted? && task.attachment.attached? %>
       <div class="attachment-info" style="margin-top: 6px;">
         📎 現在: <%= task.attachment.filename %>
