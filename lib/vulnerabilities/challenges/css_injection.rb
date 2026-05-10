@@ -19,10 +19,10 @@ module Vulnerabilities
 
       def apply!
         inject_view "tasks/_task_color.html.erb", <<~'ERB'
-          <% if @task.color.present? %>
-            <div class="detail-row" id="task-color-indicator" style="border-left: 4px solid <%= @task.color %>; padding-left: 8px;">
+          <% if task.color.present? %>
+            <div class="detail-row" id="task-color-indicator" style="border-left: 4px solid <%= task.color %>; padding-left: 8px;">
               <div class="label">ラベルカラー</div>
-              <div><%= @task.color %></div>
+              <div><%= task.color %></div>
             </div>
           <% end %>
         ERB

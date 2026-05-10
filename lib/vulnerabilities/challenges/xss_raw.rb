@@ -21,7 +21,7 @@ module Vulnerabilities
         inject_view "tasks/_task_title.html.erb", <<~'ERB'
           <div class="detail-row">
             <div class="label">タイトル</div>
-            <div><%= @task.title.html_safe %></div>
+            <div><%= task.title.html_safe %></div>
           </div>
         ERB
       end
