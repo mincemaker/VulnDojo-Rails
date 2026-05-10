@@ -4,6 +4,7 @@
   <% if @user.errors.any? %>
     <div class="errors">
       <strong><%= @user.errors.count %>件のエラーがあります:</strong>
+
       <ul>
         <% @user.errors.full_messages.each do |message| %>
           <li><%= message %></li>

@@ -1,9 +1,11 @@
 <!DOCTYPE html>
+
 <html>
   <head>
     <title>タスク管理</title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= csrf_meta_tags %>
+
     <style>
       * { box-sizing: border-box; margin: 0; padding: 0; }
       body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; color: #333; line-height: 1.6; }
@@ -54,14 +56,22 @@
       .attachment-info { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #f3f4f6; border-radius: 6px; font-size: 0.9rem; }
     </style>
   </head>
+
   <body>
     <header>
       <div class="container" style="position:relative;">
         <nav class="header-nav">
           <h1>
             <a href="/">📋 タスク管理</a>
-            <a href="/vulnerabilities" style="font-size:0.75rem; background:rgba(255,255,255,0.2); padding:4px 12px; border-radius:12px; margin-left:12px;">🔓 チャレンジ</a>
+
+            <a
+              href="/vulnerabilities"
+              style="font-size:0.75rem; background:rgba(255,255,255,0.2); padding:4px 12px; border-radius:12px; margin-left:12px;"
+            >
+              🔓 チャレンジ
+            </a>
           </h1>
+
           <% if logged_in? %>
             <div class="nav-right">
               <span>👤 <%= current_user.name %></span>
@@ -71,9 +81,16 @@
         </nav>
       </div>
     </header>
+
     <div class="container">
-      <% if notice %><div class="flash notice"><%= notice %></div><% end %>
-      <% if alert %><div class="flash alert"><%= alert %></div><% end %>
+      <% if notice %>
+        <div class="flash notice"><%= notice %></div>
+      <% end %>
+
+      <% if alert %>
+        <div class="flash alert"><%= alert %></div>
+      <% end %>
+
       <%= yield %>
     </div>
   </body>
