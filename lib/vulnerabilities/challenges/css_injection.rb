@@ -22,7 +22,12 @@ module Vulnerabilities
           <% if task.color.present? %>
             <div class="detail-row" id="task-color-indicator" style="border-left: 4px solid <%= task.color %>; padding-left: 8px;">
               <div class="label">ラベルカラー</div>
-              <div><%= task.color %></div>
+              <div>
+                <% if task.color.match?(/\A#[0-9a-fA-F]{3,6}\z/) %>
+                  <span style="display:inline-block; width:16px; height:16px; background-color:<%= task.color %>; border:1px solid #ccc; border-radius:3px; vertical-align:middle;"></span>
+                <% end %>
+                <%= task.color %>
+              </div>
             </div>
           <% end %>
         ERB
