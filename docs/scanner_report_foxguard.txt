@@ -1,23 +1,208 @@
-# Foxguard Scan Report (scanner-test/all-vulns branch)
+=== Foxguard ===
+Emulate Docker CLI using podman. Create /etc/containers/nodocker to quiet msg.
+npm warn exec The following package was not found and will be installed: foxguard@0.8.0
+foxguard: downloading v0.8.0 for x86_64-unknown-linux-gnu...
+  foxguard v0.8.0 · scanning...                                                             
+  ./app/controllers/application_controller.rb · 3 issues
 
-Date: 2026-05-11
-Command: npx foxguard .
-Version: 0.8.0
+    █  HIGH  redirect_to with dynamic argument — validate URL to prevent open redirect
+    █   rb/no-open-redirect (CWE-601)  line 19:7
+    █   redirect_to login_path, alert: "ログインしてください。"
 
-## Summary
+    █  HIGH  redirect_to with dynamic argument — validate URL to prevent open redirect
+    █   rb/no-open-redirect (CWE-601)  line 26:7
+    █   redirect_to url, allow_other_host: true
 
-35 issues found: 10 critical, 25 high
-90 files scanned in 0.28s
+    █  HIGH  redirect_to with dynamic argument — validate URL to prevent open redirect
+    █   rb/no-open-redirect (CWE-601)  line 28:7
+    █   redirect_to fallback
 
-## Findings by Category
 
-### Critical (10)
-- Command injection: app/controllers/tasks_controller.rb:82, lib/.../command_injection.rb:42, test/.../command_injection_test.rb:25,41, test/.../e2e_helper.rb:47,51
-- SQL injection: app/controllers/tasks_controller.rb:214, lib/.../sql_injection.rb:27, lib/.../sql_injection_order.rb:28
-- Eval: lib/vulnerabilities/base.rb:13
+  ./app/controllers/sessions_controller.rb · 2 issues
 
-### High (25)
-- Open redirect: app/controllers/application_controller.rb:19,26,28, app/controllers/sessions_controller.rb:15,24, app/controllers/tasks_controller.rb:61,93,95,174, app/controllers/users_controller.rb:15, lib/.../open_redirect.rb:28,30, lib/.../session_fixation.rb:28, lib/.../xxe_nokogiri.rb:76, lib/.../broken_auth_timing.rb:34
-- Mass assignment (permit!): app/controllers/tasks_controller.rb:224, lib/.../mass_assignment.rb:25
-- Path traversal: lib/vulnerabilities/base.rb:53,54
-- Hardcoded secrets: db/seeds.rb:6,7, test/.../broken_auth_timing_test.rb:74,93, test/.../e2e_helper.rb:12, test/.../log_leakage_test.rb:9
+    █  HIGH  redirect_to with dynamic argument — validate URL to prevent open redirect
+    █   rb/no-open-redirect (CWE-601)  line 19:7
+    █   redirect_to tasks_path
+
+    █  HIGH  redirect_to with dynamic argument — validate URL to prevent open redirect
+    █   rb/no-open-redirect (CWE-601)  line 28:5
+    █   redirect_to login_path, notice: "ログアウトしました。"
+
+
+  ./app/controllers/tasks_controller.rb · 7 issues
+
+    █  HIGH  redirect_to with dynamic argument — validate URL to prevent open redirect
+    █   rb/no-open-redirect (CWE-601)  line 61:5
+    █   redirect_to tasks_url, notice: "タスクを削除しました。", status: :see_other
+
+    █  CRITICAL  Backtick/subshell command execution — risk of command injection
+    █   rb/no-command-injection (CWE-78)  line 82:17
+    █   safe_name = `echo #{name} | tr -cd '[:alnum:]_-'`.strip
+
+    █  HIGH  redirect_to with dynamic argument — validate URL to prevent open redirect
+    █   rb/no-open-redirect (CWE-601)  line 93:7
+    █   redirect_to rails_blob_path(@task.attachment, disposition: "attachment"), allow_other_host: false
+
+    █  HIGH  redirect_to with dynamic argument — validate URL to prevent open redirect
+    █   rb/no-open-redirect (CWE-601)  line 95:7
+    █   redirect_to @task, alert: "添付ファイルがありません。"
+
+    █  HIGH  redirect_to with dynamic argument — validate URL to prevent open redirect
+    █   rb/no-open-redirect (CWE-601)  line 174:5
+    █   redirect_to tasks_path
+
+    █  CRITICAL  String interpolation in where — use parameterized queries to prevent SQL injection
+    █   rb/no-sql-injection (CWE-89)  line 214:14
+    █   @tasks = Task.where("user_id = #{current_user.id} AND title LIKE '%#{params[:q]}%'") if params[:q].present?
+
+    █  HIGH  permit! allows all parameters — use permit(:field1, :field2) to whitelist
+    █   rb/no-mass-assignment (CWE-915)  line 224:5
+    █   params.require(:task).permit!
+
+
+  ./app/controllers/users_controller.rb · 1 issue
+
+    █  HIGH  redirect_to with dynamic argument — validate URL to prevent open redirect
+    █   rb/no-open-redirect (CWE-601)  line 15:7
+    █   redirect_to tasks_path, notice: "アカウントを作成しました。"
+
+
+  ./db/seeds.rb · 2 issues
+
+    █  HIGH  Hardcoded secret in 'u.password' — use environment variables
+    █   rb/no-hardcoded-secret (CWE-798)  line 6:3
+    █   u.password = "password123"
+
+    █  HIGH  Hardcoded secret in 'u.password_confirmation' — use environment variables
+    █   rb/no-hardcoded-secret (CWE-798)  line 7:3
+    █   u.password_confirmation = "password123"
+
+
+  ./lib/vulnerabilities/base.rb · 3 issues
+
+    █  CRITICAL  instance_eval executes arbitrary code — avoid dynamic evaluation
+    █   rb/no-eval (CWE-95)  line 13:9
+    █   dsl.instance_eval(&block)
+
+    █  HIGH  FileUtils.mkdir_p called with dynamic path — validate to prevent path traversal
+    █   rb/no-path-traversal (CWE-22)  line 53:7
+    █   FileUtils.mkdir_p(vuln_view_path.join(File.dirname(relative_path)))
+    █ Fix: Validate file paths and ensure they don't escape the intended directory
+
+    █  HIGH  File.write called with dynamic path — validate to prevent path traversal
+    █   rb/no-path-traversal (CWE-22)  line 54:7
+    █   File.write(vuln_view_path.join(relative_path), content)
+    █ Fix: Validate file paths and ensure they don't escape the intended directory
+
+
+  .../vulnerabilities/challenges/broken_auth_timing.rb · 1 issue
+
+    █  HIGH  redirect_to with dynamic argument — validate URL to prevent open redirect
+    █   rb/no-open-redirect (CWE-601)  line 34:15
+    █   redirect_to tasks_path
+
+
+  .../vulnerabilities/challenges/command_injection.rb · 1 issue
+
+    █  CRITICAL  Backtick/subshell command execution — risk of command injection
+    █   rb/no-command-injection (CWE-78)  line 42:25
+    █   safe_name = `echo #{name} | tr -cd '[:alnum:]_-'`.strip
+
+
+  .../vulnerabilities/challenges/mass_assignment.rb · 1 issue
+
+    █  HIGH  permit! allows all parameters — use permit(:field1, :field2) to whitelist
+    █   rb/no-mass-assignment (CWE-915)  line 25:13
+    █   params.require(:task).permit!  # 全属性許可 — Mass Assignment 脆弱性
+
+
+  .../vulnerabilities/challenges/open_redirect.rb · 2 issues
+
+    █  HIGH  redirect_to with dynamic argument — validate URL to prevent open redirect
+    █   rb/no-open-redirect (CWE-601)  line 28:15
+    █   redirect_to url, allow_other_host: true  # 検証なし — Open Redirect 脆弱性
+
+    █  HIGH  redirect_to with dynamic argument — validate URL to prevent open redirect
+    █   rb/no-open-redirect (CWE-601)  line 30:15
+    █   redirect_to fallback
+
+
+  .../vulnerabilities/challenges/session_fixation.rb · 1 issue
+
+    █  HIGH  redirect_to with dynamic argument — validate URL to prevent open redirect
+    █   rb/no-open-redirect (CWE-601)  line 28:15
+    █   redirect_to tasks_path, notice: "ログインしました。"
+
+
+  .../vulnerabilities/challenges/sql_injection.rb · 1 issue
+
+    █  CRITICAL  String interpolation in where — use parameterized queries to prevent SQL injection
+    █   rb/no-sql-injection (CWE-89)  line 27:22
+    █   @tasks = Task.where("user_id = #{current_user.id} AND title LIKE '%#{params[:q]}%'") if params[:q].present?
+
+
+  .../vulnerabilities/challenges/sql_injection_order.rb · 1 issue
+
+    █  CRITICAL  String interpolation in where — use parameterized queries to prevent SQL injection
+    █   rb/no-sql-injection (CWE-89)  line 28:22
+    █   @tasks = @tasks.where("title LIKE ?", "%#{params[:q]}%") if params[:q].present?
+
+
+  .../vulnerabilities/challenges/xxe_nokogiri.rb · 1 issue
+
+    █  HIGH  redirect_to with dynamic argument — validate URL to prevent open redirect
+    █   rb/no-open-redirect (CWE-601)  line 76:13
+    █   redirect_to tasks_path
+
+
+  .../integration/vulnerabilities/broken_auth_timing_test.rb · 1 issue
+
+    █  HIGH  Hardcoded secret in 'wrong_password' — use environment variables
+    █   rb/no-hardcoded-secret (CWE-798)  line 72:5
+    █   wrong_password = "wrongpassword!"
+
+
+  .../integration/vulnerabilities/command_injection_test.rb · 2 issues
+
+    █  CRITICAL  Backtick/subshell command execution — risk of command injection
+    █   rb/no-command-injection (CWE-78)  line 25:20
+    █   current_user = `whoami`.strip
+
+    █  CRITICAL  Backtick/subshell command execution — risk of command injection
+    █   rb/no-command-injection (CWE-78)  line 41:20
+    █   current_user = `whoami`.strip
+
+
+  .../integration/vulnerabilities/e2e_helper.rb · 3 issues
+
+    █  HIGH  Hardcoded secret in 'TEST_USER_PASSWORD' — use environment variables
+    █   rb/no-hardcoded-secret (CWE-798)  line 12:3
+    █   TEST_USER_PASSWORD = "password123"
+
+    █  CRITICAL  system called — risk of command injection with dynamic arguments
+    █   rb/no-command-injection (CWE-78)  line 47:7
+    █   system(env, "bundle", "exec", "rails", "db:prepare", chdir: Rails.root.to_s, exception: false)
+
+    █  CRITICAL  spawn called — risk of command injection with dynamic arguments
+    █   rb/no-command-injection (CWE-78)  line 51:14
+    █   @pid = Process.spawn(
+
+
+  .../integration/vulnerabilities/log_leakage_test.rb · 1 issue
+
+    █  HIGH  Hardcoded secret in 'SECRET_VALUE' — use environment variables
+    █   rb/no-hardcoded-secret (CWE-798)  line 9:3
+    █   SECRET_VALUE = "TOP_SECRET_NOTE_12345"
+
+
+  ──────────────────────────────────────────────────
+
+  34 issues  91 files · 0.28s
+
+   10 critical    24 high 
+
+npm notice
+npm notice New major version of npm available! 10.9.4 -> 11.14.1
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.14.1
+npm notice To update run: npm install -g npm@11.14.1
+npm notice

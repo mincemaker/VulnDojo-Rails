@@ -9,11 +9,18 @@ SRC="/src"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
 run_brakeman() {
-  echo "=== Brakeman ($(brakeman --version 2>/dev/null || echo '?')) ==="
-  docker run --rm \
-    -v "$(pwd):$SRC" \
-    ghcr.io/presidentbeef/brakeman:latest \
-    brakeman --run-all-checks --no-pager "$SRC" 2>&1
+  local version
+  version=$(docker run --rm ghcr.io/presidentbeef/brakeman:latest brakeman --version 2>/dev/null) \
+    && echo "=== Brakeman ($version) ===" \
+    && docker run --rm -v "$(pwd):$SRC" ghcr.io/presidentbeef/brakeman:latest \
+         brakeman --run-all-checks --no-pager "$SRC" 2>&1 \
+    || {
+      echo "=== Brakeman (via compose + gem install) ==="
+      docker compose run --rm web bash -c "
+        gem install brakeman --no-document 2>/dev/null &&
+        brakeman --run-all-checks --no-pager /rails
+      " 2>&1
+    }
 }
 
 run_foxguard() {

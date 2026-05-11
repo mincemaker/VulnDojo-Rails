@@ -1,3 +1,22 @@
+=== Semgrep p/default ===
+Emulate Docker CLI using podman. Create /etc/containers/nodocker to quiet msg.
+               
+               
+┌─────────────┐
+│ Scan Status │
+└─────────────┘
+  Scanning 132 files tracked by git with 1059 Code rules:
+                                                                                                                        
+  Language      Rules   Files          Origin      Rules                                                                
+ ─────────────────────────────        ───────────────────                                                               
+  <multilang>      67     132          Community    1059                                                                
+  ruby             73      60                                                                                           
+  yaml             31       6                                                                                           
+  json              4       3                                                                                           
+  html              1       3                                                                                           
+  bash              4       2                                                                                           
+  dockerfile        6       1                                                                                           
+                                                                                                                        
                     
                     
 ┌──────────────────┐
@@ -197,3 +216,18 @@
                                                                                                             
            59┆ stdout, stderr, status = Open3.capture3("curl -m 5 -s -L #{safe_url}")
 
+                
+                
+┌──────────────┐
+│ Scan Summary │
+└──────────────┘
+✅ Scan completed successfully.
+ • Findings: 18 (18 blocking)
+ • Rules run: 182
+ • Targets scanned: 132
+ • Parsed lines: ~100.0%
+ • Scan skipped: 
+   ◦ Files matching .semgrepignore patterns: 34
+ • Scan was limited to files tracked by git
+ • For a detailed list of skipped files and lines, run semgrep with the --verbose flag
+Ran 182 rules on 132 files: 18 findings.

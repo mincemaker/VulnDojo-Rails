@@ -476,9 +476,9 @@ time curl -s -X POST http://localhost:3000/login \
 - 実際にコードベースに存在する脆弱性パターンとしてスキャナに検出させる
 - カスタム Semgrep ルールの有効性を検証する
 
-### ベイクドイン方式（19/21 チャレンジ）
+### ベイクドイン方式（20/21 チャレンジ）
 
-以下の 19 チャレンジは `app/` のソースファイルを直接書き換えています。
+以下の 20 チャレンジは `app/` のソースファイルを直接書き換えています。
 
 | # | チャレンジ | 書き換えファイル | 脆弱性パターン |
 |---|-----------|----------------|---------------|
@@ -501,17 +501,16 @@ time curl -s -X POST http://localhost:3000/login \
 | 17 | unsafe_file_upload | `app/models/task.rb` | 空の `acceptable_attachment` + `permit!` |
 | 18 | log_leakage | `config/initializers/filter_parameter_logging.rb` | `Rails.application.config.filter_parameters.clear` |
 | 19 | session_fixation | `app/controllers/sessions_controller.rb` | `reset_session` コメントアウト |
-| 20 | broken_auth_timing | — | **フレームワークのみ**（後述） |
+| 20 | broken_auth_timing | `app/controllers/sessions_controller.rb` | `User.find_by(email:)` + `unless user; return`（bcrypt スキップ） |
 | 21 | css_injection | `app/views/tasks/_task_color.html.erb` | `style="...<%= task.color %>..."` （未検証） |
 
-### フレームワーク依存（2 チャレンジ）
+### フレームワーク依存（1 チャレンジ）
 
-以下の 2 チャレンジは `app/` に直接ベイクドインされておらず、`lib/vulnerabilities/challenges/` の動的注入が必要です。
+以下の 1 チャレンジは `app/` に直接ベイクドインされておらず、`lib/vulnerabilities/challenges/` の動的注入が必要です。
 
 | チャレンジ | slug | 理由 |
 |-----------|------|------|
 | SQL Injection via ORDER BY | `sql_injection_order` | `sort` パラメータの処理が `lib/vulnerabilities/challenges/sql_injection_order.rb` で `prepend` により注入されるため。ベイクドイン版の `index` アクションは `order(created_at: :desc)` をハードコードしている。 |
-| Broken Auth Timing Attack | `broken_auth_timing` | `SessionsController#create` の bcrypt スキップが `lib/vulnerabilities/challenges/broken_auth_timing.rb` で `prepend` により注入されるため。ベイクドイン版は `User.authenticate_by` の安全な実装を維持している。 |
 
 ### 再現実行
 

@@ -1,17 +1,31 @@
+=== Semgrep (custom rules) ===
+Emulate Docker CLI using podman. Create /etc/containers/nodocker to quiet msg.
+               
+               
+┌─────────────┐
+│ Scan Status │
+└─────────────┘
+  Scanning 132 files tracked by git with 11 Code rules:
+                                                                                                                        
+  Language      Rules   Files          Origin   Rules                                                                   
+ ─────────────────────────────        ────────────────                                                                  
+  <multilang>       4     132          Custom      11                                                                   
+  ruby              7      60                                                                                           
+                                                                                                                        
                     
                     
 ┌──────────────────┐
-│ 39 Code Findings │
+│ 45 Code Findings │
 └──────────────────┘
                                                   
     /src/app/controllers/application_controller.rb
-    ❯❱ src.docs.detect-open-redirect
+    ❯❱ docs.detect-open-redirect
           ❰❰ Blocking ❱❱
           Open redirect via redirect_to with allow_other_host: true and dynamic URL
                                                                                    
            26┆ redirect_to url, allow_other_host: true
    
-    ❯❱ src.docs.detect-header-removal
+    ❯❱ docs.detect-header-removal
           ❰❰ Blocking ❱❱
           Security header being deleted via response.headers.delete — removes protection
                                                                                         
@@ -24,27 +38,27 @@
            36┆ response.headers.delete("Referrer-Policy")
                                                
     /src/app/controllers/sessions_controller.rb
-    ❯❱ src.docs.detect-session-fixation
+    ❯❱ docs.detect-session-fixation
           ❰❰ Blocking ❱❱
           Session variable set without reset_session — possible session fixation (check for preceding
           reset_session call)                                                                        
                                                                                                      
-           14┆ session[:user_id] = user.id
+           18┆ session[:user_id] = user.id
                                             
     /src/app/controllers/tasks_controller.rb
-    ❯❱ src.docs.detect-csrf-skip
+    ❯❱ docs.detect-csrf-skip
           ❰❰ Blocking ❱❱
           CSRF protection disabled via skip_forgery_protection — cross-site request forgery risk
                                                                                                 
             7┆ skip_forgery_protection
    
-    ❯❱ src.docs.detect-unsafe-inline-script
+    ❯❱ docs.detect-unsafe-inline-script
           ❰❰ Blocking ❱❱
           Unsafe inline script policy: script-src allows unsafe-inline
                                                                       
            23┆ request.content_security_policy.script_src(:self, :unsafe_inline)
    
-    ❯❱ src.docs.detect-xxe-nokogiri
+    ❯❱ docs.detect-xxe-nokogiri
           ❰❰ Blocking ❱❱
           XXE vulnerability: Nokogiri XML parsing with entity expansion (noent) enabled
                                                                                        
@@ -52,7 +66,7 @@
           132┆   config.noent
           133┆ end
    
-    ❯❱ src.docs.detect-arel-sql-from
+    ❯❱ docs.detect-arel-sql-from
           ❰❰ Blocking ❱❱
           Dynamic argument to Model.from() — possible SQL injection via FROM clause
                                                                                    
@@ -62,7 +76,7 @@
           208┆ ).from(@view_type).select("*")
                                             
     /src/app/controllers/users_controller.rb
-    ❯❱ src.docs.detect-session-fixation
+    ❯❱ docs.detect-session-fixation
           ❰❰ Blocking ❱❱
           Session variable set without reset_session — possible session fixation (check for preceding
           reset_session call)                                                                        
@@ -70,14 +84,14 @@
            14┆ session[:user_id] = @user.id
                                                   
     /src/app/views/tasks/_task_attachment.html.erb
-    ❯❱ src.docs.detect-html-safe
+    ❯❱ docs.detect-html-safe
           ❰❰ Blocking ❱❱
           Stored XSS: .html_safe bypasses ERB auto-escaping — user-controlled data rendered as raw HTML
                                                                                                        
            13┆ <div class="image-caption"><%= task.description.html_safe %></div>
                                              
     /src/app/views/tasks/_task_color.html.erb
-    ❯❱ src.docs.detect-css-injection
+    ❯❱ docs.detect-css-injection
           ❰❰ Blocking ❱❱
           ERB expression in style attribute — CSS injection via user-controlled color
                                                                                      
@@ -88,21 +102,21 @@
                border:1px solid #ccc; border-radius:3px; vertical-align:middle;"                        
                                              
     /src/app/views/tasks/_task_title.html.erb
-    ❯❱ src.docs.detect-css-injection
+    ❯❱ docs.detect-css-injection
           ❰❰ Blocking ❱❱
           ERB expression in style attribute — CSS injection via user-controlled color
                                                                                      
             7┆ style="display:inline-block; width:16px; height:16px; background-color:<%= task.color %>;
                border:1px solid #ccc; border-radius:50%; margin-right:8px; vertical-align:middle;"      
    
-    ❯❱ src.docs.detect-html-safe
+    ❯❱ docs.detect-html-safe
           ❰❰ Blocking ❱❱
           Stored XSS: .html_safe bypasses ERB auto-escaping — user-controlled data rendered as raw HTML
                                                                                                        
            11┆ <%= task.title.html_safe %>
                                        
     /src/app/views/tasks/index.html.erb
-    ❯❱ src.docs.detect-css-injection
+    ❯❱ docs.detect-css-injection
           ❰❰ Blocking ❱❱
           ERB expression in style attribute — CSS injection via user-controlled color
                                                                                      
@@ -110,29 +124,43 @@
                border:1px solid #ccc; border-radius:50%; margin-right:6px; vertical-align:middle;"      
                                                         
     /src/config/initializers/filter_parameter_logging.rb
-    ❯❱ src.docs.detect-filter-parameters-clear
+    ❯❱ docs.detect-filter-parameters-clear
           ❰❰ Blocking ❱❱
           Parameter filters cleared — sensitive parameters (passwords, tokens) may be logged in plaintext
                                                                                                          
             6┆ Rails.application.config.filter_parameters.clear
                        
     /src/docs/README.md
-    ❯❱ src.docs.detect-open-redirect
+    ❯❱ docs.detect-open-redirect
           ❰❰ Blocking ❱❱
           Open redirect via redirect_to with allow_other_host: true and dynamic URL
                                                                                    
-          127┆ 検出ポイント: `lib/vulnerabilities/challenges/open_redirect.rb` — `redirect_to url,
+          129┆ 検出ポイント: `lib/vulnerabilities/challenges/open_redirect.rb` — `redirect_to url,
                allow_other_host: true`                                                            
    
-    ❯❱ src.docs.detect-css-injection
+    ❯❱ docs.detect-css-injection
           ❰❰ Blocking ❱❱
           ERB expression in style attribute — CSS injection via user-controlled color
                                                                                      
-          297┆ 検出ポイント: `lib/vulnerabilities/challenges/css_injection.rb` — `style="border-left: 4px solid
+          299┆ 検出ポイント: `lib/vulnerabilities/challenges/css_injection.rb` — `style="border-left: 4px solid
                <%= @task.color %>"`                                                                            
+   
+    ❯❱ docs.detect-open-redirect
+          ❰❰ Blocking ❱❱
+          Open redirect via redirect_to with allow_other_host: true and dynamic URL
+                                                                                   
+          496┆ | 12 | open_redirect | `app/controllers/application_controller.rb` | `redirect_to url,
+               allow_other_host: true` |                                                             
+   
+    ❯❱ docs.detect-css-injection
+          ❰❰ Blocking ❱❱
+          ERB expression in style attribute — CSS injection via user-controlled color
+                                                                                     
+          505┆ | 21 | css_injection | `app/views/tasks/_task_color.html.erb` | `style="...<%= task.color
+               %>..."` （未検証） |                                                                     
                                          
     /src/docs/rails_security_checklist.md
-    ❯❱ src.docs.detect-session-fixation
+    ❯❱ docs.detect-session-fixation
           ❰❰ Blocking ❱❱
           Session variable set without reset_session — possible session fixation (check for preceding
           reset_session call)                                                                        
@@ -143,14 +171,41 @@
             ⋮┆----------------------------------------
           205┆ session[:user_id] = @user.id
    
-    ❯❱ src.docs.detect-css-injection
+    ❯❱ docs.detect-css-injection
           ❰❰ Blocking ❱❱
           ERB expression in style attribute — CSS injection via user-controlled color
                                                                                      
           352┆ <div style="<%= params[:style] %>">
+                                         
+    /src/docs/scanner_report_foxguard.txt
+    ❯❱ docs.detect-open-redirect
+          ❰❰ Blocking ❱❱
+          Open redirect via redirect_to with allow_other_host: true and dynamic URL
+                                                                                   
+           14┆ █  HIGH  redirect_to with dynamic argument — validate URL to prevent open redirect
+            ⋮┆----------------------------------------
+          123┆ █  HIGH  redirect_to with dynamic argument — validate URL to prevent open redirect
+                                       
+    /src/docs/scanner_report_summary.md
+    ❯❱ docs.detect-session-fixation
+          ❰❰ Blocking ❱❱
+          Session variable set without reset_session — possible session fixation (check for preceding
+          reset_session call)                                                                        
+                                                                                                     
+           39┆ | 19 | session_fixation | ❌ | ❌ | ❌ | ✅ | `session[:user_id] = user.id` without prior
+               `reset_session` |                                                                        
+            ⋮┆----------------------------------------
+           68┆ | `detect-session-fixation` | regex: `session[:user_id] =` | session_fixation |
+   
+    ❯❱ docs.detect-open-redirect
+          ❰❰ Blocking ❱❱
+          Open redirect via redirect_to with allow_other_host: true and dynamic URL
+                                                                                   
+           69┆ | `detect-open-redirect` | regex: `redirect_to var, allow_other_host: true` | open_redirect
+               |                                                                                          
                                                              
     /src/lib/vulnerabilities/challenges/broken_auth_timing.rb
-    ❯❱ src.docs.detect-session-fixation
+    ❯❱ docs.detect-session-fixation
           ❰❰ Blocking ❱❱
           Session variable set without reset_session — possible session fixation (check for preceding
           reset_session call)                                                                        
@@ -158,7 +213,7 @@
            33┆ session[:user_id] = user.id
                                                         
     /src/lib/vulnerabilities/challenges/css_injection.rb
-    ❯❱ src.docs.detect-css-injection
+    ❯❱ docs.detect-css-injection
           ❰❰ Blocking ❱❱
           ERB expression in style attribute — CSS injection via user-controlled color
                                                                                      
@@ -169,7 +224,7 @@
                %>; border:1px solid #ccc; border-radius:3px; vertical-align:middle;"></span>              
                                                          
     /src/lib/vulnerabilities/challenges/header_removal.rb
-    ❯❱ src.docs.detect-header-removal
+    ❯❱ docs.detect-header-removal
           ❰❰ Blocking ❱❱
           Security header being deleted via response.headers.delete — removes protection
                                                                                         
@@ -182,21 +237,21 @@
            26┆ response.headers.delete("Referrer-Policy")
                                                       
     /src/lib/vulnerabilities/challenges/log_leakage.rb
-    ❯❱ src.docs.detect-filter-parameters-clear
+    ❯❱ docs.detect-filter-parameters-clear
           ❰❰ Blocking ❱❱
           Parameter filters cleared — sensitive parameters (passwords, tokens) may be logged in plaintext
                                                                                                          
            22┆ Rails.application.config.filter_parameters.clear
                                                         
     /src/lib/vulnerabilities/challenges/open_redirect.rb
-    ❯❱ src.docs.detect-open-redirect
+    ❯❱ docs.detect-open-redirect
           ❰❰ Blocking ❱❱
           Open redirect via redirect_to with allow_other_host: true and dynamic URL
                                                                                    
            28┆ redirect_to url, allow_other_host: true  # 検証なし — Open Redirect 脆弱性
                                                            
     /src/lib/vulnerabilities/challenges/session_fixation.rb
-    ❯❱ src.docs.detect-session-fixation
+    ❯❱ docs.detect-session-fixation
           ❰❰ Blocking ❱❱
           Session variable set without reset_session — possible session fixation (check for preceding
           reset_session call)                                                                        
@@ -204,7 +259,7 @@
            27┆ session[:user_id] = user.id
                                                                       
     /src/lib/vulnerabilities/challenges/sql_injection_active_record.rb
-    ❯❱ src.docs.detect-arel-sql-from
+    ❯❱ docs.detect-arel-sql-from
           ❰❰ Blocking ❱❱
           Dynamic argument to Model.from() — possible SQL injection via FROM clause
                                                                                    
@@ -214,14 +269,14 @@
            40┆ ).from(@view_type).select("*")
                                                
     /src/lib/vulnerabilities/challenges/ssrf.rb
-    ❯❱ src.docs.detect-unsafe-inline-script
+    ❯❱ docs.detect-unsafe-inline-script
           ❰❰ Blocking ❱❱
           Unsafe inline script policy: script-src allows unsafe-inline
                                                                       
            42┆ request.content_security_policy.script_src(:self, :unsafe_inline)
                                                        
     /src/lib/vulnerabilities/challenges/xxe_nokogiri.rb
-    ❯❱ src.docs.detect-xxe-nokogiri
+    ❯❱ docs.detect-xxe-nokogiri
           ❰❰ Blocking ❱❱
           XXE vulnerability: Nokogiri XML parsing with entity expansion (noent) enabled
                                                                                        
@@ -230,15 +285,27 @@
            35┆ end
                           
     /src/z-ai/foxguard.log
-    ❯❱ src.docs.detect-open-redirect
+    ❯❱ docs.detect-open-redirect
           ❰❰ Blocking ❱❱
           Open redirect via redirect_to with allow_other_host: true and dynamic URL
                                                                                    
           116┆ █   redirect_to url, allow_other_host: true  # 検証なし — Open Redirect 脆弱性
-                          
-    /src/z-zi/foxguard.log
-    ❯❱ src.docs.detect-open-redirect
-          ❰❰ Blocking ❱❱
-          Open redirect via redirect_to with allow_other_host: true and dynamic URL
-                                                                                   
-          116┆ █   redirect_to url, allow_other_host: true  # 検証なし — Open Redirect 脆弱性
+
+                
+                
+┌──────────────┐
+│ Scan Summary │
+└──────────────┘
+✅ Scan completed successfully.
+ • Findings: 45 (45 blocking)
+ • Rules run: 11
+ • Targets scanned: 132
+ • Parsed lines: ~100.0%
+ • Scan skipped: 
+   ◦ Files matching .semgrepignore patterns: 34
+ • Scan was limited to files tracked by git
+ • For a detailed list of skipped files and lines, run semgrep with the --verbose flag
+Ran 11 rules on 132 files: 45 findings.
+
+📢 Too many findings? Try Semgrep Pro for more powerful queries and less noise.
+   See https://sg.run/false-positives.

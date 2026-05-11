@@ -1,3 +1,17 @@
+=== Semgrep p/brakeman ===
+Emulate Docker CLI using podman. Create /etc/containers/nodocker to quiet msg.
+               
+               
+┌─────────────┐
+│ Scan Status │
+└─────────────┘
+  Scanning 132 files tracked by git with 19 Code rules:
+                                                                                                                        
+  Language      Rules   Files          Origin      Rules                                                                
+ ─────────────────────────────        ───────────────────                                                               
+  ruby             16      60          Community      19                                                                
+  <multilang>       2      16                                                                                           
+                                                                                                                        
                    
                    
 ┌─────────────────┐
@@ -62,3 +76,18 @@
            38┆                     multiline: true },
            39┆           allow_blank: true
 
+                
+                
+┌──────────────┐
+│ Scan Summary │
+└──────────────┘
+✅ Scan completed successfully.
+ • Findings: 5 (5 blocking)
+ • Rules run: 18
+ • Targets scanned: 76
+ • Parsed lines: ~100.0%
+ • Scan skipped: 
+   ◦ Files matching .semgrepignore patterns: 34
+ • Scan was limited to files tracked by git
+ • For a detailed list of skipped files and lines, run semgrep with the --verbose flag
+Ran 18 rules on 76 files: 5 findings.

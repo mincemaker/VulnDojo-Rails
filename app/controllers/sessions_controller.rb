@@ -7,14 +7,18 @@ class SessionsController < ApplicationController
   end
 
   def create
-    # authenticate_by はユーザー不在でもダミー bcrypt を実行し定数時間を保証する（CWE-208 対策）
-    user = User.authenticate_by(email: params[:email]&.downcase, password: params[:password])
-    if user
-      # reset_session なし — Session Fixation 脆弱性
+    # find_by → ユーザー不在時は bcrypt をスキップして即 return（CWE-208）
+    user = User.find_by(email: params[:email]&.downcase)
+    unless user
+      flash.now[:alert] = "認証に失敗しました。"
+      return render :new, status: :unprocessable_entity
+    end
+    if user.authenticate(params[:password])
+      # reset_session なし — Session Fixation 脆弱性（baked-in の session_fixation と競合回避のため）
       session[:user_id] = user.id
-      redirect_to tasks_path, notice: "ログインしました。"
+      redirect_to tasks_path
     else
-      flash.now[:alert] = "メールアドレスまたはパスワードが正しくありません。"
+      flash.now[:alert] = "認証に失敗しました。"
       render :new, status: :unprocessable_entity
     end
   end

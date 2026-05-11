@@ -1,3 +1,12 @@
+=== Semgrep p/ruby ===
+Emulate Docker CLI using podman. Create /etc/containers/nodocker to quiet msg.
+               
+               
+┌─────────────┐
+│ Scan Status │
+└─────────────┘
+  Scanning 132 files tracked by git with 44 Code rules:
+  Scanning 60 files with 44 ruby rules.
                    
                    
 ┌─────────────────┐
@@ -96,3 +105,18 @@
                                                                                                             
            59┆ stdout, stderr, status = Open3.capture3("curl -m 5 -s -L #{safe_url}")
 
+                
+                
+┌──────────────┐
+│ Scan Summary │
+└──────────────┘
+✅ Scan completed successfully.
+ • Findings: 8 (8 blocking)
+ • Rules run: 44
+ • Targets scanned: 60
+ • Parsed lines: ~100.0%
+ • Scan skipped: 
+   ◦ Files matching .semgrepignore patterns: 34
+ • Scan was limited to files tracked by git
+ • For a detailed list of skipped files and lines, run semgrep with the --verbose flag
+Ran 44 rules on 60 files: 8 findings.
