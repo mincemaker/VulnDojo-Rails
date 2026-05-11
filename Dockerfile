@@ -16,7 +16,7 @@ RUN apt-get update -qq && \
 
 ENV BUNDLE_PATH="/usr/local/bundle"
 
-RUN gem install bundler:2.6.9
+RUN gem install bundler
 
 COPY Gemfile Gemfile.lock ./
 RUN bundle install
