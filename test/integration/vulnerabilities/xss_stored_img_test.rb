@@ -57,6 +57,7 @@ class XssStoredImgTest < ActiveSupport::TestCase
   end
 
   test "SAFE: XSS payload in description is escaped when image is attached" do
+    skip_if_vuln!("xss_stored_img")
     result = create_image_task_with_description(@safe_server, description: XSS_PAYLOAD)
     assert result[:id], "Task should be created"
 
@@ -67,6 +68,7 @@ class XssStoredImgTest < ActiveSupport::TestCase
   end
 
   test "VULN: XSS payload in description is rendered as raw HTML in image caption" do
+    skip_unless_vuln!("xss_stored_img")
     result = create_image_task_with_description(@vuln_server, description: XSS_PAYLOAD)
     assert result[:id], "Task should be created"
 

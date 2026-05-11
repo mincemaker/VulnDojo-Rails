@@ -11,6 +11,23 @@ require "socket"
 module E2EHelper
   TEST_USER_PASSWORD = "password123"
 
+  def vuln_context_active?(slug)
+    registry = Vulnerabilities::Registry.instance
+    return true if registry.enabled?(slug)
+    return true if ENV["VULN_CHALLENGES"] == "all" && registry.all_challenges.key?(slug)
+    false
+  end
+
+  def skip_unless_vuln!(slug)
+    return if vuln_context_active?(slug)
+    skip "Challenge #{slug} is not active — skip"
+  end
+
+  def skip_if_vuln!(slug)
+    return unless vuln_context_active?(slug)
+    skip "Challenge #{slug} is/may be active — SAFE test would be invalid"
+  end
+
   class ServerProcess
     attr_reader :port
 

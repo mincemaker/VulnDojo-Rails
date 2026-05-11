@@ -3,18 +3,9 @@
 require "test_helper"
 require_relative "browser_helper"
 
-# Stored XSS via image caption (html_safe description) のブラウザレベル検証
-#
-# 既存の xss_stored_img_test.rb は HTTP レスポンス本文に生 HTML タグが含まれるかを確認する。
-# このテストは「ブラウザが DOM ツリーに悪意ある要素を生成するか」を Ferrum で検証する。
-#
-# xss_stored_img 単体では CSP (script-src: 'self') が有効なため onerror は実行されない。
-# onerror の実行 (完全な exploit chain) は xss_stored_img + csp_disable の組み合わせで検証する。
 class XssStoredImgBrowserTest < ActiveSupport::TestCase
   include BrowserHelper
 
-  # image/png を添付し description に XSS ペイロードを入れたタスクを作成する
-  # 戻り値: { id:, cookie: }
   def create_image_task_with_description(server, description:, cookie: nil)
     cookie ||= setup_session(server)
 
@@ -56,11 +47,8 @@ class XssStoredImgBrowserTest < ActiveSupport::TestCase
     { id: task_id, cookie: cookie }
   end
 
-  # ── DOM 挿入の検証 (CSP あり) ──
-
   setup do
-    @safe_server = ServerPool.acquire(vuln_challenges: "")
-    @vuln_server = ServerPool.acquire(vuln_challenges: "xss_stored_img")
+    @server = ServerPool.acquire(vuln_challenges: "")
     browser_setup
   end
 
@@ -68,51 +56,23 @@ class XssStoredImgBrowserTest < ActiveSupport::TestCase
     browser_teardown
   end
 
-  test "SAFE: XSS payload in description is escaped — no malicious img element in DOM" do
-    cookie = browser_login(@safe_server)
-    result = create_image_task_with_description(@safe_server, description: XSS_FLAG_PAYLOAD, cookie: cookie)
-    assert result[:id], "Task should be created"
-
-    @browser.goto("http://127.0.0.1:#{@safe_server.port}/tasks/#{result[:id]}")
-
-    injected = @browser.at_css("img[onerror]")
-    assert_nil injected, "Malicious img element must NOT be in DOM: description is HTML-escaped"
-  end
-
   test "VULN: XSS payload in description is injected into DOM as malicious img element" do
-    cookie = browser_login(@vuln_server)
-    result = create_image_task_with_description(@vuln_server, description: XSS_FLAG_PAYLOAD, cookie: cookie)
+    cookie = browser_login(@server)
+    result = create_image_task_with_description(@server, description: XSS_FLAG_PAYLOAD, cookie: cookie)
     assert result[:id], "Task should be created"
 
-    @browser.goto("http://127.0.0.1:#{@vuln_server.port}/tasks/#{result[:id]}")
+    @browser.goto("http://127.0.0.1:#{@server.port}/tasks/#{result[:id]}")
 
-    # html_safe により <img onerror="..."> がそのまま DOM ツリーに挿入される
     injected = @browser.at_css("img[onerror]")
     refute_nil injected, "Malicious img element MUST be in DOM: description output via html_safe"
   end
 
-  # ── JS 実行の検証 (xss_stored_img + csp_disable の完全な exploit chain) ──
-
-  test "SAFE: CSP blocks onerror execution even when XSS payload is in DOM" do
-    # xss_stored_img のみ (CSP 有効) — payload は DOM に挿入されるが JS はブロックされる
-    cookie = browser_login(@vuln_server)
-    result = create_image_task_with_description(@vuln_server, description: XSS_FLAG_PAYLOAD, cookie: cookie)
+  test "VULN: onerror JS executes when CSP is disabled and XSS payload is in DOM" do
+    cookie = browser_login(@server)
+    result = create_image_task_with_description(@server, description: XSS_FLAG_PAYLOAD, cookie: cookie)
     assert result[:id], "Task should be created"
 
-    @browser.goto("http://127.0.0.1:#{@vuln_server.port}/tasks/#{result[:id]}")
-
-    refute xss_executed?,
-      "JS must NOT execute: CSP script-src 'self' blocks inline event handlers"
-  end
-
-  test "VULN: disabling CSP allows onerror to execute when XSS payload is in DOM" do
-    # xss_stored_img + csp_disable — 完全な exploit chain
-    vuln_full = ServerPool.acquire(vuln_challenges: "xss_stored_img,csp_disable")
-    cookie = browser_login(vuln_full)
-    result = create_image_task_with_description(vuln_full, description: XSS_FLAG_PAYLOAD, cookie: cookie)
-    assert result[:id], "Task should be created"
-
-    @browser.goto("http://127.0.0.1:#{vuln_full.port}/tasks/#{result[:id]}")
+    @browser.goto("http://127.0.0.1:#{@server.port}/tasks/#{result[:id]}")
 
     assert xss_executed?,
       "JS MUST execute: CSP is disabled + description rendered via html_safe"

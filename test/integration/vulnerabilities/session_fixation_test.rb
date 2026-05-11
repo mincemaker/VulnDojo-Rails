@@ -63,6 +63,7 @@ class SessionFixationTest < ActiveSupport::TestCase
   end
 
   test "SAFE: session ID changes after login (reset_session)" do
+    skip_if_vuln!("session_fixation")
     victim = create_victim(@safe_server)
 
     res = @safe_server.get("/login")
@@ -78,6 +79,7 @@ class SessionFixationTest < ActiveSupport::TestCase
   end
 
   test "SAFE: attacker cookie is invalidated after victim logs in" do
+    skip_if_vuln!("session_fixation")
     victim = create_victim(@safe_server)
 
     # 攻撃者: セッションIDを取得
@@ -95,6 +97,7 @@ class SessionFixationTest < ActiveSupport::TestCase
   end
 
   test "VULN: attacker can hijack victim session (session fixation)" do
+    skip_unless_vuln!("session_fixation")
     victim = create_victim(@vuln_server)
 
     # 攻撃者: セッションIDを取得（DBにレコード生成）

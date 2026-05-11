@@ -45,6 +45,7 @@ class UnsafeFileUploadTest < ActiveSupport::TestCase
   end
 
   test "SAFE: executable file upload is rejected" do
+    skip_if_vuln!("unsafe_file_upload")
     result = upload_file(@safe_server,
       filename: "malware.exe",
       content: "MZ\x90\x00",  # PE header
@@ -56,6 +57,7 @@ class UnsafeFileUploadTest < ActiveSupport::TestCase
   end
 
   test "SAFE: image file upload is accepted" do
+    skip_if_vuln!("unsafe_file_upload")
     result = upload_file(@safe_server,
       filename: "photo.png",
       content: "\x89PNG\r\n\x1a\n",
@@ -65,6 +67,7 @@ class UnsafeFileUploadTest < ActiveSupport::TestCase
   end
 
   test "VULN: executable file upload is accepted (no validation)" do
+    skip_unless_vuln!("unsafe_file_upload")
     result = upload_file(@vuln_server,
       filename: "malware.exe",
       content: "MZ\x90\x00",

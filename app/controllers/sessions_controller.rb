@@ -10,7 +10,7 @@ class SessionsController < ApplicationController
     # authenticate_by はユーザー不在でもダミー bcrypt を実行し定数時間を保証する（CWE-208 対策）
     user = User.authenticate_by(email: params[:email]&.downcase, password: params[:password])
     if user
-      reset_session
+      # reset_session なし — Session Fixation 脆弱性
       session[:user_id] = user.id
       redirect_to tasks_path, notice: "ログインしました。"
     else

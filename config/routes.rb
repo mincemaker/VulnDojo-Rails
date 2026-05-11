@@ -10,6 +10,7 @@ Rails.application.routes.draw do
   resources :tasks do
     member do
       get :download_attachment
+      post :preview_url
     end
     collection do
       get :export

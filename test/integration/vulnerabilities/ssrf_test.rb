@@ -12,6 +12,7 @@ class SsrfTest < ActiveSupport::TestCase
   end
 
   test "SAFE: preview_url endpoint does not exist" do
+    skip_if_vuln!("ssrf")
     result = create_task_via_form(@safe_server, title: "SSRF safe test")
     cookie = result[:cookie]
     task_id = result[:id]
@@ -26,6 +27,7 @@ class SsrfTest < ActiveSupport::TestCase
   end
 
   test "VULN: fetches internal HTTP URL without validation" do
+    skip_unless_vuln!("ssrf")
     result = create_task_via_form(@vuln_server, title: "SSRF vuln test")
     cookie = result[:cookie]
     task_id = result[:id]
@@ -51,6 +53,7 @@ class SsrfTest < ActiveSupport::TestCase
 
   # 手動確認用: docker-compose 環境で Redis に gopher 経由で到達できることを検証する
   test "VULN: gopher scheme reaches Redis (manual, requires redis container)" do
+    skip_unless_vuln!("ssrf")
     result = create_task_via_form(@vuln_server, title: "gopher test")
     cookie = result[:cookie]
     task_id = result[:id]
@@ -72,6 +75,7 @@ class SsrfTest < ActiveSupport::TestCase
   end
 
   test "VULN: leaks session data from Redis via gopher" do
+    skip_unless_vuln!("ssrf")
     # 1) ログインしてセッションを作成
     result = create_task_via_form(@vuln_server, title: "session leak test")
     cookie = result[:cookie]
@@ -120,6 +124,7 @@ class SsrfTest < ActiveSupport::TestCase
     end
 
     test "VULN: allows saving non-HTTP URL (like gopher://) to task model" do
+    skip_unless_vuln!("ssrf")
     # SSRF チャレンジが有効な場合、攻撃者が UI から攻撃用 URL を保存できる必要がある
     gopher_url = "gopher://redis:6379/_PING"
     result = create_task_via_form(@vuln_server, title: "gopher save test", url: gopher_url)

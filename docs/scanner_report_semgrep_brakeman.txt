@@ -1,0 +1,64 @@
+                   
+                   
+┌─────────────────┐
+│ 5 Code Findings │
+└─────────────────┘
+                                            
+    /src/app/controllers/tasks_controller.rb
+    ❯❱ ruby.rails.security.brakeman.check-unscoped-find.check-unscoped-find
+          ❰❰ Blocking ❱❱
+          Found an unscoped `find(...)` with user-controllable input. If the ActiveRecord model being searched
+          against is sensitive, this may lead to Insecure Direct Object Reference (IDOR) behavior and allow   
+          users to read arbitrary records. Scope the find to the current user, e.g.                           
+          `current_user.accounts.find(params[:id])`.                                                          
+          Details: https://sg.run/dPbP                                                                        
+                                                                                                              
+          219┆ @task = Task.find(params[:id])
+                           
+    /src/app/models/task.rb
+   ❯❯❱ ruby.rails.security.brakeman.check-validation-regex.check-validation-regex
+          ❰❰ Blocking ❱❱
+          /^https?:\/\/.+/m Found an incorrectly-bounded regex passed to `validates_format_of` or `validate
+          ... format => ...`. Ruby regex behavior is multiline by default and lines should be terminated by
+          `\A` for beginning of line and `\Z` for end of line, respectively.                               
+          Details: https://sg.run/ZPo7                                                                     
+                                                                                                           
+            8┆ validates :url, format: { with: /^https?:\/\/.+/m, message: "は http:// または https://
+               で始まる必要があります", multiline: true },                                            
+            9┆                 allow_blank: true
+                                      
+    /src/app/views/tasks/show.html.erb
+    ❯❱ ruby.rails.security.brakeman.check-reverse-tabnabbing.check-reverse-tabnabbing
+          ❰❰ Blocking ❱❱
+          Setting an anchor target of `_blank` without the `noopener` or `noreferrer` attribute allows reverse
+          tabnabbing on Internet Explorer, Opera, and Android Webview.                                        
+          Details: https://sg.run/r30j                                                                        
+                                                                                                              
+           41┆ <div><%= link_to @task.url, @task.url, target: "_blank", rel: "noopener noreferrer"
+               %></div>                                                                           
+                                               
+    /src/lib/vulnerabilities/challenges/idor.rb
+    ❯❱ ruby.rails.security.brakeman.check-unscoped-find.check-unscoped-find
+          ❰❰ Blocking ❱❱
+          Found an unscoped `find(...)` with user-controllable input. If the ActiveRecord model being searched
+          against is sensitive, this may lead to Insecure Direct Object Reference (IDOR) behavior and allow   
+          users to read arbitrary records. Scope the find to the current user, e.g.                           
+          `current_user.accounts.find(params[:id])`.                                                          
+          Details: https://sg.run/dPbP                                                                        
+                                                                                                              
+           25┆ @task = Task.find(params[:id])  # 所有者スコープなし — IDOR 脆弱性
+                                                       
+    /src/lib/vulnerabilities/challenges/regex_bypass.rb
+   ❯❯❱ ruby.rails.security.brakeman.check-validation-regex.check-validation-regex
+          ❰❰ Blocking ❱❱
+          /^https?:\/\/.+/m Found an incorrectly-bounded regex passed to `validates_format_of` or `validate
+          ... format => ...`. Ruby regex behavior is multiline by default and lines should be terminated by
+          `\A` for beginning of line and `\Z` for end of line, respectively.                               
+          Details: https://sg.run/ZPo7                                                                     
+                                                                                                           
+           35┆ validates :url,
+           36┆           format: { with: /^https?:\/\/.+/m,  # ^ = 行頭マッチ (脆弱)
+           37┆                     message: "は http:// または https:// で始まる必要があります",
+           38┆                     multiline: true },
+           39┆           allow_blank: true
+

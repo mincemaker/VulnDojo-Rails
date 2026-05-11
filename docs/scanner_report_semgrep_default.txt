@@ -1,0 +1,199 @@
+                    
+                    
+┌──────────────────┐
+│ 18 Code Findings │
+└──────────────────┘
+                   
+    /src/Dockerfile
+   ❯❯❱ dockerfile.security.missing-user-entrypoint.missing-user-entrypoint
+          ❰❰ Blocking ❱❱
+          By not specifying a USER, a program in the container may run as 'root'. This is a security hazard.
+          If an attacker can control a process running as root, they may have control over the container.   
+          Ensure that the last USER in a Dockerfile is a USER other than 'root'.                            
+          Details: https://sg.run/k281                                                                      
+                                                                                                            
+           ▶▶┆ Autofix ▶ USER non-root ENTRYPOINT ["/rails/bin/docker-entrypoint"]
+           24┆ ENTRYPOINT ["/rails/bin/docker-entrypoint"]
+   
+   ❯❯❱ dockerfile.security.missing-user.missing-user
+          ❰❰ Blocking ❱❱
+          By not specifying a USER, a program in the container may run as 'root'. This is a security hazard.
+          If an attacker can control a process running as root, they may have control over the container.   
+          Ensure that the last USER in a Dockerfile is a USER other than 'root'.                            
+          Details: https://sg.run/Gbvn                                                                      
+                                                                                                            
+           ▶▶┆ Autofix ▶ USER non-root CMD ["./bin/rails", "server", "-b", "0.0.0.0"]
+           26┆ CMD ["./bin/rails", "server", "-b", "0.0.0.0"]
+                                                  
+    /src/app/controllers/application_controller.rb
+   ❯❯❱ ruby.lang.security.missing-csrf-protection.missing-csrf-protection
+          ❰❰ Blocking ❱❱
+          Detected controller which does not enable cross-site request forgery protections using          
+          'protect_from_forgery'. Add 'protect_from_forgery :with => :exception' to your controller class.
+          Details: https://sg.run/XLel                                                                    
+                                                                                                          
+            3┆ class ApplicationController < ActionController::Base
+            4┆   before_action :require_login
+            5┆   helper_method :current_user, :logged_in?
+            6┆
+            7┆   private
+            8┆
+            9┆   def current_user
+           10┆     @current_user ||= User.find_by(id: session[:user_id]) if session[:user_id]
+           11┆   end
+           12┆
+             [hid 25 additional lines, adjust with --max-lines-per-finding] 
+                                            
+    /src/app/controllers/tasks_controller.rb
+    ❯❱ ruby.rails.security.audit.rails-skip-forgery-protection.rails-skip-forgery-protection
+          ❰❰ Blocking ❱❱
+          This call turns off CSRF protection allowing CSRF attacks against the application
+          Details: https://sg.run/PgwY                                                     
+                                                                                           
+            7┆ skip_forgery_protection
+   
+    ❯❱ ruby.lang.security.dangerous-subshell.dangerous-subshell
+          ❰❰ Blocking ❱❱
+          Detected non-static command inside `...`. If unverified user data can reach this call site, this is 
+          a code injection vulnerability. A malicious actor can inject a malicious script to execute arbitrary
+          code.                                                                                               
+          Details: https://sg.run/NrxL                                                                        
+                                                                                                              
+           82┆ safe_name = `echo #{name} | tr -cd '[:alnum:]_-'`.strip
+   
+    ❯❱ ruby.lang.security.dangerous-exec.dangerous-exec
+          ❰❰ Blocking ❱❱
+          Detected non-static command inside Open3.capture3. Audit the input to 'Open3.capture3'. If        
+          unverified user data can reach this call site, this is a code injection vulnerability. A malicious
+          actor can inject a malicious script to execute arbitrary code.                                    
+          Details: https://sg.run/R8GY                                                                      
+                                                                                                            
+          105┆ stdout, stderr, status = Open3.capture3("curl -m 5 -s -L #{safe_url}")
+   
+   ❯❯❱ ruby.rails.security.injection.tainted-sql-string.tainted-sql-string
+          ❰❰ Blocking ❱❱
+          Detected user input used to manually construct a SQL string. This is usually bad practice because 
+          manual construction could accidentally result in a SQL injection. An attacker could use a SQL     
+          injection to steal or modify contents of the database. Instead, use a parameterized query which is
+          available by default in most database engines. Alternatively, consider using an object-relational 
+          mapper (ORM) such as ActiveRecord which will protect your queries.                                
+          Details: https://sg.run/Y85o                                                                      
+                                                                                                            
+          214┆ @tasks = Task.where("user_id = #{current_user.id} AND title LIKE '%#{params[:q]}%'") if
+               params[:q].present?                                                                    
+   
+    ❯❱ ruby.rails.security.brakeman.check-unscoped-find.check-unscoped-find
+          ❰❰ Blocking ❱❱
+          Found an unscoped `find(...)` with user-controllable input. If the ActiveRecord model being searched
+          against is sensitive, this may lead to Insecure Direct Object Reference (IDOR) behavior and allow   
+          users to read arbitrary records. Scope the find to the current user, e.g.                           
+          `current_user.accounts.find(params[:id])`.                                                          
+          Details: https://sg.run/dPbP                                                                        
+                                                                                                              
+          219┆ @task = Task.find(params[:id])
+                                               
+    /src/app/views/tasks/_search_label.html.erb
+    ❯❱ ruby.rails.security.audit.xss.templates.alias-for-html-safe.alias-for-html-safe
+          ❰❰ Blocking ❱❱
+          The syntax `<%== ... %>` is an alias for `html_safe`. This means the content inside these tags will 
+          be rendered as raw HTML. This may expose your application to cross-site scripting. If you need raw  
+          HTML, prefer using the more explicit `html_safe` and be sure to correctly sanitize variables using a
+          library such as DOMPurify.                                                                          
+          Details: https://sg.run/8nGJ                                                                        
+                                                                                                              
+            3┆ 「<%== params[:q] %>」の検索結果
+                                                  
+    /src/app/views/tasks/_task_attachment.html.erb
+    ❯❱ ruby.rails.security.audit.xss.templates.var-in-href.var-in-href
+          ❰❰ Blocking ❱❱
+          Detected a template variable used in an anchor tag with the 'href' attribute. This allows a       
+          malicious actor to input the 'javascript:' URI and is subject to cross- site scripting (XSS)      
+          attacks. If using a relative URL, start with a literal forward slash and concatenate the URL, like
+          this: href='/<%= link =>'. You may also consider setting the Content Security Policy (CSP) header.
+          Details: https://sg.run/J3Do                                                                      
+                                                                                                            
+            7┆ <a href="<%= url_for(task.attachment) %>" target="_blank" rel="noopener noreferrer">
+   
+    ❯❱ ruby.rails.security.audit.xss.templates.avoid-html-safe.avoid-html-safe
+          ❰❰ Blocking ❱❱
+          'html_safe' renders raw HTML. This means that normal HTML escaping is bypassed. If user data can be
+          controlled here, this exposes your application to cross-site scripting (XSS). If you need to do    
+          this, be sure to correctly sanitize the data using a library such as DOMPurify.                    
+          Details: https://sg.run/Q8rD                                                                       
+                                                                                                             
+           13┆ <div class="image-caption"><%= task.description.html_safe %></div>
+                                             
+    /src/app/views/tasks/_task_title.html.erb
+    ❯❱ ruby.rails.security.audit.xss.templates.avoid-html-safe.avoid-html-safe
+          ❰❰ Blocking ❱❱
+          'html_safe' renders raw HTML. This means that normal HTML escaping is bypassed. If user data can be
+          controlled here, this exposes your application to cross-site scripting (XSS). If you need to do    
+          this, be sure to correctly sanitize the data using a library such as DOMPurify.                    
+          Details: https://sg.run/Q8rD                                                                       
+                                                                                                             
+           11┆ <%= task.title.html_safe %>
+                                           
+    /src/config/environments/development.rb
+    ❯❱ ruby.rails.security.audit.detailed-exceptions.detailed-exceptions
+          ❰❰ Blocking ❱❱
+          Found that the setting for providing detailed exception reports in Rails is set to true. This can   
+          lead to information exposure, where sensitive system or internal information is displayed to the end
+          user. Instead, turn this setting off.                                                               
+          Details: https://sg.run/Je0d                                                                        
+                                                                                                              
+           15┆ config.consider_all_requests_local = true
+                                    
+    /src/config/environments/test.rb
+    ❯❱ ruby.rails.security.audit.detailed-exceptions.detailed-exceptions
+          ❰❰ Blocking ❱❱
+          Found that the setting for providing detailed exception reports in Rails is set to true. This can   
+          lead to information exposure, where sensitive system or internal information is displayed to the end
+          user. Instead, turn this setting off.                                                               
+          Details: https://sg.run/Je0d                                                                        
+                                                                                                              
+           27┆ config.consider_all_requests_local = true
+                                                            
+    /src/lib/vulnerabilities/challenges/command_injection.rb
+    ❯❱ ruby.lang.security.dangerous-subshell.dangerous-subshell
+          ❰❰ Blocking ❱❱
+          Detected non-static command inside `...`. If unverified user data can reach this call site, this is 
+          a code injection vulnerability. A malicious actor can inject a malicious script to execute arbitrary
+          code.                                                                                               
+          Details: https://sg.run/NrxL                                                                        
+                                                                                                              
+           42┆ safe_name = `echo #{name} | tr -cd '[:alnum:]_-'`.strip
+                                               
+    /src/lib/vulnerabilities/challenges/idor.rb
+    ❯❱ ruby.rails.security.brakeman.check-unscoped-find.check-unscoped-find
+          ❰❰ Blocking ❱❱
+          Found an unscoped `find(...)` with user-controllable input. If the ActiveRecord model being searched
+          against is sensitive, this may lead to Insecure Direct Object Reference (IDOR) behavior and allow   
+          users to read arbitrary records. Scope the find to the current user, e.g.                           
+          `current_user.accounts.find(params[:id])`.                                                          
+          Details: https://sg.run/dPbP                                                                        
+                                                                                                              
+           25┆ @task = Task.find(params[:id])  # 所有者スコープなし — IDOR 脆弱性
+                                                        
+    /src/lib/vulnerabilities/challenges/sql_injection.rb
+   ❯❯❱ ruby.rails.security.injection.tainted-sql-string.tainted-sql-string
+          ❰❰ Blocking ❱❱
+          Detected user input used to manually construct a SQL string. This is usually bad practice because 
+          manual construction could accidentally result in a SQL injection. An attacker could use a SQL     
+          injection to steal or modify contents of the database. Instead, use a parameterized query which is
+          available by default in most database engines. Alternatively, consider using an object-relational 
+          mapper (ORM) such as ActiveRecord which will protect your queries.                                
+          Details: https://sg.run/Y85o                                                                      
+                                                                                                            
+           27┆ @tasks = Task.where("user_id = #{current_user.id} AND title LIKE '%#{params[:q]}%'") if
+               params[:q].present?                                                                    
+                                               
+    /src/lib/vulnerabilities/challenges/ssrf.rb
+    ❯❱ ruby.lang.security.dangerous-exec.dangerous-exec
+          ❰❰ Blocking ❱❱
+          Detected non-static command inside Open3.capture3. Audit the input to 'Open3.capture3'. If        
+          unverified user data can reach this call site, this is a code injection vulnerability. A malicious
+          actor can inject a malicious script to execute arbitrary code.                                    
+          Details: https://sg.run/R8GY                                                                      
+                                                                                                            
+           59┆ stdout, stderr, status = Open3.capture3("curl -m 5 -s -L #{safe_url}")
+

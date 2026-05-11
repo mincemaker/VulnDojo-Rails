@@ -12,6 +12,7 @@ class IdorTest < ActiveSupport::TestCase
   end
 
   test "SAFE: cannot view another user's task" do
+    skip_if_vuln!("idor")
     # User A creates a task
     cookie_a = setup_session(@safe_server)
     result_a = create_task_via_form(@safe_server, title: "User A secret", cookie: cookie_a)
@@ -27,6 +28,7 @@ class IdorTest < ActiveSupport::TestCase
   end
 
   test "VULN: can view another user's task" do
+    skip_unless_vuln!("idor")
     # User A creates a task
     cookie_a = setup_session(@vuln_server)
     result_a = create_task_via_form(@vuln_server, title: "User A secret IDOR", cookie: cookie_a)

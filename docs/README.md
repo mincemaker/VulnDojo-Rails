@@ -7,6 +7,8 @@
 
 - `README.md` — チャレンジリファレンス（このファイル）
 - `rails_security_checklist.md` — Rails 7.1 セキュリティチェックリスト（安全な実装の根拠）
+- `scanner_report_summary.md` — スキャナ検出率比較表（scanner-test/all-vulns ブランチ）
+- `custom_semgrep_rules.yml` — 未検出チャレンジを補うカスタム Semgrep ルール
 
 ---
 
@@ -459,3 +461,92 @@ time curl -s -X POST http://localhost:3000/login \
 | `config.filter_parameters` | ログへの機密パラメータ出力を抑制 | [ガイド](https://guides.rubyonrails.org/configuring.html#config-filter-parameters) |
 | `config.action_dispatch.default_headers` | デフォルトセキュリティヘッダ（X-Frame-Options 等）の設定 | [ガイド](https://guides.rubyonrails.org/configuring.html#config-action-dispatch-default-headers) |
 | `SecureRandom.urlsafe_base64` | 推測困難なランダムトークン生成 | [Ruby docs](https://docs.ruby-lang.org/en/master/Random/Formatter.html#method-i-urlsafe_base64) |
+
+---
+
+## scanner-test/all-vulns ブランチ
+
+このブランチ (`scanner-test/all-vulns`) は、全21の脆弱性チャレンジを直接 `app/` にベイクドインしたものです。
+通常の main ブランチでは脆弱性は `lib/vulnerabilities/challenges/` に隔離され、`VULN_CHALLENGES` 環境変数で動的に注入されますが、
+このブランチでは `app/` のソースコードそのものに脆弱性が含まれています。
+
+### 目的
+
+- 静的スキャナ（Brakeman / Foxguard / Semgrep）の検出率を、動的注入レイヤー（`Module#prepend` 等）を介さず直接測定する
+- 実際にコードベースに存在する脆弱性パターンとしてスキャナに検出させる
+- カスタム Semgrep ルールの有効性を検証する
+
+### ベイクドイン方式（19/21 チャレンジ）
+
+以下の 19 チャレンジは `app/` のソースファイルを直接書き換えています。
+
+| # | チャレンジ | 書き換えファイル | 脆弱性パターン |
+|---|-----------|----------------|---------------|
+| 1 | xss_raw | `app/views/tasks/_task_title.html.erb` | `task.title.html_safe` |
+| 2 | xss_stored_img | `app/views/tasks/_task_attachment.html.erb` | `task.description.html_safe` |
+| 3 | xss_reflected | `app/views/tasks/_search_label.html.erb` | `<%== params[:q] %>` |
+| 4 | sql_injection | `app/controllers/tasks_controller.rb` | `where("... #{params[:q]}")` |
+| 5 | sql_injection_active_record | `app/controllers/tasks_controller.rb` | `Task.from(@view_type)` + ホワイトリスト検証削除 |
+| 6 | sql_injection_order | — | **フレームワークのみ**（後述） |
+| 7 | csrf_skip | `app/controllers/tasks_controller.rb` | `skip_forgery_protection` |
+| 8 | csp_disable | `config/initializers/content_security_policy.rb` + `app/controllers/tasks_controller.rb` | 空の CSP ポリシー + `script_src(:self, :unsafe_inline)` |
+| 9 | command_injection | `app/controllers/tasks_controller.rb` | `` `echo #{name}` `` バックティック注入 |
+| 10 | idor | `app/controllers/tasks_controller.rb` | `Task.find(params[:id])` （スコープなし） |
+| 11 | mass_assignment | `app/controllers/tasks_controller.rb` | `params.require(:task).permit!` |
+| 12 | open_redirect | `app/controllers/application_controller.rb` | `redirect_to url, allow_other_host: true` |
+| 13 | regex_bypass | `app/models/task.rb` | `/^https?:\/\/.+/m` （`\A` の代わりに `^`） |
+| 14 | ssrf | `app/controllers/tasks_controller.rb` + `config/routes.rb` | `Open3.capture3("curl ... #{safe_url}")` + `post :preview_url` |
+| 15 | xxe_nokogiri | `app/controllers/tasks_controller.rb` | `Nokogiri::XML(...) { \|c\| c.noent }` |
+| 16 | header_removal | `app/controllers/application_controller.rb` | `response.headers.delete(...)` (×4) |
+| 17 | unsafe_file_upload | `app/models/task.rb` | 空の `acceptable_attachment` + `permit!` |
+| 18 | log_leakage | `config/initializers/filter_parameter_logging.rb` | `Rails.application.config.filter_parameters.clear` |
+| 19 | session_fixation | `app/controllers/sessions_controller.rb` | `reset_session` コメントアウト |
+| 20 | broken_auth_timing | — | **フレームワークのみ**（後述） |
+| 21 | css_injection | `app/views/tasks/_task_color.html.erb` | `style="...<%= task.color %>..."` （未検証） |
+
+### フレームワーク依存（2 チャレンジ）
+
+以下の 2 チャレンジは `app/` に直接ベイクドインされておらず、`lib/vulnerabilities/challenges/` の動的注入が必要です。
+
+| チャレンジ | slug | 理由 |
+|-----------|------|------|
+| SQL Injection via ORDER BY | `sql_injection_order` | `sort` パラメータの処理が `lib/vulnerabilities/challenges/sql_injection_order.rb` で `prepend` により注入されるため。ベイクドイン版の `index` アクションは `order(created_at: :desc)` をハードコードしている。 |
+| Broken Auth Timing Attack | `broken_auth_timing` | `SessionsController#create` の bcrypt スキップが `lib/vulnerabilities/challenges/broken_auth_timing.rb` で `prepend` により注入されるため。ベイクドイン版は `User.authenticate_by` の安全な実装を維持している。 |
+
+### 再現実行
+
+全スキャナの再現実行は `bin/scan-scanners` で行う:
+
+```bash
+# 全スキャナ実行（結果は docs/scanner_report_*.txt に保存）
+bin/scan-scanners
+
+# 特定のスキャナのみ
+bin/scan-scanners --only semgrep
+bin/scan-scanners --only brakeman
+bin/scan-scanners --only foxguard
+```
+
+各スキャナは Docker コンテナ内で実行される（ホスト環境非汚染）。カスタム Semgrep ルールは `docs/custom_semgrep_rules.yml`、各スキャナのバージョンや実行コマンドの詳細は `docs/scanner_report_summary.md` を参照。
+
+### スキャナ検出結果
+
+| スキャナ | 検出 / 21 | 検出率 |
+|---------|:---------:|:------:|
+| Brakeman 8.0.4 (`--run-all-checks`) | 7 | 33% |
+| Foxguard 0.8.0 | 6 | 29% |
+| Semgrep p/ruby + p/brakeman + p/default | 3 | 14% |
+| **標準スキャナ合計** | **11** | **52%** |
+| カスタム Semgrep ルール（11ルール） | 10 | 48% |
+| **全スキャナ + カスタムルール合計** | **19** | **90%** |
+
+詳細は `docs/scanner_report_summary.md` を参照。
+
+### カスタム Semgrep ルール
+
+11 のカスタムルールを `docs/custom_semgrep_rules.yml` に定義。
+未検出だった 10 チャレンジを新たに検出可能にした。
+
+残りの未検出（2）：
+- `unsafe_file_upload` — 空の validation method（absence 脆弱性、パターンマッチ不可）
+- `broken_auth_timing` — クロスプロシージャな timing attack（意味解析が必要）

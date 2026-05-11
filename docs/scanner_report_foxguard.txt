@@ -1,0 +1,23 @@
+# Foxguard Scan Report (scanner-test/all-vulns branch)
+
+Date: 2026-05-11
+Command: npx foxguard .
+Version: 0.8.0
+
+## Summary
+
+35 issues found: 10 critical, 25 high
+90 files scanned in 0.28s
+
+## Findings by Category
+
+### Critical (10)
+- Command injection: app/controllers/tasks_controller.rb:82, lib/.../command_injection.rb:42, test/.../command_injection_test.rb:25,41, test/.../e2e_helper.rb:47,51
+- SQL injection: app/controllers/tasks_controller.rb:214, lib/.../sql_injection.rb:27, lib/.../sql_injection_order.rb:28
+- Eval: lib/vulnerabilities/base.rb:13
+
+### High (25)
+- Open redirect: app/controllers/application_controller.rb:19,26,28, app/controllers/sessions_controller.rb:15,24, app/controllers/tasks_controller.rb:61,93,95,174, app/controllers/users_controller.rb:15, lib/.../open_redirect.rb:28,30, lib/.../session_fixation.rb:28, lib/.../xxe_nokogiri.rb:76, lib/.../broken_auth_timing.rb:34
+- Mass assignment (permit!): app/controllers/tasks_controller.rb:224, lib/.../mass_assignment.rb:25
+- Path traversal: lib/vulnerabilities/base.rb:53,54
+- Hardcoded secrets: db/seeds.rb:6,7, test/.../broken_auth_timing_test.rb:74,93, test/.../e2e_helper.rb:12, test/.../log_leakage_test.rb:9

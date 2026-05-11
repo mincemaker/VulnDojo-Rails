@@ -1,0 +1,142 @@
+rules:
+  - id: detect-html-safe
+    languages:
+      - generic
+    patterns:
+      - pattern-regex: \.html_safe\b
+    paths:
+      include:
+        - "*.html.erb"
+    message: "Stored XSS: .html_safe bypasses ERB auto-escaping — user-controlled data rendered as raw HTML"
+    severity: WARNING
+    metadata:
+      cwe: "CWE-79"
+      challenge:
+        - xss_raw
+        - xss_stored_img
+
+  - id: detect-csrf-skip
+    languages:
+      - ruby
+    pattern: skip_forgery_protection
+    message: "CSRF protection disabled via skip_forgery_protection — cross-site request forgery risk"
+    severity: WARNING
+    metadata:
+      cwe: "CWE-352"
+      challenge:
+        - csrf_skip
+
+  - id: detect-unsafe-inline-script
+    languages:
+      - ruby
+    pattern: |
+      request.content_security_policy.script_src(:self, :unsafe_inline)
+    message: "Unsafe inline script policy: script-src allows unsafe-inline"
+    severity: WARNING
+    metadata:
+      cwe: "CWE-1021"
+      challenge:
+        - csp_disable
+
+  - id: detect-xxe-nokogiri
+    languages:
+      - ruby
+    patterns:
+      - pattern: |
+          Nokogiri::XML(...) do |$C|
+            ...
+            $C.noent
+            ...
+          end
+    message: "XXE vulnerability: Nokogiri XML parsing with entity expansion (noent) enabled"
+    severity: WARNING
+    metadata:
+      cwe: "CWE-611"
+      challenge:
+        - xxe_nokogiri
+
+  - id: detect-header-removal
+    languages:
+      - ruby
+    pattern: |
+      response.headers.delete("...")
+    message: "Security header being deleted via response.headers.delete — removes protection"
+    severity: WARNING
+    metadata:
+      cwe: "CWE-693"
+      challenge:
+        - header_removal
+
+  - id: detect-filter-parameters-clear
+    languages:
+      - ruby
+    patterns:
+      - pattern: |
+          $APP.config.filter_parameters.clear
+    message: "Parameter filters cleared — sensitive parameters (passwords, tokens) may be logged in plaintext"
+    severity: WARNING
+    metadata:
+      cwe: "CWE-532"
+      challenge:
+        - log_leakage
+
+  - id: detect-arel-sql-from
+    languages:
+      - ruby
+    patterns:
+      - pattern: |
+          ... .from($ARG)
+    message: "Dynamic argument to Model.from() — possible SQL injection via FROM clause"
+    severity: WARNING
+    metadata:
+      cwe: "CWE-89"
+      challenge:
+        - sql_injection_active_record
+
+  - id: detect-arel-where-interpolation
+    languages:
+      - ruby
+    pattern: |
+      $MODEL.where("... #{...} ...")
+    message: "String interpolation in ActiveRecord where() — SQL injection risk"
+    severity: WARNING
+    metadata:
+      cwe: "CWE-89"
+      challenge:
+        - sql_injection_active_record
+
+  - id: detect-css-injection
+    languages:
+      - generic
+    patterns:
+      - pattern-regex: style="[^"]*<%= .+? %>[^"]*"
+    message: "ERB expression in style attribute — CSS injection via user-controlled color"
+    severity: WARNING
+    metadata:
+      cwe: "CWE-79"
+      challenge:
+        - css_injection
+
+  - id: detect-session-fixation
+    languages:
+      - generic
+    patterns:
+      - pattern-regex: session\[:user_id\]\s*=\s*\S+
+    message: "Session variable set without reset_session — possible session fixation (check for preceding reset_session call)"
+    severity: WARNING
+    metadata:
+      cwe: "CWE-384"
+      challenge:
+        - session_fixation
+
+  - id: detect-open-redirect
+    languages:
+      - generic
+    patterns:
+      - pattern-regex: redirect_to\s+[a-zA-Z_][a-zA-Z0-9_]*\s*,\s*allow_other_host:\s*true
+    message: "Open redirect via redirect_to with allow_other_host: true and dynamic URL"
+    severity: WARNING
+    metadata:
+      cwe: "CWE-601"
+      challenge:
+        - open_redirect

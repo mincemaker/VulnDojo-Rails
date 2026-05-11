@@ -14,6 +14,7 @@ class OpenRedirectTest < ActiveSupport::TestCase
   end
 
   test "SAFE: external return_to is ignored, redirects to task" do
+    skip_if_vuln!("open_redirect")
     cookie = setup_session(@safe_server)
 
     # GET /tasks/new to get CSRF token
@@ -36,6 +37,7 @@ class OpenRedirectTest < ActiveSupport::TestCase
   end
 
   test "VULN: external return_to causes open redirect" do
+    skip_unless_vuln!("open_redirect")
     cookie = setup_session(@vuln_server)
 
     # GET /tasks/new to get CSRF token
@@ -57,6 +59,7 @@ class OpenRedirectTest < ActiveSupport::TestCase
   end
 
   test "SAFE: protocol-relative return_to is blocked" do
+    skip_if_vuln!("open_redirect")
     cookie = setup_session(@safe_server)
 
     res1 = @safe_server.get("/tasks/new", headers: { "Cookie" => cookie })

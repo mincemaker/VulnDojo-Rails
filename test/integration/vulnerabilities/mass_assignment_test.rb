@@ -62,11 +62,14 @@ class MassAssignmentTest < ActiveSupport::TestCase
   end
 
   test "SAFE: user_id parameter is ignored by strong parameters" do
+    skip_if_vuln!("mass_assignment")
     result = attempt_user_id_overwrite(@safe_server)
     refute result[:stolen], "user_id should NOT be overwritable with strong parameters"
   end
 
   test "VULN: user_id can be overwritten via permit!" do
+    skip_unless_vuln!("mass_assignment")
+    skip "IDOR と共存していると user_id 変更の検出ができない" if vuln_context_active?("idor")
     result = attempt_user_id_overwrite(@vuln_server)
     assert result[:stolen], "user_id should be overwritable with permit! (mass assignment vulnerability)"
   end
@@ -104,11 +107,13 @@ class MassAssignmentTest < ActiveSupport::TestCase
   end
 
   test "SAFE: updated_at parameter is ignored by strong parameters" do
+    skip_if_vuln!("mass_assignment")
     overwritten = attempt_updated_at_overwrite(@safe_server)
     refute overwritten, "updated_at should NOT be overwritable with strong parameters"
   end
 
   test "VULN: updated_at can be overwritten via permit!" do
+    skip_unless_vuln!("mass_assignment")
     overwritten = attempt_updated_at_overwrite(@vuln_server)
     assert overwritten, "updated_at should be overwritable with permit! (mass assignment vulnerability)"
   end

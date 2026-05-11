@@ -26,6 +26,7 @@ class SqlInjectionTest < ActiveSupport::TestCase
   end
 
   test "SAFE: normal search returns matching results scoped to current user" do
+    skip_if_vuln!("sql_injection")
     res = @safe_server.get("/tasks?q=#{URI.encode_www_form_component('UserA')}",
                            headers: { "Cookie" => @safe_cookie_a })
     body = res.body
@@ -36,6 +37,7 @@ class SqlInjectionTest < ActiveSupport::TestCase
   end
 
   test "SAFE: SQLi payload does not leak other users tasks" do
+    skip_if_vuln!("sql_injection")
     res = @safe_server.get("/tasks?q=#{URI.encode_www_form_component(SQLI_PAYLOAD)}",
                            headers: { "Cookie" => @safe_cookie_a })
     body = res.body
@@ -45,11 +47,13 @@ class SqlInjectionTest < ActiveSupport::TestCase
   end
 
   test "VULN: search functionality is available on index page" do
+    skip_unless_vuln!("sql_injection")
     res = @vuln_server.get("/tasks", headers: { "Cookie" => @vuln_cookie_a })
     assert_includes res.body, 'name="q"', "Search box must exist in vulnerable mode"
   end
 
   test "VULN: empty search query properly scopes tasks to current user" do
+    skip_unless_vuln!("sql_injection")
     res = @vuln_server.get("/tasks", headers: { "Cookie" => @vuln_cookie_a })
     body = res.body
     assert_includes body, "UserA Private Task"
@@ -58,6 +62,7 @@ class SqlInjectionTest < ActiveSupport::TestCase
   end
 
   test "VULN: normal search does not leak other users tasks even if queried" do
+    skip_unless_vuln!("sql_injection")
     # User A が他人のタスク（UserB）を検索してもヒットしないことを確認
     res = @vuln_server.get("/tasks?q=#{URI.encode_www_form_component('UserB')}",
                            headers: { "Cookie" => @vuln_cookie_a })
@@ -66,6 +71,7 @@ class SqlInjectionTest < ActiveSupport::TestCase
   end
 
   test "VULN: SQL injection payload bypasses user scope and leaks data" do
+    skip_unless_vuln!("sql_injection")
     res = @vuln_server.get("/tasks?q=#{URI.encode_www_form_component(SQLI_PAYLOAD)}",
                            headers: { "Cookie" => @vuln_cookie_a })
     body = res.body

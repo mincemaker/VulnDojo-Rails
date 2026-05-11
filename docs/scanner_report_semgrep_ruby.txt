@@ -1,0 +1,98 @@
+                   
+                   
+┌─────────────────┐
+│ 8 Code Findings │
+└─────────────────┘
+                                            
+    /src/app/controllers/tasks_controller.rb
+    ❯❱ ruby.lang.security.dangerous-exec.dangerous-exec
+          ❰❰ Blocking ❱❱
+          Detected non-static command inside Open3.capture3. Audit the input to 'Open3.capture3'. If        
+          unverified user data can reach this call site, this is a code injection vulnerability. A malicious
+          actor can inject a malicious script to execute arbitrary code.                                    
+          Details: https://sg.run/R8GY                                                                      
+                                                                                                            
+          105┆ stdout, stderr, status = Open3.capture3("curl -m 5 -s -L #{safe_url}")
+   
+   ❯❯❱ ruby.rails.security.injection.tainted-sql-string.tainted-sql-string
+          ❰❰ Blocking ❱❱
+          Detected user input used to manually construct a SQL string. This is usually bad practice because 
+          manual construction could accidentally result in a SQL injection. An attacker could use a SQL     
+          injection to steal or modify contents of the database. Instead, use a parameterized query which is
+          available by default in most database engines. Alternatively, consider using an object-relational 
+          mapper (ORM) such as ActiveRecord which will protect your queries.                                
+          Details: https://sg.run/Y85o                                                                      
+                                                                                                            
+          214┆ @tasks = Task.where("user_id = #{current_user.id} AND title LIKE '%#{params[:q]}%'") if
+               params[:q].present?                                                                    
+   
+    ❯❱ ruby.rails.security.brakeman.check-unscoped-find.check-unscoped-find
+          ❰❰ Blocking ❱❱
+          Found an unscoped `find(...)` with user-controllable input. If the ActiveRecord model being searched
+          against is sensitive, this may lead to Insecure Direct Object Reference (IDOR) behavior and allow   
+          users to read arbitrary records. Scope the find to the current user, e.g.                           
+          `current_user.accounts.find(params[:id])`.                                                          
+          Details: https://sg.run/dPbP                                                                        
+                                                                                                              
+          219┆ @task = Task.find(params[:id])
+                           
+    /src/app/models/task.rb
+   ❯❯❱ ruby.rails.security.brakeman.check-validation-regex.check-validation-regex
+          ❰❰ Blocking ❱❱
+          /^https?:\/\/.+/m Found an incorrectly-bounded regex passed to `validates_format_of` or `validate
+          ... format => ...`. Ruby regex behavior is multiline by default and lines should be terminated by
+          `\A` for beginning of line and `\Z` for end of line, respectively.                               
+          Details: https://sg.run/ZPo7                                                                     
+                                                                                                           
+            8┆ validates :url, format: { with: /^https?:\/\/.+/m, message: "は http:// または https://
+               で始まる必要があります", multiline: true },                                            
+            9┆                 allow_blank: true
+                                               
+    /src/lib/vulnerabilities/challenges/idor.rb
+    ❯❱ ruby.rails.security.brakeman.check-unscoped-find.check-unscoped-find
+          ❰❰ Blocking ❱❱
+          Found an unscoped `find(...)` with user-controllable input. If the ActiveRecord model being searched
+          against is sensitive, this may lead to Insecure Direct Object Reference (IDOR) behavior and allow   
+          users to read arbitrary records. Scope the find to the current user, e.g.                           
+          `current_user.accounts.find(params[:id])`.                                                          
+          Details: https://sg.run/dPbP                                                                        
+                                                                                                              
+           25┆ @task = Task.find(params[:id])  # 所有者スコープなし — IDOR 脆弱性
+                                                       
+    /src/lib/vulnerabilities/challenges/regex_bypass.rb
+   ❯❯❱ ruby.rails.security.brakeman.check-validation-regex.check-validation-regex
+          ❰❰ Blocking ❱❱
+          /^https?:\/\/.+/m Found an incorrectly-bounded regex passed to `validates_format_of` or `validate
+          ... format => ...`. Ruby regex behavior is multiline by default and lines should be terminated by
+          `\A` for beginning of line and `\Z` for end of line, respectively.                               
+          Details: https://sg.run/ZPo7                                                                     
+                                                                                                           
+           35┆ validates :url,
+           36┆           format: { with: /^https?:\/\/.+/m,  # ^ = 行頭マッチ (脆弱)
+           37┆                     message: "は http:// または https:// で始まる必要があります",
+           38┆                     multiline: true },
+           39┆           allow_blank: true
+                                                        
+    /src/lib/vulnerabilities/challenges/sql_injection.rb
+   ❯❯❱ ruby.rails.security.injection.tainted-sql-string.tainted-sql-string
+          ❰❰ Blocking ❱❱
+          Detected user input used to manually construct a SQL string. This is usually bad practice because 
+          manual construction could accidentally result in a SQL injection. An attacker could use a SQL     
+          injection to steal or modify contents of the database. Instead, use a parameterized query which is
+          available by default in most database engines. Alternatively, consider using an object-relational 
+          mapper (ORM) such as ActiveRecord which will protect your queries.                                
+          Details: https://sg.run/Y85o                                                                      
+                                                                                                            
+           27┆ @tasks = Task.where("user_id = #{current_user.id} AND title LIKE '%#{params[:q]}%'") if
+               params[:q].present?                                                                    
+                                               
+    /src/lib/vulnerabilities/challenges/ssrf.rb
+    ❯❱ ruby.lang.security.dangerous-exec.dangerous-exec
+          ❰❰ Blocking ❱❱
+          Detected non-static command inside Open3.capture3. Audit the input to 'Open3.capture3'. If        
+          unverified user data can reach this call site, this is a code injection vulnerability. A malicious
+          actor can inject a malicious script to execute arbitrary code.                                    
+          Details: https://sg.run/R8GY                                                                      
+                                                                                                            
+           59┆ stdout, stderr, status = Open3.capture3("curl -m 5 -s -L #{safe_url}")
+

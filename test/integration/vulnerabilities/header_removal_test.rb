@@ -12,6 +12,7 @@ class HeaderRemovalTest < ActiveSupport::TestCase
   end
 
   test "SAFE: security headers are present" do
+    skip_if_vuln!("header_removal")
     cookie = setup_session(@safe_server)
     res = @safe_server.get("/tasks", headers: { "Cookie" => cookie })
 
@@ -21,6 +22,7 @@ class HeaderRemovalTest < ActiveSupport::TestCase
   end
 
   test "VULN: security headers are missing" do
+    skip_unless_vuln!("header_removal")
     cookie = setup_session(@vuln_server)
     res = @vuln_server.get("/tasks", headers: { "Cookie" => cookie })
 

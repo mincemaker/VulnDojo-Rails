@@ -1,0 +1,62 @@
+#!/bin/bash -e
+# Run all security scanners against the codebase.
+# Usage: bin/scan-scanners [--only brakeman|foxguard|semgrep]
+#
+# All scanners run in containers to avoid host pollution.
+
+OUTDIR="${SCAN_OUTDIR:-docs}"
+SRC="/src"
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+
+run_brakeman() {
+  echo "=== Brakeman ($(brakeman --version 2>/dev/null || echo '?')) ==="
+  docker run --rm \
+    -v "$(pwd):$SRC" \
+    ghcr.io/presidentbeef/brakeman:latest \
+    brakeman --run-all-checks --no-pager "$SRC" 2>&1
+}
+
+run_foxguard() {
+  echo "=== Foxguard ==="
+  docker run --rm \
+    -v "$(pwd):$SRC" \
+    -w "$SRC" \
+    node:22-slim \
+    bash -c "npx foxguard@latest . 2>&1" 2>&1
+}
+
+run_semgrep_standard() {
+  local ruleset="$1" label="$2"
+  echo "=== Semgrep $label ==="
+  docker run --rm \
+    -v "$(pwd):$SRC" \
+    semgrep/semgrep:latest \
+    semgrep scan --config "$ruleset" "$SRC" 2>&1
+}
+
+run_semgrep_custom() {
+  echo "=== Semgrep (custom rules) ==="
+  docker run --rm \
+    -v "$(pwd):$SRC" \
+    semgrep/semgrep:latest \
+    semgrep scan --config "$SRC/docs/custom_semgrep_rules.yml" "$SRC" 2>&1
+}
+
+run_all() {
+  mkdir -p "$OUTDIR"
+  run_brakeman       | tee "$OUTDIR/scanner_report_brakeman.txt"
+  run_foxguard       | tee "$OUTDIR/scanner_report_foxguard.txt"
+  run_semgrep_standard "p/ruby"    "p/ruby"    | tee "$OUTDIR/scanner_report_semgrep_ruby.txt"
+  run_semgrep_standard "p/brakeman" "p/brakeman" | tee "$OUTDIR/scanner_report_semgrep_brakeman.txt"
+  run_semgrep_standard "p/default"  "p/default"  | tee "$OUTDIR/scanner_report_semgrep_default.txt"
+  run_semgrep_custom | tee "$OUTDIR/scanner_report_semgrep_custom.txt"
+  echo "=== All reports saved to $OUTDIR/ ==="
+}
+
+case "${1:-all}" in
+  brakeman)  run_brakeman ;;
+  foxguard)  run_foxguard ;;
+  semgrep)   run_semgrep_custom ;;
+  all)       run_all ;;
+  *)         echo "Usage: $0 [--only brakeman|foxguard|semgrep]"; exit 1 ;;
+esac

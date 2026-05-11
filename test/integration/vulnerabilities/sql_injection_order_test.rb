@@ -31,6 +31,7 @@ class SqlInjectionOrderTest < ActiveSupport::TestCase
   # --- SAFE モード ---
 
   test "SAFE: tasks are listed in created_at DESC order by default" do
+    skip_if_vuln!("sql_injection_order")
     res = @safe_server.get("/tasks", headers: { "Cookie" => @safe_cookie })
     body = res.body
 
@@ -42,6 +43,7 @@ class SqlInjectionOrderTest < ActiveSupport::TestCase
   end
 
   test "SAFE: sort param is ignored and order remains created_at DESC" do
+    skip_if_vuln!("sql_injection_order")
     res = @safe_server.get("/tasks?sort=#{URI.encode_www_form_component(ORDER_INJECTION_PAYLOAD)}",
                            headers: { "Cookie" => @safe_cookie })
     body = res.body
@@ -54,6 +56,7 @@ class SqlInjectionOrderTest < ActiveSupport::TestCase
   # --- VULN モード ---
 
   test "VULN: default order is created_at DESC without sort param" do
+    skip_unless_vuln!("sql_injection_order")
     res = @vuln_server.get("/tasks", headers: { "Cookie" => @vuln_cookie })
     body = res.body
 
@@ -62,6 +65,7 @@ class SqlInjectionOrderTest < ActiveSupport::TestCase
   end
 
   test "VULN: sort=title injection changes order to alphabetical ASC" do
+    skip_unless_vuln!("sql_injection_order")
     res = @vuln_server.get("/tasks?sort=#{URI.encode_www_form_component(ORDER_INJECTION_PAYLOAD)}",
                            headers: { "Cookie" => @vuln_cookie })
     body = res.body
@@ -72,6 +76,7 @@ class SqlInjectionOrderTest < ActiveSupport::TestCase
   end
 
   test "VULN: CASE WHEN expression is accepted as SQL injection payload" do
+    skip_unless_vuln!("sql_injection_order")
     payload = URI.encode_www_form_component(BLIND_INJECTION_PAYLOAD)
     res = @vuln_server.get("/tasks?sort=#{payload}", headers: { "Cookie" => @vuln_cookie })
 
