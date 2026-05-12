@@ -63,12 +63,22 @@ module Vulnerabilities
       routes = Rails.application.routes
       return unless routes
 
-      routes.prepend(&block)  # clear! のたびに再評価されるよう登録
+      # @prepend ブロックは clear! のたびに再実行される。
+      # 同じブロックが複数回登録された場合（開発モードでの Registry 再生成など）も含め、
+      # 重複定義エラーを無視するラッパーで包む。
+      idempotent = proc {
+        begin
+          instance_exec(&block)
+        rescue ArgumentError => e
+          raise e unless e.message.include?("Invalid route name, already in use")
+        end
+      }
+
+      routes.prepend(&idempotent)
       routes.disable_clear_and_finalize = true
       begin
-        routes.draw(&block)
+        routes.draw(&idempotent)
       rescue ArgumentError => e
-        # ルート名重複は既に定義済みとして無視
         raise e unless e.message.include?("Invalid route name, already in use")
       end
       registry.mark_route_applied(slug)
