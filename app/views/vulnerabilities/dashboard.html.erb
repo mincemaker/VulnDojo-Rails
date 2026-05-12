@@ -5,7 +5,7 @@
 <div class="card" style="margin-bottom: 16px; background: #fef3c7; border-left: 4px solid #f59e0b;">
   <strong>⚠️ この機能は脆弱性診断の学習用です。</strong><br>
   環境変数 <code>VULN_CHALLENGES</code> で有効にしたチャレンジがアプリに脆弱性を注入します。<br>
-  <code style="background:#fff; padding:2px 6px; border-radius:4px;">VULN_CHALLENGES=xss_raw,sql_injection bin/rails server</code>
+  <code style="background:#fff; padding:2px 6px; border-radius:4px;">VULN_CHALLENGES=<%= @registry.active_slugs.join(",") %> bin/rails server</code>
 </div>
 
 <table>
