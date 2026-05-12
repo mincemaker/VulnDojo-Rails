@@ -66,7 +66,7 @@ module Vulnerabilities
       # (古いファイルが prepend_view_path で意図せず優先されるのを防ぐ)
       FileUtils.rm_f(Dir[Rails.root.join("lib/vulnerabilities/views/**/*.erb")])
 
-      @applied_routes&.clear
+      # @applied_routes&.clear  # routes.prepend は累積するため、リロードのたびにクリアしてはいけない
       resolve_conflicts!
       active_challenges.each do |klass|
         $stdout.puts "[Vuln] Applying challenge: #{klass.slug}"
