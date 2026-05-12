@@ -5,6 +5,11 @@
 - For multi-step changes that will become a PR, confirm the branch strategy before starting.
 - Commit tests and implementation together in the same commit.
 
+## Merging Pull Requests
+
+- Always use `gh pr merge --merge` (merge commit). Never use `--squash` or `--rebase`.
+- The repository uses `merge.ff = false` to preserve branch history.
+
 ## TDD Workflow
 - Always use TDD (RED → GREEN → REFACTOR) for new features.
 - A server startup failure is NOT a valid RED state — write a failing test first.
