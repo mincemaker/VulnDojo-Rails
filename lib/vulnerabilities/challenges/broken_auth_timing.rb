@@ -16,6 +16,8 @@ module Vulnerabilities
       end
 
       def apply!
+        # テスト環境等でハッシュ計算が速すぎる場合、ネットワーク越しのタイミング攻撃が
+        # 観測不能になるため、本チャレンジ有効時のみ BCrypt の計算コストを引き上げる
         ActiveModel::SecurePassword.min_cost = false
         BCrypt::Engine.cost = 10
 

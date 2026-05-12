@@ -105,3 +105,22 @@ class BrokenAuthTimingTest < ActiveSupport::TestCase
       "bcrypt is skipped when user not found."
   end
 end
+
+# User.singleton_class への prepend_to 冪等性を検証する
+# broken_auth_timing は prepend_to(User.singleton_class, ...) を使う初めてのチャレンジであり、
+# apply! を複数回呼んでも singleton_class の ancestors に重複しないことを確認する
+class BrokenAuthTimingSingletonPrependIdempotencyTest < ActiveSupport::TestCase
+  SLUG = Vulnerabilities::Challenges::BrokenAuthTiming.slug
+
+  test "apply! called twice does not double-prepend to User.singleton_class" do
+    challenge = Vulnerabilities::Challenges::BrokenAuthTiming.new
+    challenge.apply!
+    challenge.apply!
+
+    count = User.singleton_class.ancestors.count { |a|
+      a.instance_variable_get(:@vuln_slug) == SLUG
+    }
+    assert_equal 1, count,
+      "User.singleton_class に #{SLUG} モジュールが #{count} 回 prepend されている（期待: 1）"
+  end
+end
