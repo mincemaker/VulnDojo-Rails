@@ -1,5 +1,5 @@
 ---
-name: merge-pr
+name: merge-pr-rails
 description: "git worktree を使って GitHub PR を安全に取り込むワークフロー。worktree 作成・コンテナ内フルテスト・main へ rebase・レビューコメント投稿・マージ確認まで一連で実施する。「PR を取り込む」「PR をマージしたい」「依存関係の更新 PR を確認・マージしたい」「Renovate の PR をレビューしたい」などの文脈で積極的にトリガーすること。PR 番号を引数として受け取るか、引数なしでオープン PR 一覧から対話的に選択できる。"
 allowed-tools: Bash
 ---
