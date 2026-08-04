@@ -211,9 +211,9 @@ GEM
       erb
       psych (>= 4.0.0)
       tsort
-    redis (5.4.1)
-      redis-client (>= 0.22.0)
-    redis-client (0.28.0)
+    redis (6.0.0)
+      redis-client (= 0.30.1)
+    redis-client (0.30.1)
       connection_pool
     reline (0.6.3)
       io-console (~> 0.5)
@@ -259,7 +259,7 @@ DEPENDENCIES
   nokogiri
   puma (>= 5.0)
   rails (~> 8.0)
-  redis (~> 5.0)
+  redis (~> 6.0)
   sqlite3 (>= 1.4)
   tzinfo-data
   web-console
