@@ -3,9 +3,9 @@ import { web } from '@e2e-dev/web';
 import { chatgpt } from 'e2e/oauth/chatgpt';
 
 export default {
-  tests: ['tests/**/*.e2e.ts', '!tests/example.e2e.ts'],
+  tests: 'tests/**/*.e2e.ts',
   workers: 1,
-  // Your ChatGPT subscription serves the model; sign in once with `e2e login openai`, `e2e models openai` lists the ids.
+  // Model setup is optional: current tests make no agent calls and need no login.
   agents: {
     default: {
       model: chatgpt('gpt-6-luna'),

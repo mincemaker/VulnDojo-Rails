@@ -28,6 +28,16 @@ bin/rails db:prepare
 bin/rails db:seed   # デモユーザ作成: demo@example.com / password123
 ```
 
+### エージェントを使った開発の初期セットアップ
+
+Claude Code または Codex を使う場合は、[APM 0.33](https://github.com/microsoft/apm) 以降を用意し、リポジトリのルートで次を実行してください。ホスト側に `e2e` と `migrate-to-e2e` のスキルを導入します。
+
+```bash
+apm install --frozen
+```
+
+スキルの管理方法は[エージェント用スキルの導入](#エージェント用スキルの導入)、Docker でのテスト準備・実行は[テスト](#-テスト)を参照してください。clone 後の `npx e2e init` は不要です。
+
 ## 起動
 
 ```bash
@@ -300,6 +310,25 @@ docker compose -f compose.yaml -f compose.e2e.yaml run --rm e2e npx e2e run
 ```
 
 Minitest と e2e は DB を共有するため順番に実行してください。
+テストは Docker 内で実行します。現在の10件はモデルを呼ばないため、AI のログインや API キーは不要です。
+
+このリポジトリには初期化済みの設定・テスト・npm 依存関係をコミットしています。clone 後に `npx e2e init` を実行する必要はありません。`init` は新しいプロジェクトを初期化するときに使用します。
+
+### エージェント用スキルの導入
+
+`e2e` と `migrate-to-e2e` は `apm.yml` で管理し、取得元を `apm.lock.yaml` に固定しています。[APM 0.33](https://github.com/microsoft/apm) 以降で、ホスト側から次を実行してください。
+
+```bash
+apm install --frozen
+```
+
+Claude Code 向けの `.claude/skills/` と Codex 向けの `.agents/skills/` に両スキルが配置されます。これらの生成ファイルはコミットせず、`apm.yml` と `apm.lock.yaml` を共有します。APM はスキルを導入し、上記の `npm ci` はテスト実行に必要な npm パッケージを導入します。テストの実行だけならスキルの導入は不要です。
+
+パッケージに同梱された手順は Docker 内の `npx e2e guide` でも確認できます。MCP 接続は任意で、このテストスイートの実行には必要ありません。
+
+### 失敗時の確認
+
+e2e が案内する `.e2e/results/<test>/trace.md` を最初に確認してください。Rails のリクエストログは `.e2e/logs/rails-<port>-app.log`、Puma の出力は `.e2e/logs/rails-<port>-process.log` に保存され、コンテナ終了後も残ります。起動に失敗したときはポート、チャレンジ構成、プロセスの終了状態とログの末尾が表示されます。
 
 HTTP テストは SAFE 用と VULN 用の Rails サーバーを別プロセスで起動して検証します。`ServerPool` がサーバーインスタンスを `VULN_CHALLENGES` の値でキャッシュし、同一構成のサーバーはテストクラス間で共有・再利用されます。ポートは動的に割り当てられます。
 

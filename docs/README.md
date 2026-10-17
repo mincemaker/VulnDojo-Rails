@@ -395,7 +395,7 @@ VULN_CHALLENGES=xss_stored_img bin/rails server -b 127.0.0.1
 検出ポイント: `lib/vulnerabilities/challenges/xss_stored_img.rb` — `@task.description.html_safe`
 
 #### ブラウザテストについて
-`test/integration/vulnerabilities/xss_stored_img_browser_test.rb` では Ferrum を用いて「imgタグがDOMに存在するだけでなく、onerror等でJavaScriptが実際に実行されたか（window.__xssがセットされるか）」を検証しています。
+`tests/xss-stored-img.e2e.ts` では e2e で Chromium を操作し、img タグの DOM への挿入と、onerror による JavaScript の実行を `window.__xss` で検証しています。
 このため、CSP有効/無効の両方でテストし、JS実行の有無を自動で確認できます。
 
 参考: https://guides.rubyonrails.org/security.html#cross-site-scripting-xss
