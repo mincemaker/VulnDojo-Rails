@@ -3,6 +3,14 @@
   "private": true,
   "devDependencies": {
     "@herb-tools/linter": "latest",
-    "@herb-tools/formatter": "latest"
+    "@herb-tools/formatter": "latest",
+    "e2e": "^0.21.2",
+    "@e2e-dev/web": "^0.15.2",
+    "ai": "^7.0.0",
+    "zod": "^4.1.8",
+    "@ai-sdk/openai": "^4.0.0"
+  },
+  "scripts": {
+    "test:e2e": "e2e run"
   }
 }

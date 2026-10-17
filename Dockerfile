@@ -25,6 +25,14 @@ ENTRYPOINT ["/rails/bin/docker-entrypoint"]
 EXPOSE 3000
 CMD ["./bin/rails", "server", "-b", "0.0.0.0"]
 
+FROM node:24-bookworm-slim AS e2e-node
+
+FROM development AS e2e
+COPY --from=e2e-node /usr/local/bin/node /usr/local/bin/node
+COPY --from=e2e-node /usr/local/lib/node_modules /usr/local/lib/node_modules
+RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
+    ln -s /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
+
 # Production base stage
 FROM registry.docker.com/library/ruby:$RUBY_VERSION-slim as base
 

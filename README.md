@@ -278,33 +278,49 @@ docker compose exec web bin/rails db:prepare RAILS_ENV=development
 ### テストの実行
 
 ```bash
-# コンテナ内で全テスト実行 (110テスト, 264アサーション)
+# コンテナ内で Minitest を実行
 docker compose exec web bundle exec rake test
 
 # 個別実行
 docker compose exec web bundle exec ruby -Itest test/integration/vulnerabilities/xss_raw_test.rb
-docker compose exec web bundle exec ruby -Itest test/integration/vulnerabilities/xss_raw_browser_test.rb
+docker compose -f compose.yaml -f compose.e2e.yaml run --rm e2e npx e2e run tests/xss-raw.e2e.ts
 ```
 
 ### テストの仕組み
 
-各テストは **別プロセスで Rails サーバー**（SAFE 用 / VULN 用）を起動して検証します。`ServerPool` がサーバーインスタンスを `VULN_CHALLENGES` の値でキャッシュし、同一構成のサーバーはテストクラス間で共有・再利用されます。ポートは動的に割り当てられます。
+e2e への移行状況と検証結果は [MIGRATION.md](MIGRATION.md) に記録しています。
+CSS injection、XSS raw、画像添付の XSS、CSP のブラウザテストを e2e で実行できます。
+ブラウザテスト全10件の移行が完了しています。
 
-HTTP テスト (`*_test.rb`) は `Net::HTTP` でレスポンスを検証します。ブラウザテスト (`*_browser_test.rb`) は Ferrum (Chrome DevTools Protocol) でヘッドレス Chromium を操作し、JS 実行・DOM 状態・計算済みスタイルをブラウザレベルで検証します。
+```bash
+docker compose -f compose.yaml -f compose.e2e.yaml build e2e
+docker compose -f compose.yaml -f compose.e2e.yaml run --rm e2e npm ci
+docker compose -f compose.yaml -f compose.e2e.yaml run --rm e2e npx @e2e-dev/web install chromium
+docker compose -f compose.yaml -f compose.e2e.yaml run --rm e2e npx e2e run
+```
+
+Minitest と e2e は DB を共有するため順番に実行してください。
+
+HTTP テストは SAFE 用と VULN 用の Rails サーバーを別プロセスで起動して検証します。`ServerPool` がサーバーインスタンスを `VULN_CHALLENGES` の値でキャッシュし、同一構成のサーバーはテストクラス間で共有・再利用されます。ポートは動的に割り当てられます。
+
+HTTP テスト (`*_test.rb`) は `Net::HTTP` でレスポンスを検証します。ブラウザテスト (`tests/*.e2e.ts`) は e2e でヘッドレス Chromium を操作し、JS 実行・DOM 状態・計算済みスタイルを検証します。e2e のサーバーは一時ディレクトリ内のアプリで起動し、構成ごとの生成ビューを分離しています。
 
 ```
  テストプロセス
     ├── ServerPool (VULN_CHALLENGES="")       ← 安全なサーバー（共有）
     ├── ServerPool (VULN_CHALLENGES="xss_raw") ← 脆弱なサーバー（共有）
-    ├── Net::HTTP で両方にリクエスト → レスポンスを比較  (HTTPテスト)
-    └── BrowserPool (Chromium) でページを開いて DOM/JS を検証 (ブラウザテスト)
+    └── Net::HTTP で両方にリクエスト → レスポンスを比較
+
+ e2e ランナー
+    ├── tests/support/rails.rb → 構成ごとに分離した Rails サーバー
+    └── Chromium でページを開いて DOM/JS を検証
 ```
 
-テストヘルパー (`e2e_helper.rb`) がユーザーのサインアップ・ログイン・セッション Cookie 管理・タスク作成を自動化します。`browser_helper.rb` は `e2e_helper.rb` を継承し Ferrum のブラウザ操作を追加します。
+テストヘルパー (`e2e_helper.rb`) がユーザーのサインアップ・ログイン・セッション Cookie 管理・タスク作成を自動化します。e2e もこのヘルパーを再利用し、画像添付には `tests/support/image-task.rb` を使用します。
 
-### テスト一覧 (110テスト)
+### テスト一覧
 
-#### HTTP テスト (64テスト)
+#### HTTP テスト
 
 | チャレンジ | SAFEテスト | VULNテスト |
 |-----------|------|------|
@@ -330,14 +346,14 @@ HTTP テスト (`*_test.rb`) は `Net::HTTP` でレスポンスを検証しま�
 | xxe_nokogiri | 正常XMLインポート成功、XXEペイロードが展開されない | `config.noent` で `/etc/passwd` の内容がタスクの description に漏洩 |
 
 
-#### ブラウザテスト — Ferrum (Chromium) (7テスト)
+#### ブラウザテスト — e2e (Chromium) (10テスト)
 
 | チャレンジ | SAFEテスト | VULNテスト |
 |-----------|------|------|
-| xss_raw (browser) | img[onerror] 要素が DOM に存在しない | html_safe で img[onerror] が DOM に挿入される |
-| xss_stored_img (browser) | description経由のimg[onerror]要素がDOMに存在しない | description.html_safeでimg[onerror]がDOMに挿入される（CSP有効時はJS発火しない） |
-| css_injection (browser) | #task-color-indicator 要素が存在しない | getComputedStyle で borderLeftColor:red が適用済み |
-| csp_disable (browser) | xss_raw + CSP → onerror が実行されない | xss_raw + csp_disable → window.__xss が true |
+| css_injection | #task-color-indicator 要素が存在しない | getComputedStyle で borderLeftColor:red が適用済み |
+| xss_raw | img[onerror] 要素が DOM に存在しない | html_safe で img[onerror] が DOM に挿入される |
+| csp_disable | xss_raw + CSP → onerror が実行されない | xss_raw + csp_disable → window.__xss が true |
+| xss_stored_img | description のエスケープと CSP による実行遮断 | DOM への挿入と CSP 無効時の onerror 実行 |
 
 > XSS系チャレンジはCSP（Content-Security-Policy）が有効な場合、onerror等のインラインJSは発火しません。`csp_disable`と組み合わせることで実際にJSが実行される挙動をブラウザテストで検証できます。
 
@@ -446,13 +462,13 @@ VulnDojo-Rails/
 │   │   ├── xxe_nokogiri.rb
 │   │   └── (21 files)
 │   └── views/tasks/                     # 脆弱なテンプレート（注入用）
-├── test/integration/vulnerabilities/     # E2E テスト (110テスト, 264アサーション)
+├── test/integration/vulnerabilities/     # HTTP と注入レイヤーのテスト
 │   ├── e2e_helper.rb                    # サーバー管理 + セッション管理 (HTTP)
-│   ├── browser_helper.rb                # Ferrum ブラウザ操作ヘルパー
 │   ├── xss_stored_img_test.rb           # 画像キャプションXSS HTTPテスト
-│   ├── xss_stored_img_browser_test.rb   # 画像キャプションXSS ブラウザテスト
-│   ├── *_test.rb                        # HTTP レベル E2E テスト
-│   └── *_browser_test.rb                # ブラウザレベル E2E テスト
+│   └── *_test.rb                        # HTTP レベル E2E テスト等
+├── tests/                              # e2e ブラウザテスト10件
+│   ├── *.e2e.ts                        # DOM・JS・計算済みスタイルの検証
+│   └── support/                        # Rails 起動・HTTP ヘルパー・画像添付
 ├── config/
 │   ├── initializers/
 │   │   ├── vulnerabilities.rb           # 注入の初期化

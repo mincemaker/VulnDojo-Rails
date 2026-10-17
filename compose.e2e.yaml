@@ -1,0 +1,19 @@
+services:
+  e2e:
+    extends:
+      file: compose.yaml
+      service: web
+    build:
+      target: e2e
+    ports: !reset []
+    environment:
+      RAILS_ENV: test
+      VULN_CHALLENGES: ""
+    volumes:
+      - e2e_node_modules:/rails/node_modules
+      - e2e_browsers:/root/.cache/ms-playwright
+    command: ["npx", "e2e", "run"]
+
+volumes:
+  e2e_node_modules:
+  e2e_browsers:
