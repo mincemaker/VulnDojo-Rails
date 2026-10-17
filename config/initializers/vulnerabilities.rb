@@ -15,6 +15,12 @@ require_relative "../../lib/vulnerabilities/engine"
 # チャレンジをロード・登録・有効化（起動時に1回、applyはしない）
 Vulnerabilities::Engine.setup!
 
+# セッション用ミドルウェアが保存先を保持する前に Redis へ切り替える。
+if Vulnerabilities::Registry.instance.enabled?("ssrf")
+  Rails.application.config.cache_store = :redis_cache_store, { url: ENV.fetch("REDIS_URL", "redis://redis:6379/1") }
+  Rails.cache = ActiveSupport::Cache.lookup_store(Rails.application.config.cache_store)
+end
+
 # development 環境ではクラスがリロードされるため、
 # to_prepare で毎回適用する（コントローラがロード済みのタイミング）
 Rails.application.config.to_prepare do

