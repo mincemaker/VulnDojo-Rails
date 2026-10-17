@@ -1,0 +1,288 @@
+lockfile_version: '1'
+apm_version: 0.33.0
+dependencies:
+- repo_url: tester-army/e2e
+  name: e2e
+  host: github.com
+  resolved_commit: ff3bf3917f2b5bb0f81e5bc5f4fdaa24d023afd0
+  resolved_ref: ff3bf3917f2b5bb0f81e5bc5f4fdaa24d023afd0
+  version: unknown
+  virtual_path: skills/e2e
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/e2e
+  - .agents/skills/e2e/SKILL.md
+  - .agents/skills/e2e/references/agent.md
+  - .agents/skills/e2e/references/bug-bash.md
+  - .agents/skills/e2e/references/debugging.md
+  - .agents/skills/e2e/references/explore.md
+  - .agents/skills/e2e/references/mcp.md
+  - .agents/skills/e2e/references/running.md
+  - .agents/skills/e2e/references/setup.md
+  - .agents/skills/e2e/references/writing-tests.md
+  - .claude/skills/e2e
+  - .claude/skills/e2e/SKILL.md
+  - .claude/skills/e2e/references/agent.md
+  - .claude/skills/e2e/references/bug-bash.md
+  - .claude/skills/e2e/references/debugging.md
+  - .claude/skills/e2e/references/explore.md
+  - .claude/skills/e2e/references/mcp.md
+  - .claude/skills/e2e/references/running.md
+  - .claude/skills/e2e/references/setup.md
+  - .claude/skills/e2e/references/writing-tests.md
+  deployed_file_hashes:
+    .agents/skills/e2e/SKILL.md: sha256:99de53b787d3ecc7c55f169cf70b5d1605188a3010f31cb85e2c5e53cf9fe9aa
+    .agents/skills/e2e/references/agent.md: sha256:ed39c749bd09730ed23927283010b045fd32f75adc6f971fdbe6f557f34260db
+    .agents/skills/e2e/references/bug-bash.md: sha256:ae2f3f969ee14a725760ead9ede0ab0d2234d0e3f31454254158491a3e727f73
+    .agents/skills/e2e/references/debugging.md: sha256:2c19f060bb2a5c2667286731ef2cdfea6eed2f9b13b2592c708763fab35994c3
+    .agents/skills/e2e/references/explore.md: sha256:85e3090a3849522fd00446bdb1735524d92e5815070dc55ba2a45da1f30c665f
+    .agents/skills/e2e/references/mcp.md: sha256:e220368f6e9a0ef7728c00129271152f4b8b594fc046fce4bc9b49cd7c4c2319
+    .agents/skills/e2e/references/running.md: sha256:1a3956de9fc93ee63afef8e1885a69d2ef67f7bda0d133b13856e5f844365424
+    .agents/skills/e2e/references/setup.md: sha256:4a7d482f3d97fbaff91c4f47647570cd4e6d19a24c118a14a18c9531681bccb1
+    .agents/skills/e2e/references/writing-tests.md: sha256:f0a1481140edce6ab59956a917d266da4cd3d09a6c3ef22485e358187b6afbf0
+    .claude/skills/e2e/SKILL.md: sha256:99de53b787d3ecc7c55f169cf70b5d1605188a3010f31cb85e2c5e53cf9fe9aa
+    .claude/skills/e2e/references/agent.md: sha256:ed39c749bd09730ed23927283010b045fd32f75adc6f971fdbe6f557f34260db
+    .claude/skills/e2e/references/bug-bash.md: sha256:ae2f3f969ee14a725760ead9ede0ab0d2234d0e3f31454254158491a3e727f73
+    .claude/skills/e2e/references/debugging.md: sha256:2c19f060bb2a5c2667286731ef2cdfea6eed2f9b13b2592c708763fab35994c3
+    .claude/skills/e2e/references/explore.md: sha256:85e3090a3849522fd00446bdb1735524d92e5815070dc55ba2a45da1f30c665f
+    .claude/skills/e2e/references/mcp.md: sha256:e220368f6e9a0ef7728c00129271152f4b8b594fc046fce4bc9b49cd7c4c2319
+    .claude/skills/e2e/references/running.md: sha256:1a3956de9fc93ee63afef8e1885a69d2ef67f7bda0d133b13856e5f844365424
+    .claude/skills/e2e/references/setup.md: sha256:4a7d482f3d97fbaff91c4f47647570cd4e6d19a24c118a14a18c9531681bccb1
+    .claude/skills/e2e/references/writing-tests.md: sha256:f0a1481140edce6ab59956a917d266da4cd3d09a6c3ef22485e358187b6afbf0
+  content_hash: sha256:aebe4459e6682192be2ceacdbef5e9bf0f2bed62d4b2a4fc17d53f93b1219212
+- repo_url: tester-army/e2e
+  name: migrate-to-e2e
+  host: github.com
+  resolved_commit: ff3bf3917f2b5bb0f81e5bc5f4fdaa24d023afd0
+  resolved_ref: ff3bf3917f2b5bb0f81e5bc5f4fdaa24d023afd0
+  version: unknown
+  virtual_path: skills/migrate-to-e2e
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/migrate-to-e2e
+  - .agents/skills/migrate-to-e2e/SKILL.md
+  - .claude/skills/migrate-to-e2e
+  - .claude/skills/migrate-to-e2e/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/migrate-to-e2e/SKILL.md: sha256:b6dbb807ba9278ca95384a1bf6fd0bdb3cb2d17acba492a6cc32b4697e57884e
+    .claude/skills/migrate-to-e2e/SKILL.md: sha256:b6dbb807ba9278ca95384a1bf6fd0bdb3cb2d17acba492a6cc32b4697e57884e
+  content_hash: sha256:e13f13c0931a0b857baf681f40cbedbc12544b8f8e5fff938f74c0ef71b2a631
+deployments:
+- kind: project-relative
+  target: claude
+  value: .claude/skills/e2e
+  runtime: null
+  scope: project
+  owners:
+  - tester-army/e2e/skills/e2e
+  active_owner: tester-army/e2e/skills/e2e
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/e2e/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - tester-army/e2e/skills/e2e
+  active_owner: tester-army/e2e/skills/e2e
+  content_hash: sha256:99de53b787d3ecc7c55f169cf70b5d1605188a3010f31cb85e2c5e53cf9fe9aa
+- kind: project-relative
+  target: claude
+  value: .claude/skills/e2e/references/agent.md
+  runtime: null
+  scope: project
+  owners:
+  - tester-army/e2e/skills/e2e
+  active_owner: tester-army/e2e/skills/e2e
+  content_hash: sha256:ed39c749bd09730ed23927283010b045fd32f75adc6f971fdbe6f557f34260db
+- kind: project-relative
+  target: claude
+  value: .claude/skills/e2e/references/bug-bash.md
+  runtime: null
+  scope: project
+  owners:
+  - tester-army/e2e/skills/e2e
+  active_owner: tester-army/e2e/skills/e2e
+  content_hash: sha256:ae2f3f969ee14a725760ead9ede0ab0d2234d0e3f31454254158491a3e727f73
+- kind: project-relative
+  target: claude
+  value: .claude/skills/e2e/references/debugging.md
+  runtime: null
+  scope: project
+  owners:
+  - tester-army/e2e/skills/e2e
+  active_owner: tester-army/e2e/skills/e2e
+  content_hash: sha256:2c19f060bb2a5c2667286731ef2cdfea6eed2f9b13b2592c708763fab35994c3
+- kind: project-relative
+  target: claude
+  value: .claude/skills/e2e/references/explore.md
+  runtime: null
+  scope: project
+  owners:
+  - tester-army/e2e/skills/e2e
+  active_owner: tester-army/e2e/skills/e2e
+  content_hash: sha256:85e3090a3849522fd00446bdb1735524d92e5815070dc55ba2a45da1f30c665f
+- kind: project-relative
+  target: claude
+  value: .claude/skills/e2e/references/mcp.md
+  runtime: null
+  scope: project
+  owners:
+  - tester-army/e2e/skills/e2e
+  active_owner: tester-army/e2e/skills/e2e
+  content_hash: sha256:e220368f6e9a0ef7728c00129271152f4b8b594fc046fce4bc9b49cd7c4c2319
+- kind: project-relative
+  target: claude
+  value: .claude/skills/e2e/references/running.md
+  runtime: null
+  scope: project
+  owners:
+  - tester-army/e2e/skills/e2e
+  active_owner: tester-army/e2e/skills/e2e
+  content_hash: sha256:1a3956de9fc93ee63afef8e1885a69d2ef67f7bda0d133b13856e5f844365424
+- kind: project-relative
+  target: claude
+  value: .claude/skills/e2e/references/setup.md
+  runtime: null
+  scope: project
+  owners:
+  - tester-army/e2e/skills/e2e
+  active_owner: tester-army/e2e/skills/e2e
+  content_hash: sha256:4a7d482f3d97fbaff91c4f47647570cd4e6d19a24c118a14a18c9531681bccb1
+- kind: project-relative
+  target: claude
+  value: .claude/skills/e2e/references/writing-tests.md
+  runtime: null
+  scope: project
+  owners:
+  - tester-army/e2e/skills/e2e
+  active_owner: tester-army/e2e/skills/e2e
+  content_hash: sha256:f0a1481140edce6ab59956a917d266da4cd3d09a6c3ef22485e358187b6afbf0
+- kind: project-relative
+  target: claude
+  value: .claude/skills/migrate-to-e2e
+  runtime: null
+  scope: project
+  owners:
+  - tester-army/e2e/skills/migrate-to-e2e
+  active_owner: tester-army/e2e/skills/migrate-to-e2e
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/migrate-to-e2e/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - tester-army/e2e/skills/migrate-to-e2e
+  active_owner: tester-army/e2e/skills/migrate-to-e2e
+  content_hash: sha256:b6dbb807ba9278ca95384a1bf6fd0bdb3cb2d17acba492a6cc32b4697e57884e
+- kind: project-relative
+  target: codex
+  value: .agents/skills/e2e
+  runtime: null
+  scope: project
+  owners:
+  - tester-army/e2e/skills/e2e
+  active_owner: tester-army/e2e/skills/e2e
+  content_hash: null
+- kind: project-relative
+  target: codex
+  value: .agents/skills/e2e/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - tester-army/e2e/skills/e2e
+  active_owner: tester-army/e2e/skills/e2e
+  content_hash: sha256:99de53b787d3ecc7c55f169cf70b5d1605188a3010f31cb85e2c5e53cf9fe9aa
+- kind: project-relative
+  target: codex
+  value: .agents/skills/e2e/references/agent.md
+  runtime: null
+  scope: project
+  owners:
+  - tester-army/e2e/skills/e2e
+  active_owner: tester-army/e2e/skills/e2e
+  content_hash: sha256:ed39c749bd09730ed23927283010b045fd32f75adc6f971fdbe6f557f34260db
+- kind: project-relative
+  target: codex
+  value: .agents/skills/e2e/references/bug-bash.md
+  runtime: null
+  scope: project
+  owners:
+  - tester-army/e2e/skills/e2e
+  active_owner: tester-army/e2e/skills/e2e
+  content_hash: sha256:ae2f3f969ee14a725760ead9ede0ab0d2234d0e3f31454254158491a3e727f73
+- kind: project-relative
+  target: codex
+  value: .agents/skills/e2e/references/debugging.md
+  runtime: null
+  scope: project
+  owners:
+  - tester-army/e2e/skills/e2e
+  active_owner: tester-army/e2e/skills/e2e
+  content_hash: sha256:2c19f060bb2a5c2667286731ef2cdfea6eed2f9b13b2592c708763fab35994c3
+- kind: project-relative
+  target: codex
+  value: .agents/skills/e2e/references/explore.md
+  runtime: null
+  scope: project
+  owners:
+  - tester-army/e2e/skills/e2e
+  active_owner: tester-army/e2e/skills/e2e
+  content_hash: sha256:85e3090a3849522fd00446bdb1735524d92e5815070dc55ba2a45da1f30c665f
+- kind: project-relative
+  target: codex
+  value: .agents/skills/e2e/references/mcp.md
+  runtime: null
+  scope: project
+  owners:
+  - tester-army/e2e/skills/e2e
+  active_owner: tester-army/e2e/skills/e2e
+  content_hash: sha256:e220368f6e9a0ef7728c00129271152f4b8b594fc046fce4bc9b49cd7c4c2319
+- kind: project-relative
+  target: codex
+  value: .agents/skills/e2e/references/running.md
+  runtime: null
+  scope: project
+  owners:
+  - tester-army/e2e/skills/e2e
+  active_owner: tester-army/e2e/skills/e2e
+  content_hash: sha256:1a3956de9fc93ee63afef8e1885a69d2ef67f7bda0d133b13856e5f844365424
+- kind: project-relative
+  target: codex
+  value: .agents/skills/e2e/references/setup.md
+  runtime: null
+  scope: project
+  owners:
+  - tester-army/e2e/skills/e2e
+  active_owner: tester-army/e2e/skills/e2e
+  content_hash: sha256:4a7d482f3d97fbaff91c4f47647570cd4e6d19a24c118a14a18c9531681bccb1
+- kind: project-relative
+  target: codex
+  value: .agents/skills/e2e/references/writing-tests.md
+  runtime: null
+  scope: project
+  owners:
+  - tester-army/e2e/skills/e2e
+  active_owner: tester-army/e2e/skills/e2e
+  content_hash: sha256:f0a1481140edce6ab59956a917d266da4cd3d09a6c3ef22485e358187b6afbf0
+- kind: project-relative
+  target: codex
+  value: .agents/skills/migrate-to-e2e
+  runtime: null
+  scope: project
+  owners:
+  - tester-army/e2e/skills/migrate-to-e2e
+  active_owner: tester-army/e2e/skills/migrate-to-e2e
+  content_hash: null
+- kind: project-relative
+  target: codex
+  value: .agents/skills/migrate-to-e2e/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - tester-army/e2e/skills/migrate-to-e2e
+  active_owner: tester-army/e2e/skills/migrate-to-e2e
+  content_hash: sha256:b6dbb807ba9278ca95384a1bf6fd0bdb3cb2d17acba492a6cc32b4697e57884e

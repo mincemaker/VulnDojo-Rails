@@ -1,0 +1,17 @@
+name: VulnDojo-Rails
+version: 1.0.0
+description: APM project for VulnDojo-Rails
+author: mincemaker
+# Which agent platforms to deploy to.
+# Resolution order: --target flag > this field > auto-detect from filesystem.
+# Accepted values: agent-skills, antigravity, claude, codex, copilot, cursor, gemini, grok-build, hermes, kiro, opencode, vscode, windsurf
+targets:
+  - codex
+  - claude
+dependencies:
+  apm:
+    - tester-army/e2e/skills/migrate-to-e2e#ff3bf3917f2b5bb0f81e5bc5f4fdaa24d023afd0
+    - tester-army/e2e/skills/e2e#ff3bf3917f2b5bb0f81e5bc5f4fdaa24d023afd0
+  mcp: []
+includes: auto
+scripts: {}
