@@ -43,6 +43,10 @@ module ImageTaskHelper
       m = res["location"].match(%r{/tasks/(\d+)})
       task_id = m[1].to_i if m
     end
+    unless task_id
+      raise "POST /tasks on port #{server.port} failed: HTTP #{res.code}, " \
+        "Location=#{res['location'].inspect}, response=#{res.body.to_s[0, 500]}"
+    end
     { id: task_id, cookie: cookie }
   end
 end

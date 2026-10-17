@@ -5,13 +5,14 @@ import { createTask } from './support/rails-task.js';
 
 const title = '<img src=x onerror="window.__xss=true">';
 
-test('SAFE: XSS payload is escaped — no malicious img element in DOM', async ({ app, browser }) => {
+test('SAFE: XSS payload is escaped — no malicious img element in DOM', async ({ app, browser, screen }) => {
   const result = await createTask(3101, { title });
   expect(result.id).toBeTruthy();
   const [name, ...value] = result.cookie.split('=');
   await browser.setCookies([{ name, value: value.join('='), domain: '127.0.0.1', path: '/' }]);
   await app.open(`http://127.0.0.1:3101/tasks/${result.id}`);
   await expect(browser).toHaveURL(`http://127.0.0.1:3101/tasks/${result.id}`);
+  await expect(screen.getByText(title)).toBeVisible();
   await expect(browser.locator('img[onerror]')).toHaveCount(0);
 });
 
