@@ -7,8 +7,11 @@
   "packageRules": [
     {
       "matchUpdateTypes": ["minor", "patch", "digest"],
-      "matchDepNames": ["!ruby"],
       "groupName": "non-major dependencies"
+    },
+    {
+      "matchDepNames": ["ruby", "registry.docker.com/library/ruby"],
+      "groupName": "ruby"
     }
   ]
 }
