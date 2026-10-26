@@ -40,7 +40,8 @@
 # Only track .claude/skills/ (ignore everything else in .claude/)
 /.claude/*
 !/.claude/skills/
-/.github/
+/.github/*
+!/.github/workflows/
 
 # Ignore Serena files.
 .serena/
