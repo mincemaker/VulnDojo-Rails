@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  E2E_COMPOSE: docker compose -f compose.yaml -f compose.e2e.yaml
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build images
+        run: |
+          docker compose build web
+          $E2E_COMPOSE build e2e
+
+      # Minitest and e2e share the SQLite test database, so they run in sequence.
+      - name: Minitest
+        run: docker compose run --rm -T web bin/rails test
+
+      - name: e2e
+        run: |
+          $E2E_COMPOSE run --rm -T e2e npm ci
+          $E2E_COMPOSE run --rm -T e2e npx @e2e-dev/web install chromium
+          $E2E_COMPOSE run --rm -T e2e npx e2e run
+
+      - name: Upload e2e results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results
+          path: |
+            .e2e/results
+            .e2e/logs
