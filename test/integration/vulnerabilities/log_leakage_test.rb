@@ -29,6 +29,7 @@ class LogLeakageTest < ActiveSupport::TestCase
   end
 
   test "SAFE: secret_note is filtered in logs" do
+    skip_if_vuln!("log_leakage")
     create_task_with_secret(@safe_server)
     log = File.read("/tmp/e2e_server_#{@safe_server.port}.log")
     refute_includes log, SECRET_VALUE,
@@ -36,6 +37,7 @@ class LogLeakageTest < ActiveSupport::TestCase
   end
 
   test "VULN: secret_note is visible in logs" do
+    skip_unless_vuln!("log_leakage")
     create_task_with_secret(@vuln_server)
     log = File.read("/tmp/e2e_server_#{@vuln_server.port}.log")
     assert_includes log, SECRET_VALUE,

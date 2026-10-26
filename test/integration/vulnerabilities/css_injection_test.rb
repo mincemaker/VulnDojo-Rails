@@ -14,6 +14,7 @@ class CssInjectionTest < ActiveSupport::TestCase
   end
 
   test "SAFE: color is not embedded unvalidated in style attribute" do
+    skip_if_vuln!("css_injection")
     result = create_task_via_form(@safe_server, title: "CSS test", color: CSS_PAYLOAD)
     assert result[:id]
 
@@ -25,6 +26,7 @@ class CssInjectionTest < ActiveSupport::TestCase
   end
 
   test "VULN: color is embedded unvalidated in style attribute (CSS injection)" do
+    skip_unless_vuln!("css_injection")
     result = create_task_via_form(@vuln_server, title: "CSS test", color: CSS_PAYLOAD)
     assert result[:id]
 

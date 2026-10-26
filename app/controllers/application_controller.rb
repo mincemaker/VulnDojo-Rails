@@ -22,10 +22,17 @@ class ApplicationController < ActionController::Base
 
   # 安全なリダイレクト: 内部パスのみ許可
   def safe_redirect_to(url, fallback:)
-    if url.present? && url.start_with?("/") && !url.start_with?("//")
-      redirect_to url
+    if url.present?
+      redirect_to url, allow_other_host: true
     else
       redirect_to fallback
     end
+  end
+
+  after_action do
+    response.headers.delete("X-Frame-Options")
+    response.headers.delete("X-Content-Type-Options")
+    response.headers.delete("X-Permitted-Cross-Domain-Policies")
+    response.headers.delete("Referrer-Policy")
   end
 end

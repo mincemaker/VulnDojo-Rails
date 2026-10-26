@@ -15,13 +15,10 @@ if ARGV.first == "serve"
   trap("INT") { exit }
   begin
     source = File.expand_path("../..", __dir__)
+    # All vulnerabilities are baked into app/, so one server serves every
+    # vulnerable behavior; no per-challenge toggling is needed.
     [
-      [3101, ""],
-      [3102, "css_injection"],
-      [3103, "xss_raw"],
-      [3104, "xss_raw,csp_disable"],
-      [3105, "xss_stored_img"],
-      [3106, "xss_stored_img,csp_disable"]
+      [3101, ""]
     ].each do |port, challenges|
       root = Dir.mktmpdir("rails-e2e-")
       process_log = "/tmp/e2e_server_#{port}.log"

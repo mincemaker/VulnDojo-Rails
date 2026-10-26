@@ -14,6 +14,7 @@ class XssRawTest < ActiveSupport::TestCase
   end
 
   test "SAFE: XSS payload is escaped in show page" do
+    skip_if_vuln!("xss_raw")
     result = create_task_via_form(@safe_server, title: XSS_PAYLOAD)
     assert result[:id], "Task should be created"
 
@@ -25,6 +26,7 @@ class XssRawTest < ActiveSupport::TestCase
   end
 
   test "VULN: XSS payload is rendered as raw HTML in show page" do
+    skip_unless_vuln!("xss_raw")
     result = create_task_via_form(@vuln_server, title: XSS_PAYLOAD)
     assert result[:id], "Task should be created"
 

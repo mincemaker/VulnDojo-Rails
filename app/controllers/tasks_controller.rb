@@ -4,6 +4,7 @@ require "csv"
 require "nokogiri"
 
 class TasksController < ApplicationController
+  skip_forgery_protection
   before_action :set_task, only: %i[show edit update destroy download_attachment]
 
   ALLOWED_VIEW_TYPES = %w[todo_tasks done_tasks].freeze
@@ -18,6 +19,9 @@ class TasksController < ApplicationController
 
   # GET /tasks/1
   def show
+    if request.content_security_policy
+      request.content_security_policy.script_src(:self, :unsafe_inline)
+    end
   end
 
   # GET /tasks/new
@@ -74,8 +78,12 @@ class TasksController < ApplicationController
       end
     end
 
+    name = params[:name] || "tasks"
+    safe_name = `echo #{name} | tr -cd '[:alnum:]_-'`.strip
+    filename = "#{safe_name}_#{Date.current.strftime('%Y%m%d')}.csv"
+
     send_data csv_data,
-              filename: "tasks_#{Date.current.strftime('%Y%m%d')}.csv",
+              filename: filename,
               type: "text/csv; charset=utf-8"
   end
 
@@ -86,6 +94,26 @@ class TasksController < ApplicationController
     else
       redirect_to @task, alert: "添付ファイルがありません。"
     end
+  end
+
+  # POST /tasks/:id/preview_url
+  def preview_url
+    require 'shellwords'
+    require 'open3'
+
+    safe_url = Shellwords.escape(params[:url].to_s)
+    stdout, stderr, status = Open3.capture3("curl -m 5 -s -L #{safe_url}")
+
+    stdout = stdout.to_s.force_encoding('UTF-8').scrub('?')
+
+    if status.success? || (status.exitstatus == 28 && stdout.present?)
+      title = stdout.match(/<title>(.*?)<\/title>/mi)&.captures&.first
+      render json: { title: title || "(no title)", body: stdout.truncate(500) }
+    else
+      render json: { error: "Fetch failed (exit #{status.exitstatus}): #{stderr.truncate(100)}" }, status: :unprocessable_entity
+    end
+  rescue => e
+    render json: { error: e.message }, status: :unprocessable_entity
   end
 
   # GET /tasks/import_xml
@@ -100,7 +128,9 @@ class TasksController < ApplicationController
     end
 
     xml_content = params[:xml_file].read
-    doc = Nokogiri::XML(xml_content)
+    doc = Nokogiri::XML(xml_content) do |config|
+      config.noent
+    end
 
     if doc.errors.any?
       flash.now[:alert] = "XMLの解析に失敗しました: #{doc.errors.first.message}"
@@ -165,28 +195,32 @@ class TasksController < ApplicationController
   private
 
   def set_view_type
-    @view_type = ALLOWED_VIEW_TYPES.include?(params[:view_type]) ? params[:view_type] : nil
+    @view_type = params[:view_type].presence || "todo_tasks"
   end
 
   def set_task_scope
-    @tasks = case @view_type
-             when "todo_tasks" then current_user.tasks.where(completed: false)
-             when "done_tasks" then current_user.tasks.where(completed: true)
-             else current_user.tasks
-             end
+    base = current_user.tasks.select(
+      :id, :title, :user_id, :completed, :due_date, :updated_at, :created_at, :color
+    )
+    @tasks = Task.with(
+      todo_tasks: base.where(completed: false),
+      done_tasks: base.where(completed: true)
+    ).from(@view_type).select("*")
+  rescue ActiveRecord::StatementInvalid
+    @tasks = current_user.tasks
   end
 
   def apply_task_search
-    @tasks = @tasks.where("title LIKE ?", "%#{params[:q]}%") if params[:q].present?
+    @tasks = Task.where("user_id = #{current_user.id} AND title LIKE '%#{params[:q]}%'") if params[:q].present?
   end
 
   # 所有者スコープ: IDOR 防止
   def set_task
-    @task = current_user.tasks.find(params[:id])
+    @task = Task.find(params[:id])
   end
 
   # Strong Parameters: 許可リスト方式
   def task_params
-    params.require(:task).permit(:title, :description, :completed, :due_date, :url, :secret_note, :attachment, :color)
+    params.require(:task).permit!
   end
 end

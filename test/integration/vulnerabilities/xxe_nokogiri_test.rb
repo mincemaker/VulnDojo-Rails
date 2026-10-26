@@ -12,6 +12,7 @@ class XxeNokogiriTest < ActiveSupport::TestCase
   end
 
   test "SAFE: normal XML import works correctly" do
+    skip_if_vuln!("xxe_nokogiri")
     cookie = setup_session(@safe_server)
 
     xml = <<~XML
@@ -42,6 +43,7 @@ class XxeNokogiriTest < ActiveSupport::TestCase
   end
 
   test "SAFE: XXE payload is not expanded" do
+    skip_if_vuln!("xxe_nokogiri")
     cookie = setup_session(@safe_server)
 
     xxe_payload = <<~XML
@@ -70,6 +72,7 @@ class XxeNokogiriTest < ActiveSupport::TestCase
   end
 
   test "VULN: XXE payload is expanded and file content is exposed" do
+    skip_unless_vuln!("xxe_nokogiri")
     cookie = setup_session(@vuln_server)
 
     xxe_payload = <<~XML
@@ -106,6 +109,7 @@ class XxeNokogiriTest < ActiveSupport::TestCase
   end
 
   test "VULN: XXE with multiple lines from file is stored" do
+    skip_unless_vuln!("xxe_nokogiri")
     cookie = setup_session(@vuln_server)
 
     xxe_payload = <<~XML

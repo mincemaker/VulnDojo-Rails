@@ -12,6 +12,7 @@ class CspDisableTest < ActiveSupport::TestCase
   end
 
   test "SAFE: Content-Security-Policy header is present" do
+    skip_if_vuln!("csp_disable")
     cookie = setup_session(@safe_server)
     res = @safe_server.get("/tasks", headers: { "Cookie" => cookie })
 
@@ -23,6 +24,7 @@ class CspDisableTest < ActiveSupport::TestCase
   end
 
   test "VULN: Content-Security-Policy header is missing" do
+    skip_unless_vuln!("csp_disable")
     cookie = setup_session(@vuln_server)
     res = @vuln_server.get("/tasks", headers: { "Cookie" => cookie })
 

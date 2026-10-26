@@ -1,0 +1,298 @@
+=== Foxguard ===
+Emulate Docker CLI using podman. Create /etc/containers/nodocker to quiet msg.
+time="2026-10-26T18:33:39+09:00" level=error msg="User-selected graph driver \"overlay\" overwritten by graph driver \"btrfs\" from database - delete libpod local files (\"/home/mince/.local/share/containers/storage\") to resolve.  May prevent use of images created by other tools"
+Trying to pull docker.io/library/node:22-slim...
+Getting image source signatures
+Copying blob sha256:b43ad0aedb87ae13912d52799d0d5552c146dced05197a7fa83b117cb3308906
+Copying blob sha256:9d58805976c12f11013d188c510c3520e3f061c1b311d4905afe5865aa496e63
+Copying blob sha256:696628b66b50a8ea2d374542f47107bc19fb3fd29825211da5c68b74a1b01555
+Copying blob sha256:ba8be34911c2eabcd63c9da67f2e8887ddf912df62c1223ca377ef9e9655cfba
+Copying blob sha256:11422d7ca1a44390a32bd8d8d9dc5946b4d053b3bbd9507d682e35584ba84a26
+Copying config sha256:58a96d9752cfedf3c4fcfcbe2dabbad725c147f7003caa9f7899a3f414ada3fc
+Writing manifest to image destination
+npm warn exec The following package was not found and will be installed: foxguard@0.14.1
+foxguard: downloading v0.14.1 for x86_64-unknown-linux-gnu...
+  foxguard v0.14.1 · scanning... Skipped 50 files: 50 unsupported extensions.
+                                                            
+  ./app/controllers/application_controller.rb · 2 issues
+
+    █  HIGH  redirect_to with dynamic argument — validate URL to prevent open redirect
+    █   rb/no-open-redirect (CWE-601)  line 26:7
+    █   redirect_to url, allow_other_host: true
+
+    █  HIGH  redirect_to with dynamic argument — validate URL to prevent open redirect
+    █   rb/no-open-redirect (CWE-601)  line 28:7
+    █   redirect_to fallback
+
+
+  ./app/controllers/tasks_controller.rb · 12 issues
+
+    █  MEDIUM  request params reaches redirect_to() (via cross-file call to safe_redirect_to) — untrusted input can drive an open redirect
+    █   rb/taint-open-redirect (CWE-601)  line 42:7
+    █   safe_redirect_to params[:return_to], fallback: @task
+    █ Fix: Validate redirect targets against an allowlist of permitted destinations
+
+    █  MEDIUM  request params reaches redirect_to() (via cross-file call to safe_redirect_to) — untrusted input can drive an open redirect
+    █   rb/taint-open-redirect (CWE-601)  line 52:7
+    █   safe_redirect_to params[:return_to], fallback: @task
+    █ Fix: Validate redirect targets against an allowlist of permitted destinations
+
+    █  CRITICAL  request params reaches subshell/backtick execution — untrusted input can inject OS commands or Ruby code
+    █   rb/taint-command-injection (CWE-78)  line 82:17
+    █   safe_name = `echo #{name} | tr -cd '[:alnum:]_-'`.strip
+    █ Fix: Avoid invoking shell commands or eval with request-controlled data; use Shellwords.escape on validated argument arrays and avoid eval entirely
+
+    █  CRITICAL  request params reaches subshell/backtick execution — untrusted input can inject SQL
+    █   rb/taint-sql-injection (CWE-89)  line 82:17
+    █   safe_name = `echo #{name} | tr -cd '[:alnum:]_-'`.strip
+    █ Fix: Use ActiveRecord parameter binding (where("col = ?", val)) instead of interpolating request input into query strings
+
+    █  HIGH  request params reaches subshell/backtick execution — untrusted input reaches an HTML output sink (XSS)
+    █   rb/taint-xss (CWE-79)  line 82:17
+    █   safe_name = `echo #{name} | tr -cd '[:alnum:]_-'`.strip
+    █ Fix: HTML-escape untrusted values (ERB::Util.html_escape / CGI.escapeHTML) instead of marking them html_safe / passing them to raw()
+
+    █  CRITICAL  request params reaches subshell/backtick execution — untrusted input can trigger unsafe deserialization
+    █   rb/taint-unsafe-deserialization (CWE-502)  line 82:17
+    █   safe_name = `echo #{name} | tr -cd '[:alnum:]_-'`.strip
+    █ Fix: Do not Marshal.load / YAML.unsafe_load request-controlled data; prefer YAML.safe_load with an explicit permit list or a structured format
+
+    █  MEDIUM  request params reaches subshell/backtick execution — untrusted input can drive an open redirect
+    █   rb/taint-open-redirect (CWE-601)  line 82:17
+    █   safe_name = `echo #{name} | tr -cd '[:alnum:]_-'`.strip
+    █ Fix: Validate redirect targets against an allowlist of permitted destinations
+
+    █  CRITICAL  Backtick/subshell command execution — risk of command injection
+    █   rb/no-command-injection (CWE-78)  line 82:17
+    █   safe_name = `echo #{name} | tr -cd '[:alnum:]_-'`.strip
+
+    █  HIGH  redirect_to with dynamic argument — validate URL to prevent open redirect
+    █   rb/no-open-redirect (CWE-601)  line 95:7
+    █   redirect_to @task, alert: "添付ファイルがありません。"
+
+    █  CRITICAL  request params reaches ActiveRecord.where() — untrusted input can inject SQL
+    █   rb/taint-sql-injection (CWE-89)  line 214:14
+    █   @tasks = Task.where("user_id = #{current_user.id} AND title LIKE '%#{params[:q]}%'") if params[:q].present?
+    █ Fix: Use ActiveRecord parameter binding (where("col = ?", val)) instead of interpolating request input into query strings
+
+    █  CRITICAL  String interpolation in where — use parameterized queries to prevent SQL injection
+    █   rb/no-sql-injection (CWE-89)  line 214:14
+    █   @tasks = Task.where("user_id = #{current_user.id} AND title LIKE '%#{params[:q]}%'") if params[:q].present?
+
+    █  HIGH  permit! allows all parameters — use permit(:field1, :field2) to whitelist
+    █   rb/no-mass-assignment (CWE-915)  line 224:5
+    █   params.require(:task).permit!
+
+
+  ./db/seeds.rb · 2 issues
+
+    █  HIGH  Hardcoded secret in 'u.password' — use environment variables
+    █   rb/no-hardcoded-secret (CWE-798)  line 6:3
+    █   u.password = "password123"
+
+    █  HIGH  Hardcoded secret in 'u.password_confirmation' — use environment variables
+    █   rb/no-hardcoded-secret (CWE-798)  line 7:3
+    █   u.password_confirmation = "password123"
+
+
+  ./lib/vulnerabilities/base.rb · 3 issues
+
+    █  CRITICAL  instance_eval executes arbitrary code — avoid dynamic evaluation
+    █   rb/no-eval (CWE-95)  line 13:9
+    █   dsl.instance_eval(&block)
+
+    █  HIGH  FileUtils.mkdir_p called with dynamic path — validate to prevent path traversal
+    █   rb/no-path-traversal (CWE-22)  line 53:7
+    █   FileUtils.mkdir_p(vuln_view_path.join(File.dirname(relative_path)))
+    █ Fix: Validate file paths and ensure they don't escape the intended directory
+
+    █  HIGH  File.write called with dynamic path — validate to prevent path traversal
+    █   rb/no-path-traversal (CWE-22)  line 54:7
+    █   File.write(vuln_view_path.join(relative_path), content)
+    █ Fix: Validate file paths and ensure they don't escape the intended directory
+
+
+  .../vulnerabilities/challenges/command_injection.rb · 6 issues
+
+    █  CRITICAL  request params reaches subshell/backtick execution — untrusted input can inject OS commands or Ruby code
+    █   rb/taint-command-injection (CWE-78)  line 42:25
+    █   safe_name = `echo #{name} | tr -cd '[:alnum:]_-'`.strip
+    █ Fix: Avoid invoking shell commands or eval with request-controlled data; use Shellwords.escape on validated argument arrays and avoid eval entirely
+
+    █  CRITICAL  request params reaches subshell/backtick execution — untrusted input can inject SQL
+    █   rb/taint-sql-injection (CWE-89)  line 42:25
+    █   safe_name = `echo #{name} | tr -cd '[:alnum:]_-'`.strip
+    █ Fix: Use ActiveRecord parameter binding (where("col = ?", val)) instead of interpolating request input into query strings
+
+    █  HIGH  request params reaches subshell/backtick execution — untrusted input reaches an HTML output sink (XSS)
+    █   rb/taint-xss (CWE-79)  line 42:25
+    █   safe_name = `echo #{name} | tr -cd '[:alnum:]_-'`.strip
+    █ Fix: HTML-escape untrusted values (ERB::Util.html_escape / CGI.escapeHTML) instead of marking them html_safe / passing them to raw()
+
+    █  CRITICAL  request params reaches subshell/backtick execution — untrusted input can trigger unsafe deserialization
+    █   rb/taint-unsafe-deserialization (CWE-502)  line 42:25
+    █   safe_name = `echo #{name} | tr -cd '[:alnum:]_-'`.strip
+    █ Fix: Do not Marshal.load / YAML.unsafe_load request-controlled data; prefer YAML.safe_load with an explicit permit list or a structured format
+
+    █  MEDIUM  request params reaches subshell/backtick execution — untrusted input can drive an open redirect
+    █   rb/taint-open-redirect (CWE-601)  line 42:25
+    █   safe_name = `echo #{name} | tr -cd '[:alnum:]_-'`.strip
+    █ Fix: Validate redirect targets against an allowlist of permitted destinations
+
+    █  CRITICAL  Backtick/subshell command execution — risk of command injection
+    █   rb/no-command-injection (CWE-78)  line 42:25
+    █   safe_name = `echo #{name} | tr -cd '[:alnum:]_-'`.strip
+
+
+  .../vulnerabilities/challenges/mass_assignment.rb · 1 issue
+
+    █  HIGH  permit! allows all parameters — use permit(:field1, :field2) to whitelist
+    █   rb/no-mass-assignment (CWE-915)  line 25:13
+    █   params.require(:task).permit!  # 全属性許可 — Mass Assignment 脆弱性
+
+
+  .../vulnerabilities/challenges/open_redirect.rb · 2 issues
+
+    █  HIGH  redirect_to with dynamic argument — validate URL to prevent open redirect
+    █   rb/no-open-redirect (CWE-601)  line 28:15
+    █   redirect_to url, allow_other_host: true  # 検証なし — Open Redirect 脆弱性
+
+    █  HIGH  redirect_to with dynamic argument — validate URL to prevent open redirect
+    █   rb/no-open-redirect (CWE-601)  line 30:15
+    █   redirect_to fallback
+
+
+  .../vulnerabilities/challenges/sql_injection.rb · 2 issues
+
+    █  CRITICAL  request params reaches ActiveRecord.where() — untrusted input can inject SQL
+    █   rb/taint-sql-injection (CWE-89)  line 27:22
+    █   @tasks = Task.where("user_id = #{current_user.id} AND title LIKE '%#{params[:q]}%'") if params[:q].present?
+    █ Fix: Use ActiveRecord parameter binding (where("col = ?", val)) instead of interpolating request input into query strings
+
+    █  CRITICAL  String interpolation in where — use parameterized queries to prevent SQL injection
+    █   rb/no-sql-injection (CWE-89)  line 27:22
+    █   @tasks = Task.where("user_id = #{current_user.id} AND title LIKE '%#{params[:q]}%'") if params[:q].present?
+
+
+  .../vulnerabilities/challenges/sql_injection_order.rb · 1 issue
+
+    █  CRITICAL  request params reaches ActiveRecord.where() — untrusted input can inject SQL
+    █   rb/taint-sql-injection (CWE-89)  line 28:22
+    █   @tasks = @tasks.where("title LIKE ?", "%#{params[:q]}%") if params[:q].present?
+    █ Fix: Use ActiveRecord parameter binding (where("col = ?", val)) instead of interpolating request input into query strings
+
+
+  ./test/e2e/rails_harness_test.rb · 7 issues
+
+    █  HIGH  FileUtils.mkdir_p called with dynamic path — validate to prevent path traversal
+    █   rb/no-path-traversal (CWE-22)  line 15:7
+    █   FileUtils.mkdir_p(File.join(root, "log"))
+    █ Fix: Validate file paths and ensure they don't escape the intended directory
+
+    █  HIGH  File.write called with dynamic path — validate to prevent path traversal
+    █   rb/no-path-traversal (CWE-22)  line 16:7
+    █   File.write(File.join(root, "log/test.log"), "Request failed with HTTP 500\n")
+    █ Fix: Validate file paths and ensure they don't escape the intended directory
+
+    █  HIGH  File.write called with dynamic path — validate to prevent path traversal
+    █   rb/no-path-traversal (CWE-22)  line 17:7
+    █   File.write(process_log, "Puma failed to bind\n")
+    █ Fix: Validate file paths and ensure they don't escape the intended directory
+
+    █  HIGH  File.read called with dynamic path — validate to prevent path traversal
+    █   rb/no-path-traversal (CWE-22)  line 23:54
+    █   assert_equal "Request failed with HTTP 500\n", File.read(File.join(logs, "rails-3101-app.log"))
+    █ Fix: Validate file paths and ensure they don't escape the intended directory
+
+    █  HIGH  File.read called with dynamic path — validate to prevent path traversal
+    █   rb/no-path-traversal (CWE-22)  line 24:45
+    █   assert_equal "Puma failed to bind\n", File.read(File.join(logs, "rails-3101-process.log"))
+    █ Fix: Validate file paths and ensure they don't escape the intended directory
+
+    █  HIGH  File.write called with dynamic path — validate to prevent path traversal
+    █   rb/no-path-traversal (CWE-22)  line 31:7
+    █   File.write(process_log, "Broken initializer\n")
+    █ Fix: Validate file paths and ensure they don't escape the intended directory
+
+    █  CRITICAL  spawn called — risk of command injection with dynamic arguments
+    █   rb/no-command-injection (CWE-78)  line 35:13
+    █   pid = Process.spawn(RbConfig.ruby, "-e", "exit 17")
+
+
+  .../integration/vulnerabilities/broken_auth_timing_test.rb · 1 issue
+
+    █  HIGH  Hardcoded secret in 'wrong_password' — use environment variables
+    █   rb/no-hardcoded-secret (CWE-798)  line 72:5
+    █   wrong_password = "wrongpassword!"
+
+
+  .../integration/vulnerabilities/command_injection_test.rb · 2 issues
+
+    █  CRITICAL  Backtick/subshell command execution — risk of command injection
+    █   rb/no-command-injection (CWE-78)  line 25:20
+    █   current_user = `whoami`.strip
+
+    █  CRITICAL  Backtick/subshell command execution — risk of command injection
+    █   rb/no-command-injection (CWE-78)  line 41:20
+    █   current_user = `whoami`.strip
+
+
+  .../integration/vulnerabilities/e2e_helper.rb · 3 issues
+
+    █  HIGH  Hardcoded secret in 'TEST_USER_PASSWORD' — use environment variables
+    █   rb/no-hardcoded-secret (CWE-798)  line 12:3
+    █   TEST_USER_PASSWORD = "password123"
+
+    █  CRITICAL  system called — risk of command injection with dynamic arguments
+    █   rb/no-command-injection (CWE-78)  line 47:7
+    █   system(env, "bundle", "exec", "rails", "db:prepare", chdir: Rails.root.to_s, exception: false)
+
+    █  CRITICAL  spawn called — risk of command injection with dynamic arguments
+    █   rb/no-command-injection (CWE-78)  line 51:14
+    █   @pid = Process.spawn(
+
+
+  .../integration/vulnerabilities/log_leakage_test.rb · 1 issue
+
+    █  HIGH  Hardcoded secret in 'SECRET_VALUE' — use environment variables
+    █   rb/no-hardcoded-secret (CWE-798)  line 9:3
+    █   SECRET_VALUE = "TOP_SECRET_NOTE_12345"
+
+
+  ./tests/support/rails-harness.rb · 3 issues
+
+    █  HIGH  FileUtils.mkdir_p called with dynamic path — validate to prevent path traversal
+    █   rb/no-path-traversal (CWE-22)  line 10:5
+    █   FileUtils.mkdir_p(log_dir)
+    █ Fix: Validate file paths and ensure they don't escape the intended directory
+
+    █  HIGH  FileUtils.cp called with dynamic path — validate to prevent path traversal
+    █   rb/no-path-traversal (CWE-22)  line 15:7
+    █   FileUtils.cp(source, File.join(log_dir, name)) if File.file?(source)
+    █ Fix: Validate file paths and ensure they don't escape the intended directory
+
+    █  HIGH  File.readlines called with dynamic path — validate to prevent path traversal
+    █   rb/no-path-traversal (CWE-22)  line 46:38
+    █   tail = File.file?(process_log) ? File.readlines(process_log).last(20).join : "Process log not created."
+    █ Fix: Validate file paths and ensure they don't escape the intended directory
+
+
+  ./tests/support/rails.rb · 1 issue
+
+    █  HIGH  FileUtils.mkdir_p called with dynamic path — validate to prevent path traversal
+    █   rb/no-path-traversal (CWE-22)  line 32:7
+    █   FileUtils.mkdir_p([File.join(root, "log"), File.join(root, "tmp")])
+    █ Fix: Validate file paths and ensure they don't escape the intended directory
+
+
+  ──────────────────────────────────────────────────
+
+  49 issues  113 files · 0.48s
+
+   19 critical    26 high    4 medium 
+
+npm notice
+npm notice New major version of npm available! 10.9.9 -> 12.2.1
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.1
+npm notice To update run: npm install -g npm@12.2.1
+npm notice

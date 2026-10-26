@@ -31,7 +31,8 @@ class RegexBypassTest < ActiveSupport::TestCase
     { response: res, cookie: cookie }
   end
 
-  test "SAFE: multiline bypass URL is rejected by \\A anchor" do
+  test "SAFE: multiline bypass URL is rejected by \A anchor" do
+    skip_if_vuln!("regex_bypass")
     result = create_task_with_url(@safe_server, url: BYPASS_URL)
     # \A anchor rejects the javascript: scheme
     assert_equal "422", result[:response].code,
@@ -39,11 +40,13 @@ class RegexBypassTest < ActiveSupport::TestCase
   end
 
   test "SAFE: legitimate URL is accepted" do
+    skip_if_vuln!("regex_bypass")
     result = create_task_with_url(@safe_server, url: LEGIT_URL)
     assert_equal "302", result[:response].code, "Legit URL should be accepted"
   end
 
   test "VULN: multiline bypass URL passes ^ anchor validation" do
+    skip_unless_vuln!("regex_bypass")
     result = create_task_with_url(@vuln_server, url: BYPASS_URL)
     # ^ anchor matches the http:// on the second line
     assert_equal "302", result[:response].code,

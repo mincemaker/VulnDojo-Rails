@@ -1,0 +1,192 @@
+=== Brakeman (via compose + gem install) ===
+Emulate Docker CLI using podman. Create /etc/containers/nodocker to quiet msg.
+time="2026-10-26T18:33:31+09:00" level=error msg="User-selected graph driver \"overlay\" overwritten by graph driver \"btrfs\" from database - delete libpod local files (\"/home/mince/.local/share/containers/storage\") to resolve.  May prevent use of images created by other tools"
+[4m>>>> Executing external compose provider "/usr/bin/podman-compose". Please see podman-compose(1) for how to disable this message. <<<<
+
+[0mtime="2026-10-26T18:33:31+09:00" level=error msg="User-selected graph driver \"overlay\" overwritten by graph driver \"btrfs\" from database - delete libpod local files (\"/home/mince/.local/share/containers/storage\") to resolve.  May prevent use of images created by other tools"
+time="2026-10-26T18:33:31+09:00" level=error msg="User-selected graph driver \"overlay\" overwritten by graph driver \"btrfs\" from database - delete libpod local files (\"/home/mince/.local/share/containers/storage\") to resolve.  May prevent use of images created by other tools"
+36492344b5959d17da286b54c1ccccc71293524fdb5eb96d522decf8dd6c53d1
+time="2026-10-26T18:33:31+09:00" level=error msg="User-selected graph driver \"overlay\" overwritten by graph driver \"btrfs\" from database - delete libpod local files (\"/home/mince/.local/share/containers/storage\") to resolve.  May prevent use of images created by other tools"
+cc48e0fe25c0095fb69b711b6c110b3801e7b30189e14358a5f16d4a747c9ec0
+time="2026-10-26T18:33:31+09:00" level=error msg="User-selected graph driver \"overlay\" overwritten by graph driver \"btrfs\" from database - delete libpod local files (\"/home/mince/.local/share/containers/storage\") to resolve.  May prevent use of images created by other tools"
+time="2026-10-26T18:33:32+09:00" level=error msg="User-selected graph driver \"overlay\" overwritten by graph driver \"btrfs\" from database - delete libpod local files (\"/home/mince/.local/share/containers/storage\") to resolve.  May prevent use of images created by other tools"
+7f5600c255708e9827e27757c9ea98cedc2d6ed05a283f107807820abe7e13e9
+time="2026-10-26T18:33:32+09:00" level=error msg="User-selected graph driver \"overlay\" overwritten by graph driver \"btrfs\" from database - delete libpod local files (\"/home/mince/.local/share/containers/storage\") to resolve.  May prevent use of images created by other tools"
+scanner-rebase_redis_1
+time="2026-10-26T18:33:32+09:00" level=error msg="User-selected graph driver \"overlay\" overwritten by graph driver \"btrfs\" from database - delete libpod local files (\"/home/mince/.local/share/containers/storage\") to resolve.  May prevent use of images created by other tools"
+STEP 1/10: FROM registry.docker.com/library/ruby:4.0.6-slim AS development
+STEP 2/10: WORKDIR /rails
+--> Using cache 84fbc6f05b3edc13f34d6080f941e4e82f813b553dd5b0936728809930b9b118
+--> 84fbc6f05b3e
+STEP 3/10: RUN apt-get update -qq &&     apt-get install --no-install-recommends -y       build-essential git pkg-config libsqlite3-dev curl libyaml-dev       chromium &&     rm -rf /var/lib/apt/lists /var/cache/apt/archives
+--> Using cache 2f4c838f3f6a503b92123480d497d3c836c434074d21aa0f920183b0abe5845a
+--> 2f4c838f3f6a
+STEP 4/10: ENV BUNDLE_PATH="/usr/local/bundle"
+--> Using cache 975e22b30f7f5e5be7fc717dbe780e4a2401b997abd1d3a2e553dd00833d2269
+--> 975e22b30f7f
+STEP 5/10: RUN gem install bundler
+--> Using cache bea90e860650d605f213332b9007800b66dac6eb093058f67bb840916062d37e
+--> bea90e860650
+STEP 6/10: COPY Gemfile Gemfile.lock ./
+--> Using cache b0c7c2ce367ccdedf38d0b0851f034b3b49d516295851cda3afb62c7e7892deb
+--> b0c7c2ce367c
+STEP 7/10: RUN bundle install
+--> Using cache c2dd17dac6813868c6519c3d818b10b53d2c7bba27ddc239153a76794dfd6fa3
+--> c2dd17dac681
+STEP 8/10: ENTRYPOINT ["/rails/bin/docker-entrypoint"]
+--> Using cache 77032a1ff310ed539604e437643f08ff84aaa9e02e7edbab2f3297133dad1eb1
+--> 77032a1ff310
+STEP 9/10: EXPOSE 3000
+--> Using cache dfeab4191bfc26ae27f20fadde1692a7a26f900c38d735335077670821e4d90c
+--> dfeab4191bfc
+STEP 10/10: CMD ["./bin/rails", "server", "-b", "0.0.0.0"]
+--> Using cache 28a08a3973c1ca082de7cb6f090502a1a6f5d7791879d0e97323043f259b76bc
+COMMIT scanner-rebase_web
+--> 28a08a3973c1
+Successfully tagged localhost/scanner-rebase_web:latest
+Successfully tagged localhost/vulndojo-sc_web:latest
+Successfully tagged localhost/vulndojo-ci_web:latest
+Successfully tagged localhost/vulndojo-rails-pr52_web:latest
+Successfully tagged localhost/vulndojo-ssrf-clean_web:latest
+28a08a3973c1ca082de7cb6f090502a1a6f5d7791879d0e97323043f259b76bc
+time="2026-10-26T18:33:35+09:00" level=error msg="User-selected graph driver \"overlay\" overwritten by graph driver \"btrfs\" from database - delete libpod local files (\"/home/mince/.local/share/containers/storage\") to resolve.  May prevent use of images created by other tools"
+time="2026-10-26T18:33:35+09:00" level=warning msg="The input device is not a TTY. The --tty and --interactive flags might not work properly"
+Fetching brakeman-8.1.0.gem
+Successfully installed brakeman-8.1.0
+1 gem installed
+
+A new release of RubyGems is available: 4.0.16 → 4.0.23!
+Run `gem update --system 4.0.23` to update your installation.
+
+[?25l[1G[K[1m[32mBrakeman v8.1.0[0m
+[K[1m[36m»[0m [32mLoading scanner[0m[K[1G[K[1G[K[1m[32mScanning /rails[0m
+[K[1m[36m»[0m [32mProcessing gems[0m[K[1G[K[1m[36m»[0m [32mProcessing configuration[0m[K[1G[K[1m[36m»[0m [32mFinding files[0m[K[1G[K[1m[36m»[0m [32mParsing files[0m[K[17G[1m[31m⣀[0m[K[1G[K[1m[36m»[0m [32mDetecting file types[0m[K[1G[K[1m[36m»[0m [32mProcessing initializers[0m[K[27G[31m[0m[1m[31m⣀[0m[37m⣀⣀⣀⣀⣀⣀⣀⣀⣀[0m[K[27G[31m⣿⣿[0m[1m[31m⣀[0m[37m⣀⣀⣀⣀⣀⣀⣀[0m[K[27G[31m⣿⣿⣿⣿[0m[1m[31m⣀[0m[37m⣀⣀⣀⣀⣀[0m[K[27G[31m⣿⣿⣿⣿⣿⣿[0m[1m[31m⣀[0m[37m⣀⣀⣀[0m[K[27G[31m⣿⣿⣿⣿⣿⣿⣿⣿[0m[1m[31m⣀[0m[37m⣀[0m[K[1G[K[1m[36m»[0m [32mProcessing libraries[0m[K[24G[31m[0m[1m[31m⣀[0m[37m⣀⣀⣀⣀⣀⣀⣀⣀⣀[0m[K[24G[31m[0m[1m[31m⣀[0m[37m⣀⣀⣀⣀⣀⣀⣀⣀⣀[0m[K[24G[31m[0m[1m[31m⣤[0m[37m⣀⣀⣀⣀⣀⣀⣀⣀⣀[0m[K[24G[31m[0m[1m[31m⣶[0m[37m⣀⣀⣀⣀⣀⣀⣀⣀⣀[0m[K[24G[31m⣿[0m[1m[31m⣀[0m[37m⣀⣀⣀⣀⣀⣀⣀⣀[0m[K[24G[31m⣿[0m[1m[31m⣤[0m[37m⣀⣀⣀⣀⣀⣀⣀⣀[0m[K[24G[31m⣿[0m[1m[31m⣶[0m[37m⣀⣀⣀⣀⣀⣀⣀⣀[0m[K[24G[31m⣿⣿[0m[1m[31m⣀[0m[37m⣀⣀⣀⣀⣀⣀⣀[0m[K[24G[31m⣿⣿[0m[1m[31m⣤[0m[37m⣀⣀⣀⣀⣀⣀⣀[0m[K[24G[31m⣿⣿[0m[1m[31m⣶[0m[37m⣀⣀⣀⣀⣀⣀⣀[0m[K[24G[31m⣿⣿[0m[1m[31m⣿[0m[37m⣀⣀⣀⣀⣀⣀⣀[0m[K[24G[31m⣿⣿⣿[0m[1m[31m⣀[0m[37m⣀⣀⣀⣀⣀⣀[0m[K[24G[31m⣿⣿⣿[0m[1m[31m⣤[0m[37m⣀⣀⣀⣀⣀⣀[0m[K[24G[31m⣿⣿⣿[0m[1m[31m⣶[0m[37m⣀⣀⣀⣀⣀⣀[0m[K[24G[31m⣿⣿⣿⣿[0m[1m[31m⣀[0m[37m⣀⣀⣀⣀⣀[0m[K[24G[31m⣿⣿⣿⣿[0m[1m[31m⣤[0m[37m⣀⣀⣀⣀⣀[0m[K[24G[31m⣿⣿⣿⣿[0m[1m[31m⣶[0m[37m⣀⣀⣀⣀⣀[0m[K[24G[31m⣿⣿⣿⣿⣿[0m[1m[31m⣀[0m[37m⣀⣀⣀⣀[0m[K[24G[31m⣿⣿⣿⣿⣿[0m[1m[31m⣀[0m[37m⣀⣀⣀⣀[0m[K[24G[31m⣿⣿⣿⣿⣿[0m[1m[31m⣤[0m[37m⣀⣀⣀⣀[0m[K[24G[31m⣿⣿⣿⣿⣿[0m[1m[31m⣶[0m[37m⣀⣀⣀⣀[0m[K[24G[31m⣿⣿⣿⣿⣿⣿[0m[1m[31m⣀[0m[37m⣀⣀⣀[0m[K[24G[31m⣿⣿⣿⣿⣿⣿[0m[1m[31m⣤[0m[37m⣀⣀⣀[0m[K[24G[31m⣿⣿⣿⣿⣿⣿[0m[1m[31m⣶[0m[37m⣀⣀⣀[0m[K[24G[31m⣿⣿⣿⣿⣿⣿⣿[0m[1m[31m⣀[0m[37m⣀⣀[0m[K[24G[31m⣿⣿⣿⣿⣿⣿⣿[0m[1m[31m⣤[0m[37m⣀⣀[0m[K[24G[31m⣿⣿⣿⣿⣿⣿⣿[0m[1m[31m⣶[0m[37m⣀⣀[0m[K[24G[31m⣿⣿⣿⣿⣿⣿⣿[0m[1m[31m⣿[0m[37m⣀⣀[0m[K[24G[31m⣿⣿⣿⣿⣿⣿⣿⣿[0m[1m[31m⣀[0m[37m⣀[0m[K[24G[31m⣿⣿⣿⣿⣿⣿⣿⣿[0m[1m[31m⣤[0m[37m⣀[0m[K[24G[31m⣿⣿⣿⣿⣿⣿⣿⣿[0m[1m[31m⣶[0m[37m⣀[0m[K[24G[31m⣿⣿⣿⣿⣿⣿⣿⣿⣿[0m[1m[31m⣀[0m[37m[0m[K[24G[31m⣿⣿⣿⣿⣿⣿⣿⣿⣿[0m[1m[31m⣤[0m[37m[0m[K[24G[31m⣿⣿⣿⣿⣿⣿⣿⣿⣿[0m[1m[31m⣶[0m[37m[0m[K[1G[K[1m[36m»[0m [32mProcessing routes[0m[K[1G[K[1m[36m»[0m [32mProcessing templates[0m[K[24G[31m[0m[1m[31m⣀[0m[37m⣀⣀⣀⣀⣀⣀⣀⣀⣀[0m[K[24G[31m[0m[1m[31m⣶[0m[37m⣀⣀⣀⣀⣀⣀⣀⣀⣀[0m[K[24G[31m⣿[0m[1m[31m⣀[0m[37m⣀⣀⣀⣀⣀⣀⣀⣀[0m[K[24G[31m⣿[0m[1m[31m⣶[0m[37m⣀⣀⣀⣀⣀⣀⣀⣀[0m[K[24G[31m⣿⣿[0m[1m[31m⣤[0m[37m⣀⣀⣀⣀⣀⣀⣀[0m[K[24G[31m⣿⣿⣿[0m[1m[31m⣀[0m[37m⣀⣀⣀⣀⣀⣀[0m[K[24G[31m⣿⣿⣿[0m[1m[31m⣶[0m[37m⣀⣀⣀⣀⣀⣀[0m[K[24G[31m⣿⣿⣿⣿[0m[1m[31m⣤[0m[37m⣀⣀⣀⣀⣀[0m[K[24G[31m⣿⣿⣿⣿⣿[0m[1m[31m⣀[0m[37m⣀⣀⣀⣀[0m[K[24G[31m⣿⣿⣿⣿⣿[0m[1m[31m⣶[0m[37m⣀⣀⣀⣀[0m[K[24G[31m⣿⣿⣿⣿⣿⣿[0m[1m[31m⣀[0m[37m⣀⣀⣀[0m[K[24G[31m⣿⣿⣿⣿⣿⣿[0m[1m[31m⣶[0m[37m⣀⣀⣀[0m[K[24G[31m⣿⣿⣿⣿⣿⣿⣿[0m[1m[31m⣤[0m[37m⣀⣀[0m[K[24G[31m⣿⣿⣿⣿⣿⣿⣿⣿[0m[1m[31m⣀[0m[37m⣀[0m[K[24G[31m⣿⣿⣿⣿⣿⣿⣿⣿[0m[1m[31m⣶[0m[37m⣀[0m[K[24G[31m⣿⣿⣿⣿⣿⣿⣿⣿⣿[0m[1m[31m⣤[0m[37m[0m[K[1G[K[1m[36m»[0m [32mProcessing data flow[0m[K[24G[31m[0m[1m[31m⣀[0m[37m⣀⣀⣀⣀⣀⣀⣀⣀⣀[0m[K[24G[31m[0m[1m[31m⣶[0m[37m⣀⣀⣀⣀⣀⣀⣀⣀⣀[0m[K[24G[31m⣿[0m[1m[31m⣀[0m[37m⣀⣀⣀⣀⣀⣀⣀⣀[0m[K[24G[31m⣿[0m[1m[31m⣶[0m[37m⣀⣀⣀⣀⣀⣀⣀⣀[0m[K[24G[31m⣿⣿[0m[1m[31m⣤[0m[37m⣀⣀⣀⣀⣀⣀⣀[0m[K[24G[31m⣿⣿⣿[0m[1m[31m⣀[0m[37m⣀⣀⣀⣀⣀⣀[0m[K[24G[31m⣿⣿⣿[0m[1m[31m⣶[0m[37m⣀⣀⣀⣀⣀⣀[0m[K[24G[31m⣿⣿⣿⣿[0m[1m[31m⣤[0m[37m⣀⣀⣀⣀⣀[0m[K[24G[31m⣿⣿⣿⣿⣿[0m[1m[31m⣀[0m[37m⣀⣀⣀⣀[0m[K[24G[31m⣿⣿⣿⣿⣿[0m[1m[31m⣶[0m[37m⣀⣀⣀⣀[0m[K[24G[31m⣿⣿⣿⣿⣿⣿[0m[1m[31m⣀[0m[37m⣀⣀⣀[0m[K[24G[31m⣿⣿⣿⣿⣿⣿[0m[1m[31m⣶[0m[37m⣀⣀⣀[0m[K[24G[31m⣿⣿⣿⣿⣿⣿⣿[0m[1m[31m⣤[0m[37m⣀⣀[0m[K[24G[31m⣿⣿⣿⣿⣿⣿⣿⣿[0m[1m[31m⣀[0m[37m⣀[0m[K[24G[31m⣿⣿⣿⣿⣿⣿⣿⣿[0m[1m[31m⣶[0m[37m⣀[0m[K[24G[31m⣿⣿⣿⣿⣿⣿⣿⣿⣿[0m[1m[31m⣤[0m[37m[0m[K[1G[K[1m[36m»[0m [32mProcessing models[0m[K[21G[31m[0m[1m[31m⣀[0m[37m⣀⣀⣀⣀⣀⣀⣀⣀⣀[0m[K[21G[31m⣿⣿⣿[0m[1m[31m⣤[0m[37m⣀⣀⣀⣀⣀⣀[0m[K[21G[31m⣿⣿⣿⣿⣿⣿[0m[1m[31m⣶[0m[37m⣀⣀⣀[0m[K[1G[K[1m[36m»[0m [32mProcessing controllers[0m[K[26G[31m[0m[1m[31m⣀[0m[37m⣀⣀⣀⣀⣀⣀⣀⣀⣀[0m[K[26G[31m⣿⣿[0m[1m[31m⣀[0m[37m⣀⣀⣀⣀⣀⣀⣀[0m[K[26G[31m⣿⣿⣿⣿[0m[1m[31m⣀[0m[37m⣀⣀⣀⣀⣀[0m[K[26G[31m⣿⣿⣿⣿⣿⣿[0m[1m[31m⣀[0m[37m⣀⣀⣀[0m[K[26G[31m⣿⣿⣿⣿⣿⣿⣿⣿[0m[1m[31m⣀[0m[37m⣀[0m[K[1G[K[1m[36m»[0m [32mProcessing data flow[0m[K[24G[31m[0m[1m[31m⣀[0m[37m⣀⣀⣀⣀⣀⣀⣀⣀⣀[0m[K[24G[31m⣿⣿[0m[1m[31m⣀[0m[37m⣀⣀⣀⣀⣀⣀⣀[0m[K[24G[31m⣿⣿⣿⣿[0m[1m[31m⣀[0m[37m⣀⣀⣀⣀⣀[0m[K[24G[31m⣿⣿⣿⣿⣿⣿[0m[1m[31m⣀[0m[37m⣀⣀⣀[0m[K[24G[31m⣿⣿⣿⣿⣿⣿⣿⣿[0m[1m[31m⣀[0m[37m⣀[0m[K[1G[K[1m[36m»[0m [32mIndexing method calls[0m[K[1G[K[1m[36m»[0m [32mRunning 86 checks in parallel[0m[K[1G[K[1m[36m»[0m [32mGenerating report[0m[K
+[1m[35m== Brakeman Report ==
+[0m
+[32mApplication Path[0m: /rails
+[32mRails Version[0m: 8.1.3.1
+[32mBrakeman Version[0m: 8.1.0
+[32mScan Date[0m: 2026-10-26 18:33:39 +0900
+[32mDuration[0m: 0.213806842 seconds
+[32mChecks Run[0m: BasicAuth, BasicAuthTimingAttack, CSRFTokenForgeryCVE, ContentTag, CookieSerialization, CreateWith, CrossSiteScripting, DefaultRoutes, Deserialize, DetailedExceptions, DigestDoS, DivideByZero, DynamicFinders, EOLRails, EOLRuby, EscapeFunction, Evaluation, Execute, FileAccess, FileDisclosure, FilterSkipping, ForceSSL, ForgerySetting, HeaderDoS, I18nXSS, JRubyXML, JSONEncoding, JSONEntityEscape, JSONParsing, LinkTo, LinkToHref, MailTo, MassAssignment, MimeTypeDoS, ModelAttrAccessible, ModelAttributes, ModelSerialize, NestedAttributes, NestedAttributesBypass, NumberToCurrency, PageCachingCVE, Pathname, PermitAttributes, QuoteTableName, Ransack, Redirect, RegexDoS, Render, RenderDoS, RenderInline, RenderRCE, ResponseSplitting, ReverseTabnabbing, RouteDoS, SQL, SQLCVEs, SSLVerify, SafeBufferManipulation, SanitizeConfigCve, SanitizeMethods, Secrets, SelectTag, SelectVulnerability, Send, SendFile, SessionManipulation, SessionSettings, SimpleFormat, SingleQuotes, SkipBeforeFilter, SprocketsPathTraversal, StripTags, SymbolDoS, SymbolDoSCVE, TemplateInjection, TranslateBug, UnsafeReflection, UnsafeReflectionMethods, UnscopedFind, ValidationRegex, VerbConfusion, WeakHash, WeakRSAKey, WithoutProtection, XMLDoS, YAMLParsing
+
+[1m[35m== Overview ==
+[0m
+[32mControllers[0m: 5
+[32mModels[0m: 3
+[32mTemplates[0m: 16
+[32mErrors[0m: 0
+[32mSecurity Warnings[0m: 12
+
+[1m[35m== Warning Types ==
+[0m
+[32mCommand Injection[0m: 2
+[32mCross-Site Scripting[0m: 2
+[32mFormat Validation[0m: 1
+[32mMass Assignment[0m: 2
+[32mSQL Injection[0m: 3
+[32mUnscoped Find[0m: 2
+
+[1m[35m== Warnings ==
+[0m
+[32mConfidence[0m: [31mHigh[0m
+[32mCategory[0m: Command Injection
+[32mCheck[0m: Execute
+[32mMessage[0m: Possible command injection
+[32mCode[0m: `echo #{([33mparams[:name][0m or "tasks")} | tr -cd '[:alnum:]_-'`
+[32mFile[0m: app/controllers/tasks_controller.rb
+[32mLine[0m: 82
+
+[32mConfidence[0m: [31mHigh[0m
+[32mCategory[0m: Command Injection
+[32mCheck[0m: Execute
+[32mMessage[0m: Possible command injection
+[32mCode[0m: `echo #{([33mparams[:name][0m or "tasks")} | tr -cd '[:alnum:]_-'`
+[32mFile[0m: lib/vulnerabilities/challenges/command_injection.rb
+[32mLine[0m: 42
+
+[32mConfidence[0m: [31mHigh[0m
+[32mCategory[0m: Cross-Site Scripting
+[32mCheck[0m: CrossSiteScripting
+[32mMessage[0m: Unescaped parameter value
+[32mCode[0m: params[:q]
+[32mFile[0m: app/views/tasks/_search_label.html.erb
+[32mLine[0m: 3
+
+[32mConfidence[0m: [31mHigh[0m
+[32mCategory[0m: Format Validation
+[32mCheck[0m: ValidationRegex
+[32mMessage[0m: Insufficient validation for `url` using `/^https?:\/\/.+/m`. Use `\A` and `\z` as anchors
+[32mCode[0m: :url, { :format => ({ :with => /^https?:\/\/.+/m, :message => "\u306F http:// \u307E\u305F\u306F https:// \u3067\u59CB\u307E\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059", :multiline => true }), :allow_blank => true }
+[32mFile[0m: app/models/task.rb
+[32mLine[0m: 8
+
+[32mConfidence[0m: [31mHigh[0m
+[32mCategory[0m: SQL Injection
+[32mCheck[0m: SQL
+[32mMessage[0m: Possible SQL injection
+[32mCode[0m: Task.where("user_id = #{current_user.id} AND title LIKE '%#{[33mparams[:q][0m}%'")
+[32mFile[0m: app/controllers/tasks_controller.rb
+[32mLine[0m: 214
+
+[32mConfidence[0m: [31mHigh[0m
+[32mCategory[0m: SQL Injection
+[32mCheck[0m: SQL
+[32mMessage[0m: Possible SQL injection
+[32mCode[0m: Task.where("user_id = #{current_user.id} AND title LIKE '%#{[33mparams[:q][0m}%'")
+[32mFile[0m: lib/vulnerabilities/challenges/sql_injection.rb
+[32mLine[0m: 27
+
+[32mConfidence[0m: [31mHigh[0m
+[32mCategory[0m: SQL Injection
+[32mCheck[0m: SQL
+[32mMessage[0m: Possible SQL injection
+[32mCode[0m: Arel.sql([33mparams[:sort][0m)
+[32mFile[0m: lib/vulnerabilities/challenges/sql_injection_order.rb
+[32mLine[0m: 33
+
+[32mConfidence[0m: [33mMedium[0m
+[32mCategory[0m: Mass Assignment
+[32mCheck[0m: MassAssignment
+[32mMessage[0m: Specify exact keys allowed for mass assignment instead of using `permit!` which allows any keys
+[32mCode[0m: params.require(:task).permit!
+[32mFile[0m: app/controllers/tasks_controller.rb
+[32mLine[0m: 224
+
+[32mConfidence[0m: [33mMedium[0m
+[32mCategory[0m: Mass Assignment
+[32mCheck[0m: MassAssignment
+[32mMessage[0m: Specify exact keys allowed for mass assignment instead of using `permit!` which allows any keys
+[32mCode[0m: params.require(:task).permit!
+[32mFile[0m: lib/vulnerabilities/challenges/mass_assignment.rb
+[32mLine[0m: 25
+
+[32mConfidence[0m: [38mWeak[0m
+[32mCategory[0m: Cross-Site Scripting
+[32mCheck[0m: LinkToHref
+[32mMessage[0m: Potentially unsafe model attribute in `link_to` href
+[32mCode[0m: link_to([33mTask.find(params[:id]).url[0m, [33mTask.find(params[:id]).url[0m, :target => "_blank", :rel => "noopener noreferrer")
+[32mFile[0m: app/views/tasks/show.html.erb
+[32mLine[0m: 41
+
+[32mConfidence[0m: [38mWeak[0m
+[32mCategory[0m: Unscoped Find
+[32mCheck[0m: UnscopedFind
+[32mMessage[0m: Unscoped call to `Task#find`
+[32mCode[0m: Task.find([33mparams[:id][0m)
+[32mFile[0m: app/controllers/tasks_controller.rb
+[32mLine[0m: 219
+
+[32mConfidence[0m: [38mWeak[0m
+[32mCategory[0m: Unscoped Find
+[32mCheck[0m: UnscopedFind
+[32mMessage[0m: Unscoped call to `Task#find`
+[32mCode[0m: Task.find([33mparams[:id][0m)
+[32mFile[0m: lib/vulnerabilities/challenges/idor.rb
+[32mLine[0m: 25
+
+[1G[K[?25h
+Error: executing /usr/bin/podman-compose run --rm web bash -c 
+        gem install brakeman --no-document 2>/dev/null &&
+        brakeman --run-all-checks --no-pager /rails
+      : exit status 3

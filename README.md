@@ -6,6 +6,13 @@ Rails 製の CRUD アプリに、**環境変数ひとつで脆弱性を注入で
 - `VULN_CHALLENGES` 環境変数で、Ruby のメタプログラミング（`Module#prepend`、`prepend_view_path` 等）を使い脆弱性を動的に上書き注入
 - 学習対象者に「どこに脆弱性があるか」を見つけさせる演習に使えます
 
+## ブランチ
+
+| ブランチ | 説明 |
+|---------|------|
+| `main` | 標準：`app/` は安全、脆弱性は `lib/vulnerabilities/challenges/` に隔離 |
+| `scanner-test/all-vulns` | **全チャレンジベイクドイン**：`main` ブランチ [`285f5c2`](https://github.com/anomalyco/VulnDojo-Rails/commit/285f5c284f0d53ee5ee71a33f36d7d73089203eb) 時点の21脆弱性チャレンジを `app/` のソースコードに直接含む。静的スキャナの検出率測定用。詳細は `docs/README.md` を参照。 |
+
 ## 技術スタック
 
 | 項目 | 値 |

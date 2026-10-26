@@ -26,6 +26,7 @@ class SqlInjectionActiveRecordTest < ActiveSupport::TestCase
   SQLI_PAYLOAD = "tasks"
 
   test "SAFE: view filter tabs exist and unknown view_type cannot bypass user scope" do
+    skip_if_vuln!("sql_injection_active_record")
     res = @safe_server.get("/tasks?view_type=#{SQLI_PAYLOAD}",
                            headers: { "Cookie" => @safe_cookie_a })
     body = res.body
@@ -36,6 +37,7 @@ class SqlInjectionActiveRecordTest < ActiveSupport::TestCase
   end
 
   test "VULN: todo_tasks view shows only current user's incomplete tasks" do
+    skip_unless_vuln!("sql_injection_active_record")
     res = @vuln_server.get("/tasks?view_type=todo_tasks",
                            headers: { "Cookie" => @vuln_cookie_a })
     body = res.body
@@ -46,6 +48,7 @@ class SqlInjectionActiveRecordTest < ActiveSupport::TestCase
   end
 
   test "VULN: done_tasks view shows only current user's completed tasks" do
+    skip_unless_vuln!("sql_injection_active_record")
     # User A の完了タスクを作成
     res1 = @vuln_server.get("/tasks/new", headers: { "Cookie" => @vuln_cookie_a })
     token = extract_csrf_token(res1.body)
@@ -66,6 +69,7 @@ class SqlInjectionActiveRecordTest < ActiveSupport::TestCase
   end
 
   test "VULN: from() injection bypasses CTE user scope and leaks all tasks" do
+    skip_unless_vuln!("sql_injection_active_record")
     # view_type=tasks で from() に直接テーブル名を注入
     # → WITH 句のユーザースコープを完全にバイパスして全タスクが見える
     res = @vuln_server.get("/tasks?view_type=#{URI.encode_www_form_component(SQLI_PAYLOAD)}",

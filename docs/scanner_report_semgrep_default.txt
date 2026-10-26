@@ -1,0 +1,959 @@
+=== Semgrep p/default ===
+Emulate Docker CLI using podman. Create /etc/containers/nodocker to quiet msg.
+time="2026-10-26T18:33:56+09:00" level=error msg="User-selected graph driver \"overlay\" overwritten by graph driver \"btrfs\" from database - delete libpod local files (\"/home/mince/.local/share/containers/storage\") to resolve.  May prevent use of images created by other tools"
+Semgrep failed to set the safe.directory Git config option. Git commands might fail: Command failed with exit code: 128
+-----
+Command failed with output:
+fatal: not a git repository: /mnt/development/VulnDojo-Rails/.git/worktrees/scanner-rebase
+
+
+Failed to run 'git config --global --add safe.directory *'. Possible reasons:
+
+- the git binary is not available
+- the current working directory is not a git repository
+- the baseline commit is not a parent of the current commit
+    (if you are running through semgrep-app, check if you are setting `SEMGREP_BRANCH` or `SEMGREP_BASELINE_COMMIT` properly)
+- the current working directory is not marked as safe
+    (fix with `git config --global --add safe.directory $(pwd)`)
+
+Try running the command yourself to debug the issue.
+               
+               
+┌─────────────┐
+│ Scan Status │
+└─────────────┘
+  Scanning 146 files tracked by git with 1074 Code rules:
+                                                                                                                        
+  Language      Rules   Files          Origin      Rules                                                                
+ ─────────────────────────────        ───────────────────                                                               
+  <multilang>      67     146          Community    1074                                                                
+  ruby             73      60                                                                                           
+  yaml             35      10                                                                                           
+  json              5       4                                                                                           
+  html              1       3                                                                                           
+  bash              4       2                                                                                           
+  ts              163       1                                                                                           
+  dockerfile        6       1                                                                                           
+                                                                                                                        
+                     
+                     
+┌───────────────────┐
+│ 117 Code Findings │
+└───────────────────┘
+                                 
+    /src/.github/workflows/ci.yml
+    ❯❱ yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
+          ❰❰ Blocking ❱❱
+          GitHub Actions step uses a mutable tag or branch reference. Tags and branch names can be silently   
+          repointed by the action owner, enabling supply-chain attacks — as seen in the trivy-action and kics-
+          github-action compromises. Pin the reference to a full 40-character commit SHA instead, e.g. `uses: 
+          actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608`.                                         
+          Details: https://sg.run/2LgAL                                                                       
+                                                                                                              
+           22┆ - uses: actions/checkout@v4
+            ⋮┆----------------------------------------
+           41┆ uses: actions/upload-artifact@v4
+                   
+    /src/Dockerfile
+   ❯❯❱ dockerfile.security.missing-user-entrypoint.missing-user-entrypoint
+          ❰❰ Blocking ❱❱
+          By not specifying a USER, a program in the container may run as 'root'. This is a security hazard.
+          If an attacker can control a process running as root, they may have control over the container.   
+          Ensure that the last USER in a Dockerfile is a USER other than 'root'.                            
+          Details: https://sg.run/k281                                                                      
+                                                                                                            
+           ▶▶┆ Autofix ▶ USER non-root ENTRYPOINT ["/rails/bin/docker-entrypoint"]
+           24┆ ENTRYPOINT ["/rails/bin/docker-entrypoint"]
+   
+   ❯❯❱ dockerfile.security.missing-user.missing-user
+          ❰❰ Blocking ❱❱
+          By not specifying a USER, a program in the container may run as 'root'. This is a security hazard.
+          If an attacker can control a process running as root, they may have control over the container.   
+          Ensure that the last USER in a Dockerfile is a USER other than 'root'.                            
+          Details: https://sg.run/Gbvn                                                                      
+                                                                                                            
+           ▶▶┆ Autofix ▶ USER non-root CMD ["./bin/rails", "server", "-b", "0.0.0.0"]
+           26┆ CMD ["./bin/rails", "server", "-b", "0.0.0.0"]
+                                                  
+    /src/app/controllers/application_controller.rb
+   ❯❯❱ ruby.lang.security.missing-csrf-protection.missing-csrf-protection
+          ❰❰ Blocking ❱❱
+          Detected controller which does not enable cross-site request forgery protections using          
+          'protect_from_forgery'. Add 'protect_from_forgery :with => :exception' to your controller class.
+          Details: https://sg.run/XLel                                                                    
+                                                                                                          
+            3┆ class ApplicationController < ActionController::Base
+            4┆   before_action :require_login
+            5┆   helper_method :current_user, :logged_in?
+            6┆
+            7┆   private
+            8┆
+            9┆   def current_user
+           10┆     @current_user ||= User.find_by(id: session[:user_id]) if session[:user_id]
+           11┆   end
+           12┆
+             [hid 25 additional lines, adjust with --max-lines-per-finding] 
+                                            
+    /src/app/controllers/tasks_controller.rb
+    ❯❱ ruby.rails.security.audit.rails-skip-forgery-protection.rails-skip-forgery-protection
+          ❰❰ Blocking ❱❱
+          This call turns off CSRF protection allowing CSRF attacks against the application
+          Details: https://sg.run/PgwY                                                     
+                                                                                           
+            7┆ skip_forgery_protection
+   
+    ❯❱ ruby.lang.security.dangerous-subshell.dangerous-subshell
+          ❰❰ Blocking ❱❱
+          Detected non-static command inside `...`. If unverified user data can reach this call site, this is 
+          a code injection vulnerability. A malicious actor can inject a malicious script to execute arbitrary
+          code.                                                                                               
+          Details: https://sg.run/NrxL                                                                        
+                                                                                                              
+           82┆ safe_name = `echo #{name} | tr -cd '[:alnum:]_-'`.strip
+   
+    ❯❱ ruby.lang.security.dangerous-exec.dangerous-exec
+          ❰❰ Blocking ❱❱
+          Detected non-static command inside Open3.capture3. Audit the input to 'Open3.capture3'. If        
+          unverified user data can reach this call site, this is a code injection vulnerability. A malicious
+          actor can inject a malicious script to execute arbitrary code.                                    
+          Details: https://sg.run/R8GY                                                                      
+                                                                                                            
+          105┆ stdout, stderr, status = Open3.capture3("curl -m 5 -s -L #{safe_url}")
+   
+   ❯❯❱ ruby.rails.security.injection.tainted-sql-string.tainted-sql-string
+          ❰❰ Blocking ❱❱
+          Detected user input used to manually construct a SQL string. This is usually bad practice because 
+          manual construction could accidentally result in a SQL injection. An attacker could use a SQL     
+          injection to steal or modify contents of the database. Instead, use a parameterized query which is
+          available by default in most database engines. Alternatively, consider using an object-relational 
+          mapper (ORM) such as ActiveRecord which will protect your queries.                                
+          Details: https://sg.run/Y85o                                                                      
+                                                                                                            
+          214┆ @tasks = Task.where("user_id = #{current_user.id} AND title LIKE '%#{params[:q]}%'") if
+               params[:q].present?                                                                    
+   
+    ❯❱ ruby.rails.security.brakeman.check-unscoped-find.check-unscoped-find
+          ❰❰ Blocking ❱❱
+          Found an unscoped `find(...)` with user-controllable input. If the ActiveRecord model being searched
+          against is sensitive, this may lead to Insecure Direct Object Reference (IDOR) behavior and allow   
+          users to read arbitrary records. Scope the find to the current user, e.g.                           
+          `current_user.accounts.find(params[:id])`.                                                          
+          Details: https://sg.run/dPbP                                                                        
+                                                                                                              
+          219┆ @task = Task.find(params[:id])
+                                               
+    /src/app/views/tasks/_search_label.html.erb
+    ❯❱ ruby.rails.security.audit.xss.templates.alias-for-html-safe.alias-for-html-safe
+          ❰❰ Blocking ❱❱
+          The syntax `<%== ... %>` is an alias for `html_safe`. This means the content inside these tags will 
+          be rendered as raw HTML. This may expose your application to cross-site scripting. If you need raw  
+          HTML, prefer using the more explicit `html_safe` and be sure to correctly sanitize variables using a
+          library such as DOMPurify.                                                                          
+          Details: https://sg.run/8nGJ                                                                        
+                                                                                                              
+            3┆ 「<%== params[:q] %>」の検索結果
+                                                  
+    /src/app/views/tasks/_task_attachment.html.erb
+    ❯❱ ruby.rails.security.audit.xss.templates.var-in-href.var-in-href
+          ❰❰ Blocking ❱❱
+          Detected a template variable used in an anchor tag with the 'href' attribute. This allows a       
+          malicious actor to input the 'javascript:' URI and is subject to cross- site scripting (XSS)      
+          attacks. If using a relative URL, start with a literal forward slash and concatenate the URL, like
+          this: href='/<%= link =>'. You may also consider setting the Content Security Policy (CSP) header.
+          Details: https://sg.run/J3Do                                                                      
+                                                                                                            
+            7┆ <a href="<%= url_for(task.attachment) %>" target="_blank" rel="noopener noreferrer">
+   
+    ❯❱ ruby.rails.security.audit.xss.templates.avoid-html-safe.avoid-html-safe
+          ❰❰ Blocking ❱❱
+          'html_safe' renders raw HTML. This means that normal HTML escaping is bypassed. If user data can be
+          controlled here, this exposes your application to cross-site scripting (XSS). If you need to do    
+          this, be sure to correctly sanitize the data using a library such as DOMPurify.                    
+          Details: https://sg.run/Q8rD                                                                       
+                                                                                                             
+           13┆ <div class="image-caption"><%= task.description.html_safe %></div>
+                                             
+    /src/app/views/tasks/_task_title.html.erb
+    ❯❱ ruby.rails.security.audit.xss.templates.avoid-html-safe.avoid-html-safe
+          ❰❰ Blocking ❱❱
+          'html_safe' renders raw HTML. This means that normal HTML escaping is bypassed. If user data can be
+          controlled here, this exposes your application to cross-site scripting (XSS). If you need to do    
+          this, be sure to correctly sanitize the data using a library such as DOMPurify.                    
+          Details: https://sg.run/Q8rD                                                                       
+                                                                                                             
+           11┆ <%= task.title.html_safe %>
+                                           
+    /src/config/environments/development.rb
+    ❯❱ ruby.rails.security.audit.detailed-exceptions.detailed-exceptions
+          ❰❰ Blocking ❱❱
+          Found that the setting for providing detailed exception reports in Rails is set to true. This can   
+          lead to information exposure, where sensitive system or internal information is displayed to the end
+          user. Instead, turn this setting off.                                                               
+          Details: https://sg.run/Je0d                                                                        
+                                                                                                              
+           15┆ config.consider_all_requests_local = true
+                                    
+    /src/config/environments/test.rb
+    ❯❱ ruby.rails.security.audit.detailed-exceptions.detailed-exceptions
+          ❰❰ Blocking ❱❱
+          Found that the setting for providing detailed exception reports in Rails is set to true. This can   
+          lead to information exposure, where sensitive system or internal information is displayed to the end
+          user. Instead, turn this setting off.                                                               
+          Details: https://sg.run/Je0d                                                                        
+                                                                                                              
+           27┆ config.consider_all_requests_local = true
+                                                            
+    /src/lib/vulnerabilities/challenges/command_injection.rb
+    ❯❱ ruby.lang.security.dangerous-subshell.dangerous-subshell
+          ❰❰ Blocking ❱❱
+          Detected non-static command inside `...`. If unverified user data can reach this call site, this is 
+          a code injection vulnerability. A malicious actor can inject a malicious script to execute arbitrary
+          code.                                                                                               
+          Details: https://sg.run/NrxL                                                                        
+                                                                                                              
+           42┆ safe_name = `echo #{name} | tr -cd '[:alnum:]_-'`.strip
+                                               
+    /src/lib/vulnerabilities/challenges/idor.rb
+    ❯❱ ruby.rails.security.brakeman.check-unscoped-find.check-unscoped-find
+          ❰❰ Blocking ❱❱
+          Found an unscoped `find(...)` with user-controllable input. If the ActiveRecord model being searched
+          against is sensitive, this may lead to Insecure Direct Object Reference (IDOR) behavior and allow   
+          users to read arbitrary records. Scope the find to the current user, e.g.                           
+          `current_user.accounts.find(params[:id])`.                                                          
+          Details: https://sg.run/dPbP                                                                        
+                                                                                                              
+           25┆ @task = Task.find(params[:id])  # 所有者スコープなし — IDOR 脆弱性
+                                                        
+    /src/lib/vulnerabilities/challenges/sql_injection.rb
+   ❯❯❱ ruby.rails.security.injection.tainted-sql-string.tainted-sql-string
+          ❰❰ Blocking ❱❱
+          Detected user input used to manually construct a SQL string. This is usually bad practice because 
+          manual construction could accidentally result in a SQL injection. An attacker could use a SQL     
+          injection to steal or modify contents of the database. Instead, use a parameterized query which is
+          available by default in most database engines. Alternatively, consider using an object-relational 
+          mapper (ORM) such as ActiveRecord which will protect your queries.                                
+          Details: https://sg.run/Y85o                                                                      
+                                                                                                            
+           27┆ @tasks = Task.where("user_id = #{current_user.id} AND title LIKE '%#{params[:q]}%'") if
+               params[:q].present?                                                                    
+                                               
+    /src/lib/vulnerabilities/challenges/ssrf.rb
+    ❯❱ ruby.lang.security.dangerous-exec.dangerous-exec
+          ❰❰ Blocking ❱❱
+          Detected non-static command inside Open3.capture3. Audit the input to 'Open3.capture3'. If        
+          unverified user data can reach this call site, this is a code injection vulnerability. A malicious
+          actor can inject a malicious script to execute arbitrary code.                                    
+          Details: https://sg.run/R8GY                                                                      
+                                                                                                            
+           59┆ stdout, stderr, status = Open3.capture3("curl -m 5 -s -L #{safe_url}")
+                            
+    /src/log/development.log
+   ❯❯❱ generic.secrets.security.detected-bcrypt-hash.detected-bcrypt-hash
+          ❰❰ Blocking ❱❱
+          bcrypt hash detected        
+          Details: https://sg.run/3A8G
+                                      
+          109┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                           
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"             
+               [["created_at", "2026-10-26 09:21:58.342391"], ["email", "demo@example.com"], ["name",     
+               "デモユーザ"], ["password_digest",                                                         
+               "$2a$10$/wI/OcNJW.RhyTLkO.mvQu6NzTEN0BnujNwURud3BE96MQD37bb46"], ["updated_at", "2026-10-26
+               09:21:58.342391"]]                                                                         
+            ⋮┆----------------------------------------
+          150┆ User Create (0.9ms)  INSERT INTO "users" ("created_at", "email",                    
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:01.888130"], ["email",                            
+               "e2e_33865_5e75b9154b14@example.com"], ["name", "tester_33865_5e75b9154b14"],       
+               ["password_digest", "$2a$10$GvJ/fnyCZSWZI2HMM3aua.v9yuT27rtCh1gMC0Fw13cgoP1o5CVs."],
+               ["updated_at", "2026-10-26 09:22:01.888130"]]                                       
+                     
+    /src/log/test.log
+   ❯❯❱ generic.secrets.security.detected-bcrypt-hash.detected-bcrypt-hash
+          ❰❰ Blocking ❱❱
+          bcrypt hash detected        
+          Details: https://sg.run/3A8G
+                                      
+          143┆ User Create (0.8ms)  INSERT INTO "users" ("created_at", "email",                    
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:21:44.397117"], ["email",                            
+               "e2e_45045_a398f84aba66@example.com"], ["name", "tester_45045_a398f84aba66"],       
+               ["password_digest", "$2a$10$w3G.IQBZMg486QJUHePyw.B1xmhSKkrNtZ4iTycipr3NANcgbKFFO"],
+               ["updated_at", "2026-10-26 09:21:44.397117"]]                                       
+            ⋮┆----------------------------------------
+          196┆ User Create (0.8ms)  INSERT INTO "users" ("created_at", "email",                    
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:21:46.829838"], ["email",                            
+               "e2e_39895_117af51736fd@example.com"], ["name", "tester_39895_117af51736fd"],       
+               ["password_digest", "$2a$10$7AtiznAjnCfVl97tht30f.bEHpjVoUCQq5C5CK4.H5N52hrdCvPt."],
+               ["updated_at", "2026-10-26 09:21:46.829838"]]                                       
+            ⋮┆----------------------------------------
+          231┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                    
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:21:47.079698"], ["email",                            
+               "e2e_39895_e6a34b10559a@example.com"], ["name", "tester_39895_e6a34b10559a"],       
+               ["password_digest", "$2a$10$f9CekU6pwwTK5YsVY0cTlOeEF/j2v3k3EhV.kezjwkIgWcErD5Z2S"],
+               ["updated_at", "2026-10-26 09:21:47.079698"]]                                       
+            ⋮┆----------------------------------------
+          266┆ User Create (0.8ms)  INSERT INTO "users" ("created_at", "email",                    
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:21:47.280632"], ["email",                            
+               "e2e_40317_75634de35d53@example.com"], ["name", "tester_40317_75634de35d53"],       
+               ["password_digest", "$2a$10$8wwIFYI.dD3sxsau2KAJr.yoC.vsJTDeQ1XUo3Bx7IEamTZ4B9lJ2"],
+               ["updated_at", "2026-10-26 09:21:47.280632"]]                                       
+            ⋮┆----------------------------------------
+          301┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                    
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:21:47.537534"], ["email",                            
+               "e2e_40317_aec15c56c8bd@example.com"], ["name", "tester_40317_aec15c56c8bd"],       
+               ["password_digest", "$2a$10$LEYOap9MTNBTwMZ0Sk4uJODleBxqF6e5Vqeqg92Pp/hSvDXIOQzAC"],
+               ["updated_at", "2026-10-26 09:21:47.537534"]]                                       
+            ⋮┆----------------------------------------
+          359┆ User Create (0.2ms)  INSERT INTO "users" ("created_at", "email",                    
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:21:47.754548"], ["email",                            
+               "e2e_39895_3374c7a29b0b@example.com"], ["name", "tester_39895_3374c7a29b0b"],       
+               ["password_digest", "$2a$10$eh7KNydkdXS.mH1ibum2LeuE1UlKxuA59peuLP.TlrgCeQR5xkX16"],
+               ["updated_at", "2026-10-26 09:21:47.754548"]]                                       
+            ⋮┆----------------------------------------
+          394┆ User Create (0.2ms)  INSERT INTO "users" ("created_at", "email",                    
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:21:47.858288"], ["email",                            
+               "e2e_39895_51e26050dafd@example.com"], ["name", "tester_39895_51e26050dafd"],       
+               ["password_digest", "$2a$10$cXDuN4qDggVReXybcRJ4G.MWA4Lsc7RryXKQ.RJ1OaPEeG2ww8D9W"],
+               ["updated_at", "2026-10-26 09:21:47.858288"]]                                       
+            ⋮┆----------------------------------------
+          429┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                    
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:21:47.981165"], ["email",                            
+               "e2e_40317_44a76035800e@example.com"], ["name", "tester_40317_44a76035800e"],       
+               ["password_digest", "$2a$10$Sp7Ua9KRpNxyPqcbgJPc7usO4S7a3U6THVkK0FlnFY0PXIjbqdUs."],
+               ["updated_at", "2026-10-26 09:21:47.981165"]]                                       
+            ⋮┆----------------------------------------
+          464┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                    
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:21:48.080357"], ["email",                            
+               "e2e_40317_04e455918df0@example.com"], ["name", "tester_40317_04e455918df0"],       
+               ["password_digest", "$2a$10$RidJvmRvRy8.F9A7EX36NeIHZf06uhVuSjbMpGTLE5caoqg2pBdY."],
+               ["updated_at", "2026-10-26 09:21:48.080357"]]                                       
+            ⋮┆----------------------------------------
+          517┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                    
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:21:48.204137"], ["email",                            
+               "e2e_39895_d5d3253d55a7@example.com"], ["name", "tester_39895_d5d3253d55a7"],       
+               ["password_digest", "$2a$10$lN3Q4YHOC44VPx/1G3I3fuGeeilxFkiQ6trDYmtgXYAP4C2swYsOG"],
+               ["updated_at", "2026-10-26 09:21:48.204137"]]                                       
+            ⋮┆----------------------------------------
+          552┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                    
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:21:48.281530"], ["email",                            
+               "e2e_39895_d0e18ddcfc88@example.com"], ["name", "tester_39895_d0e18ddcfc88"],       
+               ["password_digest", "$2a$10$W1EpuU/KIWACzKgLyAUM5.ZgkEQ7KR/nGBXskC67QCwBk.pjCCIDO"],
+               ["updated_at", "2026-10-26 09:21:48.281530"]]                                       
+            ⋮┆----------------------------------------
+          587┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                    
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:21:48.362111"], ["email",                            
+               "e2e_40317_7f7ca62dd109@example.com"], ["name", "tester_40317_7f7ca62dd109"],       
+               ["password_digest", "$2a$10$BLYpu.Cu0GPz.wwyBXKTBes/WMfybztGdVtEn.Nyq7y0zdb92aJxq"],
+               ["updated_at", "2026-10-26 09:21:48.362111"]]                                       
+            ⋮┆----------------------------------------
+          622┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                    
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:21:48.426794"], ["email",                            
+               "e2e_40317_9a0ec91563c3@example.com"], ["name", "tester_40317_9a0ec91563c3"],       
+               ["password_digest", "$2a$10$/WZktJ44rqNQ3Gn5Ehy/Gem1JbX9dZRoYOrs3EF9Hpj0WkUk0SCK6"],
+               ["updated_at", "2026-10-26 09:21:48.426794"]]                                       
+            ⋮┆----------------------------------------
+          662┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                    
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:21:48.491166"], ["email",                            
+               "e2e_39895_19ba15ea0d28@example.com"], ["name", "tester_39895_19ba15ea0d28"],       
+               ["password_digest", "$2a$10$v6OgaBuFMAtS4lYH6D9AQOM5RJjP0JcJ91VI/e9AQLs4a4yGm/vB2"],
+               ["updated_at", "2026-10-26 09:21:48.491166"]]                                       
+            ⋮┆----------------------------------------
+          697┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                    
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:21:48.618947"], ["email",                            
+               "e2e_39895_68dd0c549d6d@example.com"], ["name", "tester_39895_68dd0c549d6d"],       
+               ["password_digest", "$2a$10$GwpN1dOtdrkc52MVAGHjqeh44gg3owMgA1ZV3n6dLf53OmWrCimzG"],
+               ["updated_at", "2026-10-26 09:21:48.618947"]]                                       
+            ⋮┆----------------------------------------
+          732┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                    
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:21:48.719616"], ["email",                            
+               "e2e_40317_30c62b823d93@example.com"], ["name", "tester_40317_30c62b823d93"],       
+               ["password_digest", "$2a$10$wsKjxVBMkH8Q4C27DEsZDONArSKyF6kEfk.qttLkOJnXjCZHtbc4S"],
+               ["updated_at", "2026-10-26 09:21:48.719616"]]                                       
+            ⋮┆----------------------------------------
+          767┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                    
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:21:48.850589"], ["email",                            
+               "e2e_40317_37102ce27e94@example.com"], ["name", "tester_40317_37102ce27e94"],       
+               ["password_digest", "$2a$10$9JgBQrLBGy0Ul8h/6.S2yO3BbEZ56sJohUJrv6ClBjznKK/JGg8ne"],
+               ["updated_at", "2026-10-26 09:21:48.850589"]]                                       
+            ⋮┆----------------------------------------
+          820┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                    
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:21:48.937936"], ["email",                            
+               "e2e_39895_894ee8c29d55@example.com"], ["name", "tester_39895_894ee8c29d55"],       
+               ["password_digest", "$2a$10$5NgE6eghd4PswotQXBwVIuKOUETE6ISHRuwRUdudPS9nOplLxaj7K"],
+               ["updated_at", "2026-10-26 09:21:48.937936"]]                                       
+            ⋮┆----------------------------------------
+          855┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                    
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:21:48.996691"], ["email",                            
+               "e2e_39895_09644786aa74@example.com"], ["name", "tester_39895_09644786aa74"],       
+               ["password_digest", "$2a$10$4Fxd2ByXNJ14cyt3niZXWuJIH2KNc1B8Q3.IaFBhe2NL6cfPAScKa"],
+               ["updated_at", "2026-10-26 09:21:48.996691"]]                                       
+            ⋮┆----------------------------------------
+          890┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                    
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:21:49.060069"], ["email",                            
+               "e2e_40317_2dfd8cce5881@example.com"], ["name", "tester_40317_2dfd8cce5881"],       
+               ["password_digest", "$2a$10$E6XZD23xgXd1mccA7FM1Kuaxn/uSMmJq.jKdmP55F20sWKzmOyAFe"],
+               ["updated_at", "2026-10-26 09:21:49.060069"]]                                       
+            ⋮┆----------------------------------------
+          925┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                    
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:21:49.119030"], ["email",                            
+               "e2e_40317_5b3492a1b6c3@example.com"], ["name", "tester_40317_5b3492a1b6c3"],       
+               ["password_digest", "$2a$10$8SeAp3wuVN0VOEI5jrcRru0p.i436s.AtNS5Xtfrb4lZ.GFR1pKki"],
+               ["updated_at", "2026-10-26 09:21:49.119030"]]                                       
+            ⋮┆----------------------------------------
+          965┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                    
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:21:49.185532"], ["email",                            
+               "e2e_39895_ccb876ef92cc@example.com"], ["name", "tester_39895_ccb876ef92cc"],       
+               ["password_digest", "$2a$10$IEmPoKFjrQ8zQLP1JCPvkeLLxQqKpRamaEnF.8.DxmvfPKGDWJSKS"],
+               ["updated_at", "2026-10-26 09:21:49.185532"]]                                       
+            ⋮┆----------------------------------------
+          1000┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:21:49.239268"], ["email",                            
+               "e2e_39895_ccb75306eb14@example.com"], ["name", "tester_39895_ccb75306eb14"],       
+               ["password_digest", "$2a$10$SSK.tewpszQbjyQly3tQruFj478HDJAVz.GM5LpYkcmLxyJTHNgea"],
+               ["updated_at", "2026-10-26 09:21:49.239268"]]                                       
+            ⋮┆----------------------------------------
+          1035┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:21:49.296892"], ["email",                            
+               "e2e_40317_18c39a48d3ce@example.com"], ["name", "tester_40317_18c39a48d3ce"],       
+               ["password_digest", "$2a$10$bOHwsMEvpxB33nSTFIJrD.lLCbEmLHnnDieKat4wa6r.jLWIF8gP6"],
+               ["updated_at", "2026-10-26 09:21:49.296892"]]                                       
+            ⋮┆----------------------------------------
+          1070┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:21:49.350278"], ["email",                            
+               "e2e_40317_d1816a78d890@example.com"], ["name", "tester_40317_d1816a78d890"],       
+               ["password_digest", "$2a$10$n.GOn7rT1pK0uXSMBaQvH.fbzDCY.lelImO2YD0mDAccvEIl8x5rG"],
+               ["updated_at", "2026-10-26 09:21:49.350278"]]                                       
+            ⋮┆----------------------------------------
+          1135┆ User Create (0.8ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:21:51.804759"], ["email",                            
+               "e2e_46787_03785ae9b0c4@example.com"], ["name", "tester_46787_03785ae9b0c4"],       
+               ["password_digest", "$2a$10$u4eY0srb48fFTM6PxAUiTeUDu4wqDdVtpDLekPvr2ODgLn1JwJRFG"],
+               ["updated_at", "2026-10-26 09:21:51.804759"]]                                       
+            ⋮┆----------------------------------------
+          1198┆ User Create (0.8ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:21:54.208895"], ["email",                            
+               "e2e_46731_63f311b0c3be@example.com"], ["name", "tester_46731_63f311b0c3be"],       
+               ["password_digest", "$2a$10$gdXtWEBYVCPKxBmWJ6vRne0Stc2OVPaMhN467ySb5b4loKpN0ydgC"],
+               ["updated_at", "2026-10-26 09:21:54.208895"]]                                       
+            ⋮┆----------------------------------------
+          1228┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:21:54.306188"], ["email",                            
+               "e2e_39895_2905c1781dc6@example.com"], ["name", "tester_39895_2905c1781dc6"],       
+               ["password_digest", "$2a$10$BZHDMV.5b/rmotPwgIPrf.NHon8Rtg.5Xip9V47B81td6k8bHqwRS"],
+               ["updated_at", "2026-10-26 09:21:54.306188"]]                                       
+            ⋮┆----------------------------------------
+          1248┆ User Create (0.2ms)  INSERT INTO "users" ("created_at", "email",                          
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"             
+               [["created_at", "2026-10-26 09:21:54.413421"], ["email", "dash_test@example.com"], ["name",
+               "dash_test"], ["password_digest",                                                          
+               "$2a$10$IjnX7r1FrbKF960iT8k4OOURJIhwg04j/nSIsHP7vCD2wtJOWZIh2"], ["updated_at", "2026-10-26
+               09:21:54.413421"]]                                                                         
+            ⋮┆----------------------------------------
+          1295┆ User Create (0.8ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:21:56.822616"], ["email",                            
+               "e2e_46845_c4b6f2496583@example.com"], ["name", "tester_46845_c4b6f2496583"],       
+               ["password_digest", "$2a$10$TguGFzeHOPqe4kLRr5.Mp..yk433m8Dxm8psn4qg1l6RQcLqLrgg2"],
+               ["updated_at", "2026-10-26 09:21:56.822616"]]                                       
+            ⋮┆----------------------------------------
+          1330┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:21:57.088994"], ["email",                            
+               "e2e_46845_1d24da54f415@example.com"], ["name", "tester_46845_1d24da54f415"],       
+               ["password_digest", "$2a$10$SeyMt8T18K8fyDsA5C1H6uadQqMdHEi4MxDOJj4N6Ia1N6tKh.2KC"],
+               ["updated_at", "2026-10-26 09:21:57.088994"]]                                       
+            ⋮┆----------------------------------------
+          1390┆ User Create (0.8ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:04.478885"], ["email",                            
+               "e2e_42017_9e9554807681@example.com"], ["name", "tester_42017_9e9554807681"],       
+               ["password_digest", "$2a$10$NZjRqgYXKXU4VyCw8655DeTjZ3XHpkwXW3yMW.TnhhNwYQtBmi88K"],
+               ["updated_at", "2026-10-26 09:22:04.478885"]]                                       
+            ⋮┆----------------------------------------
+          1455┆ User Create (0.3ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:04.894384"], ["email",                            
+               "e2e_42017_726d0c922de3@example.com"], ["name", "tester_42017_726d0c922de3"],       
+               ["password_digest", "$2a$10$331JGL6UGhoZBgihCPaVEuyySD/93cUYQEpd7w4rm0fcaPAlHFpmy"],
+               ["updated_at", "2026-10-26 09:22:04.894384"]]                                       
+            ⋮┆----------------------------------------
+          1495┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:05.029402"], ["email",                            
+               "e2e_42017_c91b27540dc2@example.com"], ["name", "tester_42017_c91b27540dc2"],       
+               ["password_digest", "$2a$10$hwU1GONjUokDwmc7.zito.WGs99lFTnX1awCzK8mdBMAQ5KcsKgWq"],
+               ["updated_at", "2026-10-26 09:22:05.029402"]]                                       
+            ⋮┆----------------------------------------
+          1523┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:05.125375"], ["email",                            
+               "e2e_42017_2f54fd007c7f@example.com"], ["name", "tester_42017_2f54fd007c7f"],       
+               ["password_digest", "$2a$10$gLCS40CvBN8oVVG4RiVYw.qTR43Ce1ueRuA.1z1ZkfCPv8OXPgKKe"],
+               ["updated_at", "2026-10-26 09:22:05.125375"]]                                       
+            ⋮┆----------------------------------------
+          1604┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:15.327477"], ["email",                            
+               "e2e_42017_f6b468613565@example.com"], ["name", "tester_42017_f6b468613565"],       
+               ["password_digest", "$2a$10$18iTd7.kkXNpy8yD50fDuOJo9QBrGgmEdKz0iNKqOQ1IgOWjO2QLi"],
+               ["updated_at", "2026-10-26 09:22:15.327477"]]                                       
+            ⋮┆----------------------------------------
+          1677┆ User Create (0.8ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:22.688614"], ["email",                            
+               "e2e_36455_ad721b53dee2@example.com"], ["name", "tester_36455_ad721b53dee2"],       
+               ["password_digest", "$2a$10$XWkDeO3a59Df9eRy9iDYJO2NZ.Bx6ijzHzqgxuvbHD9L0yDYpswsS"],
+               ["updated_at", "2026-10-26 09:22:22.688614"]]                                       
+            ⋮┆----------------------------------------
+          1778┆ User Create (0.8ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:25.277293"], ["email",                            
+               "e2e_37309_310d836a1d6c@example.com"], ["name", "tester_37309_310d836a1d6c"],       
+               ["password_digest", "$2a$10$h1cN7pUyK1nxXYv6OqNfQOekwubZye8WceE63gUPiKzFWLKI8vzA2"],
+               ["updated_at", "2026-10-26 09:22:25.277293"]]                                       
+            ⋮┆----------------------------------------
+          1845┆ User Create (0.2ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:25.611831"], ["email",                            
+               "e2e_37309_77e7fc49a0de@example.com"], ["name", "tester_37309_77e7fc49a0de"],       
+               ["password_digest", "$2a$10$bKurfz8KPkOvTWLAs6mWIuSasXILwNwszK.GDU/gnTkjmmCIlow/2"],
+               ["updated_at", "2026-10-26 09:22:25.611831"]]                                       
+            ⋮┆----------------------------------------
+          1907┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                          
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"             
+               [["created_at", "2026-10-26 09:22:25.767332"], ["email", "previewtest@example.com"],       
+               ["name", "previewtest"], ["password_digest",                                               
+               "$2a$10$lT0le99OG30RdjRj1IkGPuY7UZg59F3zYGvx72Y3ObCC4DrGXGvf."], ["updated_at", "2026-10-26
+               09:22:25.767332"]]                                                                         
+            ⋮┆----------------------------------------
+          1941┆ User Create (0.3ms)  INSERT INTO "users" ("created_at", "email",                          
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"             
+               [["created_at", "2026-10-26 09:22:25.967160"], ["email", "previewtest@example.com"],       
+               ["name", "previewtest"], ["password_digest",                                               
+               "$2a$10$G.d5FpwAYHoBIq4t91EVIuae4dtojC8kGFdGDUikJ9J0dWphp80gS"], ["updated_at", "2026-10-26
+               09:22:25.967160"]]                                                                         
+            ⋮┆----------------------------------------
+          1990┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                          
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"             
+               [["created_at", "2026-10-26 09:22:26.223029"], ["email", "previewtest@example.com"],       
+               ["name", "previewtest"], ["password_digest",                                               
+               "$2a$10$zr.xtCL.R8S.DBxjllA58.FeZAhvpEN9PPlckH.Pq31.J6cH3J4BS"], ["updated_at", "2026-10-26
+               09:22:26.223029"]]                                                                         
+            ⋮┆----------------------------------------
+          2034┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                          
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"             
+               [["created_at", "2026-10-26 09:22:26.354684"], ["email", "previewtest@example.com"],       
+               ["name", "previewtest"], ["password_digest",                                               
+               "$2a$10$3RJc5mbZP5R/T68riHQG8.hspcMAP7ugwL.6WxAWKf4j7VSn759Ju"], ["updated_at", "2026-10-26
+               09:22:26.354684"]]                                                                         
+            ⋮┆----------------------------------------
+          2078┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                          
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"             
+               [["created_at", "2026-10-26 09:22:26.470982"], ["email", "previewtest@example.com"],       
+               ["name", "previewtest"], ["password_digest",                                               
+               "$2a$10$Zvz3/yaKB9azPRhUtAd/qODeNr3mGq9IhvR0qy2VdvmHPUFQx6MuO"], ["updated_at", "2026-10-26
+               09:22:26.470982"]]                                                                         
+            ⋮┆----------------------------------------
+          2127┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                          
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"             
+               [["created_at", "2026-10-26 09:22:26.607928"], ["email", "previewtest@example.com"],       
+               ["name", "previewtest"], ["password_digest",                                               
+               "$2a$10$MdpB62/bwk6N1uobOp6UzOM.s.blxsAwTUv/KIKXDBw/JHOPMrnDe"], ["updated_at", "2026-10-26
+               09:22:26.607928"]]                                                                         
+            ⋮┆----------------------------------------
+          2199┆ User Create (0.8ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:28.966169"], ["email",                            
+               "e2e_38119_f011a0685686@example.com"], ["name", "tester_38119_f011a0685686"],       
+               ["password_digest", "$2a$10$VpgfL8SnHIA1MM0YO8ETj.9dYJCl7Ho26hRxihIOE/YEQro.A8X8O"],
+               ["updated_at", "2026-10-26 09:22:28.966169"]]                                       
+            ⋮┆----------------------------------------
+          2267┆ User Create (0.7ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:31.489887"], ["email",                            
+               "e2e_42785_90df0b87051c@example.com"], ["name", "tester_42785_90df0b87051c"],       
+               ["password_digest", "$2a$10$3etJB9HUitvhuaSLhW5RmO5r1jv.KqneseXT9zcnEbWKQvYTS7TVm"],
+               ["updated_at", "2026-10-26 09:22:31.489887"]]                                       
+            ⋮┆----------------------------------------
+          2306┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:31.672494"], ["email",                            
+               "timing_39895_639df958@example.com"], ["name", "timing_39895_639df958"],            
+               ["password_digest", "$2a$10$Jm8o/SevcTmi6viaE7eCWe7qfhDwdzAG73LWjB1YCWsY3dZrDjY5q"],
+               ["updated_at", "2026-10-26 09:22:31.672494"]]                                       
+            ⋮┆----------------------------------------
+          2912┆ User Create (0.8ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:34.967162"], ["email",                            
+               "e2e_36111_974cd8b785ae@example.com"], ["name", "tester_36111_974cd8b785ae"],       
+               ["password_digest", "$2a$10$DXj4Xc4hqrjZ2ioNmT2VKOTUyZsRhIJImCbxgEgnNiBPXczaWadVO"],
+               ["updated_at", "2026-10-26 09:22:34.967162"]]                                       
+            ⋮┆----------------------------------------
+          3053┆ User Create (0.8ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:37.632252"], ["email",                            
+               "e2e_44237_595cd8519d29@example.com"], ["name", "tester_44237_595cd8519d29"],       
+               ["password_digest", "$2a$10$kofp6Cy9QBCG5U/Y.v4BjefJs7H1H9GNTeGDOMZ5rJSr43rrAuDCu"],
+               ["updated_at", "2026-10-26 09:22:37.632252"]]                                       
+            ⋮┆----------------------------------------
+          3123┆ User Create (0.8ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:40.159054"], ["email",                            
+               "victim_40563_bd3a8c4d@example.com"], ["name", "victim_40563_bd3a8c4d"],            
+               ["password_digest", "$2a$10$2.Zbgt79UR82opkTOAjmsetBeaL4p5atmq18FvsRvYTvYlEa6BO46"],
+               ["updated_at", "2026-10-26 09:22:40.159054"]]                                       
+            ⋮┆----------------------------------------
+          3205┆ User Create (0.8ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:42.702494"], ["email",                            
+               "e2e_33841_7c78f5b45334@example.com"], ["name", "tester_33841_7c78f5b45334"],       
+               ["password_digest", "$2a$10$bssawQF9HA0./y7K0QA4UuebIecyA5KqcITB/2yxsV.tntjRTyotK"],
+               ["updated_at", "2026-10-26 09:22:42.702494"]]                                       
+            ⋮┆----------------------------------------
+          3281┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:45.174893"], ["email",                            
+               "e2e_39895_107dad97b1b5@example.com"], ["name", "tester_39895_107dad97b1b5"],       
+               ["password_digest", "$2a$10$ztNIDqLTAtzn28lDSXDcQ.KsUhBY4WTncrZCK.60Bx.8o/wio30Ty"],
+               ["updated_at", "2026-10-26 09:22:45.174893"]]                                       
+            ⋮┆----------------------------------------
+          3298┆ User Create (0.8ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:45.317800"], ["email",                            
+               "e2e_42871_6130ea37cf25@example.com"], ["name", "tester_42871_6130ea37cf25"],       
+               ["password_digest", "$2a$10$DFc1Uoim0NVAH1UM4rT43eyURg0ZAev24Hisw5n2vNdRBYztEjxQ."],
+               ["updated_at", "2026-10-26 09:22:45.317800"]]                                       
+            ⋮┆----------------------------------------
+          3320┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:45.372094"], ["email",                            
+               "e2e_39895_22176a6b739b@example.com"], ["name", "tester_39895_22176a6b739b"],       
+               ["password_digest", "$2a$10$iacf2fDClr.YhFshEUc9z.UvQ/GXi9rfsW88nXwwsxDyITtdXuaIO"],
+               ["updated_at", "2026-10-26 09:22:45.372094"]]                                       
+            ⋮┆----------------------------------------
+          3337┆ User Create (0.2ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:45.466759"], ["email",                            
+               "e2e_42871_2525a294f606@example.com"], ["name", "tester_42871_2525a294f606"],       
+               ["password_digest", "$2a$10$cdee1SSaRnZFfuTXz9Wu2ezphH7F6mfT1.vctiIvh2NQlIS.RHyga"],
+               ["updated_at", "2026-10-26 09:22:45.466759"]]                                       
+            ⋮┆----------------------------------------
+          3368┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:45.631441"], ["email",                            
+               "e2e_39895_a24a63a66220@example.com"], ["name", "tester_39895_a24a63a66220"],       
+               ["password_digest", "$2a$10$tnHA.q/2FcMW/2A.zY6Ngu2Wbpd4Ik2UfXGWnzSSI82.KKkvXFSsi"],
+               ["updated_at", "2026-10-26 09:22:45.631441"]]                                       
+            ⋮┆----------------------------------------
+          3385┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:45.730086"], ["email",                            
+               "e2e_42871_aef48fd11573@example.com"], ["name", "tester_42871_aef48fd11573"],       
+               ["password_digest", "$2a$10$mwiL9Gmpg7fNmP88JTV6leuUYYfGUCE.3Vu0oSrZwbiA9qHqfc8Jy"],
+               ["updated_at", "2026-10-26 09:22:45.730086"]]                                       
+            ⋮┆----------------------------------------
+          3429┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:45.887176"], ["email",                            
+               "e2e_39895_644b3dab441f@example.com"], ["name", "tester_39895_644b3dab441f"],       
+               ["password_digest", "$2a$10$NaSrWrobHq1goxAtTuBwsetXK0ISx4wQcPPnwgoo5bfD5E705YwF6"],
+               ["updated_at", "2026-10-26 09:22:45.887176"]]                                       
+            ⋮┆----------------------------------------
+          3446┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:45.984225"], ["email",                            
+               "e2e_42871_051c6a67a4a5@example.com"], ["name", "tester_42871_051c6a67a4a5"],       
+               ["password_digest", "$2a$10$lnvHkqvCGWacgD2V/t1uKeo2/PrQjXj/HJdlh68xWhRCjbe1KRo5m"],
+               ["updated_at", "2026-10-26 09:22:45.984225"]]                                       
+            ⋮┆----------------------------------------
+          3476┆ User Create (0.8ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:48.282896"], ["email",                            
+               "e2e_35117_abb156627753@example.com"], ["name", "tester_35117_abb156627753"],       
+               ["password_digest", "$2a$10$ZfQKDt1PnZPWIctNP7SFkuUDOJXh0qbhnaaSISQ3W23wMqP0V0GQa"],
+               ["updated_at", "2026-10-26 09:22:48.282896"]]                                       
+            ⋮┆----------------------------------------
+          3554┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:50.683400"], ["email",                            
+               "e2e_39895_74b404f7eecd@example.com"], ["name", "tester_39895_74b404f7eecd"],       
+               ["password_digest", "$2a$10$GYJ5ZdRkmcA.74FmmIFg1e/7UrJRBGsQSTZ/egMzBlmbsuT/aaVRu"],
+               ["updated_at", "2026-10-26 09:22:50.683400"]]                                       
+            ⋮┆----------------------------------------
+          3607┆ User Create (0.7ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:50.842026"], ["email",                            
+               "e2e_44901_11628cb0eee0@example.com"], ["name", "tester_44901_11628cb0eee0"],       
+               ["password_digest", "$2a$10$kvd22aeJdkLZmIM0l.WrmerDrC/ui8e4fGXASsRAiJP8/Obk1CSiK"],
+               ["updated_at", "2026-10-26 09:22:50.842026"]]                                       
+            ⋮┆----------------------------------------
+          3680┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:51.182104"], ["email",                            
+               "e2e_39895_1b0de24dc151@example.com"], ["name", "tester_39895_1b0de24dc151"],       
+               ["password_digest", "$2a$10$uT0dfQCWhN1ulMEW10cgYOhnGAwhVtTqFhzieXZTkRkoxAFk2N1AS"],
+               ["updated_at", "2026-10-26 09:22:51.182104"]]                                       
+            ⋮┆----------------------------------------
+          3733┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:51.270537"], ["email",                            
+               "e2e_44901_7123beb544fe@example.com"], ["name", "tester_44901_7123beb544fe"],       
+               ["password_digest", "$2a$10$TS0qVjjLuCGx6KCOv9XjJe7/FyGvujCyV4v8obURHLwUZLfLxRtSK"],
+               ["updated_at", "2026-10-26 09:22:51.270537"]]                                       
+            ⋮┆----------------------------------------
+          3791┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:51.402865"], ["email",                            
+               "e2e_39895_41f52c2e11bb@example.com"], ["name", "tester_39895_41f52c2e11bb"],       
+               ["password_digest", "$2a$10$LopmoGIffYggIhMJEaIaVOTpMRJQsCqCZMMruurPlQvZNwtTOP8cm"],
+               ["updated_at", "2026-10-26 09:22:51.402865"]]                                       
+            ⋮┆----------------------------------------
+          3844┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:51.472642"], ["email",                            
+               "e2e_44901_ef1b14765cc4@example.com"], ["name", "tester_44901_ef1b14765cc4"],       
+               ["password_digest", "$2a$10$equOkEr88yw8mafy0ivtbOOJIv13HRVNMbv6g.3Htox.vMAglncCa"],
+               ["updated_at", "2026-10-26 09:22:51.472642"]]                                       
+            ⋮┆----------------------------------------
+          3916┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:51.602850"], ["email",                            
+               "e2e_39895_8880dded0bec@example.com"], ["name", "tester_39895_8880dded0bec"],       
+               ["password_digest", "$2a$10$NIyRnLQ7oddJvFbUIpzWl.mMkpq/7Td4ofwS4nV3CU5vJVO01joqe"],
+               ["updated_at", "2026-10-26 09:22:51.602850"]]                                       
+            ⋮┆----------------------------------------
+          3969┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:51.666101"], ["email",                            
+               "e2e_44901_d531e98a94c9@example.com"], ["name", "tester_44901_d531e98a94c9"],       
+               ["password_digest", "$2a$10$WSK2icPbWidXMrD4jpiG0uMdOkwQIdyw06dD59ccSLCYFkNVPVkRi"],
+               ["updated_at", "2026-10-26 09:22:51.666101"]]                                       
+            ⋮┆----------------------------------------
+          4027┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:51.744710"], ["email",                            
+               "e2e_39895_e54a9c12184b@example.com"], ["name", "tester_39895_e54a9c12184b"],       
+               ["password_digest", "$2a$10$bb0hXtEtMDQFHNq4SXLmYu7.qchwlh/5ci2Uax6qGOWMjjwljaYb6"],
+               ["updated_at", "2026-10-26 09:22:51.744710"]]                                       
+            ⋮┆----------------------------------------
+          4080┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:51.832770"], ["email",                            
+               "e2e_44901_248c2d9c6bd2@example.com"], ["name", "tester_44901_248c2d9c6bd2"],       
+               ["password_digest", "$2a$10$G5n2F3tNsfzJtY8k6j4yeul.2pZ4iS9Su/VPFLwkHj/K5KwBhgkx2"],
+               ["updated_at", "2026-10-26 09:22:51.832770"]]                                       
+            ⋮┆----------------------------------------
+          4161┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:54.127698"], ["email",                            
+               "e2e_39895_860a02f3b8df@example.com"], ["name", "tester_39895_860a02f3b8df"],       
+               ["password_digest", "$2a$10$ZEvGZJTr3AkyTGBPlErtd.2/kvcv8BEDNHHl9OShOcouSqN9m0T6S"],
+               ["updated_at", "2026-10-26 09:22:54.127698"]]                                       
+            ⋮┆----------------------------------------
+          4196┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:54.188855"], ["email",                            
+               "e2e_39895_f31da0e20be2@example.com"], ["name", "tester_39895_f31da0e20be2"],       
+               ["password_digest", "$2a$10$5vajJMeMrDBvTdDbCE3woOtQ8UAvwZBpTHfNvaqKsA3yTC9fmZSEm"],
+               ["updated_at", "2026-10-26 09:22:54.188855"]]                                       
+            ⋮┆----------------------------------------
+          4231┆ User Create (0.8ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:54.337867"], ["email",                            
+               "e2e_32931_1b837b8825da@example.com"], ["name", "tester_32931_1b837b8825da"],       
+               ["password_digest", "$2a$10$AGEdTKkP.PNmj2mGRHQ4y.eKX4EQbgM4Eti73I2M3wUl3/IkMyD86"],
+               ["updated_at", "2026-10-26 09:22:54.337867"]]                                       
+            ⋮┆----------------------------------------
+          4266┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:54.593120"], ["email",                            
+               "e2e_32931_0091b9e98b06@example.com"], ["name", "tester_32931_0091b9e98b06"],       
+               ["password_digest", "$2a$10$OC5wvJJKlgQW3XDNs.GDkOm2CQTsVsj0gPcDj5RqV88Bzk0BxlGm."],
+               ["updated_at", "2026-10-26 09:22:54.593120"]]                                       
+            ⋮┆----------------------------------------
+          4338┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:54.812349"], ["email",                            
+               "e2e_39895_19c36a8217bb@example.com"], ["name", "tester_39895_19c36a8217bb"],       
+               ["password_digest", "$2a$10$UTcd1qBC.14zPbWelh44dOEceUTM9E6h7CoQfIWhz8/9.bMUx.CC2"],
+               ["updated_at", "2026-10-26 09:22:54.812349"]]                                       
+            ⋮┆----------------------------------------
+          4373┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:54.870415"], ["email",                            
+               "e2e_39895_bca059c2cdcf@example.com"], ["name", "tester_39895_bca059c2cdcf"],       
+               ["password_digest", "$2a$10$HV8UCrlyX3pAzO7od16TU.83xn4auMoXM2eMaVClmUE0Cz7o3Co.S"],
+               ["updated_at", "2026-10-26 09:22:54.870415"]]                                       
+            ⋮┆----------------------------------------
+          4408┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:54.947663"], ["email",                            
+               "e2e_32931_8469e54ba7b1@example.com"], ["name", "tester_32931_8469e54ba7b1"],       
+               ["password_digest", "$2a$10$jfuAzk/XLEpNniUkfyeqYudZsy9A164T/b9HHBx/isj6DDI2rko3."],
+               ["updated_at", "2026-10-26 09:22:54.947663"]]                                       
+            ⋮┆----------------------------------------
+          4443┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:55.035638"], ["email",                            
+               "e2e_32931_f90be5003ada@example.com"], ["name", "tester_32931_f90be5003ada"],       
+               ["password_digest", "$2a$10$o6iSe6kq/umyW/KUZd6sm.5Hb0dqVQo5Ith6p1J8j0Nn8FZDaQUEe"],
+               ["updated_at", "2026-10-26 09:22:55.035638"]]                                       
+            ⋮┆----------------------------------------
+          4565┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:55.215009"], ["email",                            
+               "e2e_39895_02aaedd6698b@example.com"], ["name", "tester_39895_02aaedd6698b"],       
+               ["password_digest", "$2a$10$ugGFFg1cnzE.ZJYsvcE54OGwbEanJIENoYzw7qNBaCWbkjKokkOmy"],
+               ["updated_at", "2026-10-26 09:22:55.215009"]]                                       
+            ⋮┆----------------------------------------
+          4600┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:55.270408"], ["email",                            
+               "e2e_39895_1fd5d76e4bac@example.com"], ["name", "tester_39895_1fd5d76e4bac"],       
+               ["password_digest", "$2a$10$bkikQ/JhxNXpL/l7RP3Ju.xyl1gpUqmgoAdlver38JKODYuZeseE2"],
+               ["updated_at", "2026-10-26 09:22:55.270408"]]                                       
+            ⋮┆----------------------------------------
+          4635┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:55.330676"], ["email",                            
+               "e2e_32931_de3eeb2e24dd@example.com"], ["name", "tester_32931_de3eeb2e24dd"],       
+               ["password_digest", "$2a$10$2wRJ2DOZL3828TFioZzxFeGOwzibN.PSauzHJAOypKd3zIXouFFZS"],
+               ["updated_at", "2026-10-26 09:22:55.330676"]]                                       
+            ⋮┆----------------------------------------
+          4670┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:55.396263"], ["email",                            
+               "e2e_32931_42286796a767@example.com"], ["name", "tester_32931_42286796a767"],       
+               ["password_digest", "$2a$10$fbgORBbPtsBb9pwfuwjFoOunfqvOiv9334SYAoSnlldStJ6aZStfe"],
+               ["updated_at", "2026-10-26 09:22:55.396263"]]                                       
+            ⋮┆----------------------------------------
+          4724┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:55.527454"], ["email",                            
+               "e2e_39895_504aee2c2758@example.com"], ["name", "tester_39895_504aee2c2758"],       
+               ["password_digest", "$2a$10$AqNTCZO4HhWktcwulIY5OOniVTlmbpHMTE/VyoUCzVLZJYZWYTFjO"],
+               ["updated_at", "2026-10-26 09:22:55.527454"]]                                       
+            ⋮┆----------------------------------------
+          4759┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:55.585539"], ["email",                            
+               "e2e_39895_4cab154983ed@example.com"], ["name", "tester_39895_4cab154983ed"],       
+               ["password_digest", "$2a$10$4F4O.FVf1jyCyg3AGzFdO.YfgXGAmJgSSF59OHxZkX6qUTa8fHSS."],
+               ["updated_at", "2026-10-26 09:22:55.585539"]]                                       
+            ⋮┆----------------------------------------
+          4794┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:55.677932"], ["email",                            
+               "e2e_32931_a56a23bee0a2@example.com"], ["name", "tester_32931_a56a23bee0a2"],       
+               ["password_digest", "$2a$10$DFogsneHkIFKYEMJF/CcjORXQyrJfpzSwjwTIUY9beX9HxShfrAAm"],
+               ["updated_at", "2026-10-26 09:22:55.677932"]]                                       
+            ⋮┆----------------------------------------
+          4829┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:55.751967"], ["email",                            
+               "e2e_32931_c12df537ae27@example.com"], ["name", "tester_32931_c12df537ae27"],       
+               ["password_digest", "$2a$10$GIUmIe3ate27Wg9yLTTkjOGLl19V9mvC2TO8PqgCMAAJ2zz8hRHei"],
+               ["updated_at", "2026-10-26 09:22:55.751967"]]                                       
+            ⋮┆----------------------------------------
+          4859┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                          
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"             
+               [["created_at", "2026-10-26 09:22:55.813170"], ["email", "colortest@example.com"], ["name",
+               "colortest"], ["password_digest",                                                          
+               "$2a$10$br2Ld4CrngmhrEDV9rzgAO9tO3.y/POUOnUu5a2bG0vtYdU0RymDu"], ["updated_at", "2026-10-26
+               09:22:55.813170"]]                                                                         
+            ⋮┆----------------------------------------
+          4899┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                          
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"             
+               [["created_at", "2026-10-26 09:22:55.952370"], ["email", "colortest@example.com"], ["name",
+               "colortest"], ["password_digest",                                                          
+               "$2a$10$1Ise7Qwv2nIVtr0lPjxKj.qwnjP.FWwlMHL5LZ0JKq0xmV7vv.tLm"], ["updated_at", "2026-10-26
+               09:22:55.952370"]]                                                                         
+            ⋮┆----------------------------------------
+          4939┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                          
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"             
+               [["created_at", "2026-10-26 09:22:56.065684"], ["email", "colortest@example.com"], ["name",
+               "colortest"], ["password_digest",                                                          
+               "$2a$10$Grhc0CTwVrWTAh/aDTFpVuB7yhgBZhKXm5HMVx7kfDM9GDDcfa4ky"], ["updated_at", "2026-10-26
+               09:22:56.065684"]]                                                                         
+            ⋮┆----------------------------------------
+          4979┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                          
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"             
+               [["created_at", "2026-10-26 09:22:56.171540"], ["email", "colortest@example.com"], ["name",
+               "colortest"], ["password_digest",                                                          
+               "$2a$10$kEJDAmIkPl7Im3ctiWCLCeaVmaKMx0FCj1KEDSZTiEaLV8.L068XO"], ["updated_at", "2026-10-26
+               09:22:56.171540"]]                                                                         
+            ⋮┆----------------------------------------
+          5019┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                          
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"             
+               [["created_at", "2026-10-26 09:22:56.280882"], ["email", "colortest@example.com"], ["name",
+               "colortest"], ["password_digest",                                                          
+               "$2a$10$pXhP2csvYarPSEKCnaeoDuH7t2MXW4KKFh4VtxP.EQQSt3Y1VrCf6"], ["updated_at", "2026-10-26
+               09:22:56.280882"]]                                                                         
+            ⋮┆----------------------------------------
+          5059┆ User Create (0.1ms)  INSERT INTO "users" ("created_at", "email",                          
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"             
+               [["created_at", "2026-10-26 09:22:56.407965"], ["email", "colortest@example.com"], ["name",
+               "colortest"], ["password_digest",                                                          
+               "$2a$10$rLykXtA6.rF92ZErCt0NuuJA1l.gaWflblLh8t/M3ahg1wMB5APIy"], ["updated_at", "2026-10-26
+               09:22:56.407965"]]                                                                         
+            ⋮┆----------------------------------------
+          5122┆ User Create (0.8ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:22:58.743793"], ["email",                            
+               "e2e_37913_71dfb7ff291f@example.com"], ["name", "tester_37913_71dfb7ff291f"],       
+               ["password_digest", "$2a$10$34FsXuLV4JR2I/EFx6B48.aJQNrsoVbPtw9QqKCsVH0826YkR1A8e"],
+               ["updated_at", "2026-10-26 09:22:58.743793"]]                                       
+            ⋮┆----------------------------------------
+          5184┆ User Create (0.7ms)  INSERT INTO "users" ("created_at", "email",                   
+               "name", "password_digest", "updated_at") VALUES (?, ?, ?, ?, ?) RETURNING "id"      
+               [["created_at", "2026-10-26 09:23:01.489189"], ["email",                            
+               "e2e_45743_2671f191eaf9@example.com"], ["name", "tester_45743_2671f191eaf9"],       
+               ["password_digest", "$2a$10$k.I4KH8sfMY1eA.3C12BA.JEFxCq47W/tWhmujvxG7eI7pqFCNxFa"],
+               ["updated_at", "2026-10-26 09:23:01.489189"]]                                       
+
+                
+                
+┌──────────────┐
+│ Scan Summary │
+└──────────────┘
+✅ Scan completed successfully.
+ • Findings: 117 (117 blocking)
+ • Rules run: 349
+ • Targets scanned: 146
+ • Parsed lines: ~100.0%
+ • Scan skipped: 
+   ◦ Files matching .semgrepignore patterns: 10
+ • For a detailed list of skipped files and lines, run semgrep with the --verbose flag
+Ran 349 rules on 146 files: 117 findings.
+
+A new version of Semgrep is available. See https://semgrep.dev/docs/upgrading
+
+📢 Too many findings? Try Semgrep Pro for more powerful queries and less noise.
+   See https://sg.run/false-positives.

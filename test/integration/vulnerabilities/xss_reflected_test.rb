@@ -14,6 +14,7 @@ class XssReflectedTest < ActiveSupport::TestCase
   end
 
   test "SAFE: XSS payload in search query is escaped" do
+    skip_if_vuln!("xss_reflected")
     cookie = setup_session(@safe_server)
     res = @safe_server.get("/tasks?q=#{CGI.escape(XSS_PAYLOAD)}",
                            headers: { "Cookie" => cookie })
@@ -23,6 +24,7 @@ class XssReflectedTest < ActiveSupport::TestCase
   end
 
   test "VULN: XSS payload in search query is reflected as raw HTML" do
+    skip_unless_vuln!("xss_reflected")
     cookie = setup_session(@vuln_server)
     res = @vuln_server.get("/tasks?q=#{CGI.escape(XSS_PAYLOAD)}",
                            headers: { "Cookie" => cookie })

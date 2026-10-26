@@ -16,7 +16,7 @@ export default {
     engine: web(),
     app: {
       url: 'http://127.0.0.1:3101',
-      readyUrl: 'http://127.0.0.1:3106/up',
+      readyUrl: 'http://127.0.0.1:3101/up',
       command: {
         executable: 'bundle',
         args: ['exec', 'ruby', 'tests/support/rails.rb', 'serve'],

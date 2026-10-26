@@ -12,6 +12,7 @@ class CommandInjectionTest < ActiveSupport::TestCase
   end
 
   test "SAFE: name parameter does not affect filename via shell" do
+    skip_if_vuln!("command_injection")
     cookie = setup_session(@safe_server)
     # Create a task so export has data
     create_task_via_form(@safe_server, title: "Export test", cookie: cookie)
@@ -27,6 +28,7 @@ class CommandInjectionTest < ActiveSupport::TestCase
   end
 
   test "VULN: shell command is executed in filename generation" do
+    skip_unless_vuln!("command_injection")
     cookie = setup_session(@vuln_server)
     create_task_via_form(@vuln_server, title: "Export test", cookie: cookie)
 

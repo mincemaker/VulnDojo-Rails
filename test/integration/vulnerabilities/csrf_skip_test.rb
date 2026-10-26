@@ -18,6 +18,7 @@ class CsrfSkipTest < ActiveSupport::TestCase
   # ---- RED: 脆弱性 OFF では CSRF トークンなしの POST が拒否される ----
 
   test "SAFE: POST without CSRF token is rejected (422)" do
+    skip_if_vuln!("csrf_skip")
     body = URI.encode_www_form("task[title]" => "Hacked Task")
     # ログイン済みセッションを使うが、CSRFトークンなし
     res = @safe_server.post("/tasks", body: body, headers: { "Cookie" => @safe_cookie })
@@ -26,6 +27,7 @@ class CsrfSkipTest < ActiveSupport::TestCase
   end
 
   test "SAFE: POST with valid CSRF token succeeds (302)" do
+    skip_if_vuln!("csrf_skip")
     get_res = @safe_server.get("/tasks/new", headers: { "Cookie" => @safe_cookie })
     token = extract_csrf_token(get_res.body)
     new_cookie = latest_cookie(get_res, @safe_cookie)
@@ -42,6 +44,7 @@ class CsrfSkipTest < ActiveSupport::TestCase
   # ---- GREEN: 脆弱性 ON ではトークンなしの POST が通る ----
 
   test "VULN: POST without CSRF token succeeds (302)" do
+    skip_unless_vuln!("csrf_skip")
     body = URI.encode_www_form("task[title]" => "CSRF Attack!")
     # ログイン済みセッションを使うが、CSRFトークンなし
     res = @vuln_server.post("/tasks", body: body, headers: { "Cookie" => @vuln_cookie })
@@ -50,6 +53,7 @@ class CsrfSkipTest < ActiveSupport::TestCase
   end
 
   test "VULN: task is actually created via CSRF attack" do
+    skip_unless_vuln!("csrf_skip")
     body = URI.encode_www_form("task[title]" => "CSRF Created Task")
     @vuln_server.post("/tasks", body: body, headers: { "Cookie" => @vuln_cookie })
 
