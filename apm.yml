@@ -10,8 +10,8 @@ targets:
   - claude
 dependencies:
   apm:
-    - tester-army/e2e/skills/migrate-to-e2e#ff3bf3917f2b5bb0f81e5bc5f4fdaa24d023afd0
-    - tester-army/e2e/skills/e2e#ff3bf3917f2b5bb0f81e5bc5f4fdaa24d023afd0
+    - tester-army/e2e/skills/migrate-to-e2e#cad17c3200ceb5439a261f9c24e6e7ebbf85ddff
+    - tester-army/e2e/skills/e2e#cad17c3200ceb5439a261f9c24e6e7ebbf85ddff
   mcp: []
 includes: auto
 scripts: {}
