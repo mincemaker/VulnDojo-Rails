@@ -33,7 +33,12 @@ gh auth status
   以降の例に出てくる `<compose>` はここで確定した方に置き換える
   （`<repo-name>` や `<N>` と同じくプレースホルダ）
 - テストコマンド: `<compose> run --rm web bin/rails test`
-- **`git push` はフックでブロックされる** → ユーザーに `! cd ...` 形式で実行を依頼する
+- **`git push` はフックでブロックされる** → ユーザーに `! git -C <worktree> push ...` 形式で実行を依頼する
+
+コマンドは1つずつ単独で実行する。サンドボックスの除外設定は、コマンドが先頭から
+一致したときにしか効かない。`cd` を前に付けたり、`&&`・`;`・パイプで繋いだり、
+`> file` でリダイレクトしたりすると、サンドボックス内で実行されてしまう。
+podman ならソケットのある `/run/user` が read-only になり、gh なら認証情報が読めなくなって失敗する。
 
 ---
 
@@ -41,23 +46,28 @@ gh auth status
 
 ### 作業ディレクトリの規約
 
-2つのディレクトリを行き来する。**どちらで実行するかで結果が変わるため、常に意識する。**
+2つのディレクトリを扱う。**どちらを対象にするかで結果が変わるため、常に意識する。**
 
-- **`<repo>`** — 元のリポジトリ（例: `/mnt/development/VulnDojo-Rails`）
-- **`<worktree>`** — `../<repo-name>-pr<N>`。PR の内容が反映されているのはこちら
+- **`<repo>`** — 元のリポジトリ（例: `/mnt/development/VulnDojo-Rails`）。作業はずっとここに立って行う
+- **`<worktree>`** — `z-ai/<repo-name>-pr<N>`。PR の内容が反映されているのはこちら。
+  `../` はサンドボックスの書き込み範囲外なので作れない。`z-ai/` は gitignore 済み
 
-| Step | 実行場所 |
-|---|---|
-| 1, 2 | `<repo>` |
-| 3 | `<repo>`（worktree へは `git -C` で参照する） |
-| 4 | `<worktree>` |
-| 5, 5b | `<worktree>` — **ここを間違えると PR の変更が反映されていない状態でテストしてしまう** |
-| 6 | ユーザーが `<worktree>` で実行 |
-| 7, 8 | どちらでも可（`gh` はリポジトリ単位のため） |
-| 9 | `<worktree>` で後片付け → `<repo>` へ戻ってから `worktree remove` |
+`cd` はしない。git は `git -C <worktree>` を使い、コンテナは compose ファイルを
+`-f` で指定して worktree を対象にする。以降の例に出てくる `<wt-compose>` は次の形を指す。
 
-git コマンドは `git -C <path>` を使えば `cd` せずに済む。`cd` が必要なのは
-`<compose>` を実行する Step 5・5b・9 だけ。
+```bash
+<compose> -f <repo>/z-ai/<repo-name>-pr<N>/compose.yaml
+# e2e を使うときは2つ重ねる
+<compose> -f <repo>/z-ai/<repo-name>-pr<N>/compose.yaml -f <repo>/z-ai/<repo-name>-pr<N>/compose.e2e.yaml
+```
+
+パスは絶対パスで書く。podman-compose は、2つ目のファイルにある相対パスの bind mount
+（`.`）を volume 名と誤解して `volume [...] not defined in top level` で落ちる。
+プロジェクト名は worktree のディレクトリ名から決まるので、コンテナと volume は
+元のリポジトリのものと混ざらない。
+
+Step 5・5b で `<wt-compose>` ではなく `<compose>` をそのまま使うと元のリポジトリが
+対象になり、PR の変更が反映されていない状態でテストしてしまう。
 
 ### Step 1: PR の情報確認
 
@@ -65,9 +75,13 @@ git コマンドは `git -C <path>` を使えば `cd` せずに済む。`cd` が
 
 ```bash
 gh pr view <N> --json headRefName,title,state,mergeable
-gh pr diff <N> --name-only
 gh pr view <N> --json body -q .body
+git fetch origin
+git diff --stat origin/main...origin/<branch>
 ```
+
+`gh pr diff` はサンドボックス内で認証に失敗することがある。変更ファイルは git で取れば足りる。
+Renovate の本文は長く、出力がファイルに逃がされることがある。その場合は保存先を grep する。
 
 - ブランチ名（`headRefName`）を記録する
 - `state` が `OPEN`、`mergeable` が `MERGEABLE` であることを確認する。違えばここで中断してユーザーに報告する
@@ -91,17 +105,15 @@ grep -rn '<API 名>' app/ lib/
 ### Step 2: worktree 作成
 
 ```bash
-git fetch origin <branch>
-git worktree add ../<repo-name>-pr<N> origin/<branch>
+git worktree add z-ai/<repo-name>-pr<N> origin/<branch>
 ```
 
-`<repo-name>` はカレントディレクトリのベース名（例: `VulnDojo-Rails-pr26`）。
+`<repo-name>` はカレントディレクトリのベース名（例: `z-ai/VulnDojo-Rails-pr26`）。
 
 ### Step 3: rebase 要否の判定
 
 ```bash
-git fetch origin
-git -C ../<repo-name>-pr<N> rev-list --count HEAD..origin/main
+git -C z-ai/<repo-name>-pr<N> rev-list --count HEAD..origin/main
 ```
 
 この数値が 0 なら、PR ブランチは既に main 先端を含んでいる。rebase しても再生する
@@ -119,11 +131,13 @@ rebase 後の状態なので、確かめたいのはそちらであって、テ�
 
 ### Step 4: main 先端に rebase（Step 3 の判定が 1 以上の場合のみ）
 
-実行場所: `<worktree>`
+対象: `<worktree>`
 
 ```bash
-git -C ../<repo-name>-pr<N> rebase origin/main
+git -C z-ai/<repo-name>-pr<N> rebase origin/main
 ```
+
+コンフリクト解決の git コマンドも `git -C z-ai/<repo-name>-pr<N>` で worktree に向ける。
 
 #### コンフリクト対応
 
@@ -151,14 +165,7 @@ git commit -m "chore: update Dockerfile RUBY_VERSION to X.Y.Z"
 
 ### Step 5: rebase 後テスト
 
-実行場所: `<worktree>`。ここで `cd` する。
-
-```bash
-cd ../<repo-name>-pr<N>
-```
-
-元のリポジトリで実行すると PR の変更が反映されていない状態でテストすることになり、
-結果が無意味になる。
+対象: `<worktree>`。コンテナ操作は全部 `<wt-compose>` で行う。
 
 テストは、PR の変更が実際に反映された状態で走らせたい。反映されていなければ、
 そのテストは変更を検証していない。緑になっても何も言えていない。
@@ -172,8 +179,8 @@ volume はイメージ内の `/usr/local/bundle` を覆い隠すので、volume 
 が走るため、その後に `bundle install` を足す必要はない。
 
 ```bash
-<compose> down -v          # bundle_cache を含む全ボリュームを削除
-<compose> build --no-cache web
+<wt-compose> down -v          # bundle_cache を含む全ボリュームを削除
+<wt-compose> build --no-cache web
 ```
 
 コンテナイメージの参照が変わったなら、取得と、動いているコンテナへの適用は別物になる。
@@ -182,17 +189,19 @@ volume はイメージ内の `/usr/local/bundle` を覆い隠すので、volume 
 アプリコードだけの変更なら volume マウントで届くので、反映のための操作は要らない。
 
 判断がついたら、届いたことを実測で確かめてからテストに進む。gem なら
-`<compose> run --rm web bundle list | grep <gem>` で版を、イメージなら digest を見る。
+`<wt-compose> run --rm web bundle list` で版を、イメージなら
+`podman inspect <container> --format '{{.ImageName}}'` で digest を見る。
 ここで古い版が出るなら、反映のさせ方が足りていない。
 
-テストの出力は全文をファイルに残す。`tail` や `head` で切り詰めると、失敗した
-テスト名が中間に埋もれて失われ、特定のためだけに走らせ直すことになる。
+npm の依存（`package-lock.json`）が変わったなら、Minitest だけでは変更を踏まない。
+CLAUDE.md の手順で e2e のビルド、`npm ci`、chromium のインストール、`npx e2e run` まで
+走らせる。いずれも2ファイルを重ねた `<wt-compose>` で実行する。
 
-```bash
-<compose> run --rm web bin/rails test > /tmp/pr<N>-test.log 2>&1
-```
-
-絞り込みは保存したログへの `grep` で行う。
+テストの出力は全部残す。`tail` や `head` で切り詰めると、失敗したテスト名が
+途中に埋もれて消え、特定のためだけに走らせ直すことになる。リダイレクトで
+ファイルに書くとサンドボックスの除外から外れるので、コマンドは素のまま実行する。
+出力が大きいと保存先のファイルパスが返ってくるので、絞り込みはそのファイルへの
+`grep` で行う。e2e は進捗表示を何度も描き直すので、最後の集計行と `failed` の件数を見る。
 
 **テスト失敗の場合**: 原因を調査してユーザーに報告する。rebase によるコンフリクト解決が不完全な場合は修正して再テスト。
 
@@ -202,10 +211,10 @@ volume はイメージ内の `/usr/local/bundle` を覆い隠すので、volume 
 経路は当然あるし、Step 1 で読んだ破壊的変更が本当に無関係だったかも、静的な調査だけでは
 言い切れない。実際に動かして自分の目で見たものだけが根拠になる。
 
-実行場所: `<worktree>`（Step 5 から続けて作業する）。
+対象: `<worktree>`（Step 5 から続けて作業する）。
 
 ```bash
-<compose> up -d
+<wt-compose> up -d
 ```
 
 更新した依存が使われている経路を選んで通す。どこを通すかは変更内容から決まる。
@@ -221,13 +230,13 @@ Step 5 で volume を消していると DB が空になっている。起動し�
 起動ログも見ておく。例外や警告が出ていないことは、静かに壊れていないことの手がかりになる。
 
 ```bash
-<compose> logs web
+<wt-compose> logs web
 ```
 
 見終わったらコンテナを止める。volume は Step 9 でまとめて片付けるので、ここで消す必要はない。
 
 ```bash
-<compose> down
+<wt-compose> down
 ```
 
 ここで見た内容は Step 7 のレビューコメントに書く。何を通して何が確認できたのかが、
@@ -244,7 +253,7 @@ Step 3 の判定が 0 で rebase していないなら、ずれていないの�
 `git push` はフックでブロックされるため、ユーザーに実行してもらう:
 
 ```
-! cd ../<repo-name>-pr<N> && git push origin HEAD:<branch> --force-with-lease
+! git -C z-ai/<repo-name>-pr<N> push origin HEAD:<branch> --force-with-lease
 ```
 
 反映されたことを確かめてから次へ進む。手元の HEAD と `origin/<branch>` の SHA が
@@ -253,8 +262,12 @@ Step 3 の判定が 0 で rebase していないなら、ずれていないの�
 ### Step 7: PR にレビューコメント投稿
 
 ```bash
-gh pr review <N> --comment --body "..."
+gh pr review <N> --comment --body-file z-ai/pr<N>-review.md
 ```
+
+本文は `z-ai/pr<N>-review.md` に書き、ユーザーに見せたものをそのまま投稿する。
+gh の書き込み系コマンドはサンドボックス内で認証に失敗するので、合意を取った後に
+サンドボックスを外して実行する。Step 8 の `gh pr merge` も同じ。
 
 このコメントは後から読み返される記録になる。なぜマージしてよいと判断したのかが、
 根拠つきで残っている状態にしたい。どの状態を基準にテストしたのか（`git log --oneline
@@ -286,16 +299,13 @@ gh pr merge <N> --merge
 
 ### Step 9: クリーンアップ
 
-コンテナと volume は worktree 側に紐づいているので、worktree を消す前に片付ける。
-ただし自分が worktree の中に立ったまま消すと、足元のディレクトリが無くなり、
-以降のコマンドが `Unable to read current working directory` で動かなくなる。
-片付けてから元のリポジトリへ戻り、それから消す。
+コンテナと volume は worktree 側の compose プロジェクトに紐づいているので、
+worktree を消す前に片付ける。compose ファイルが消えると、`<wt-compose>` で指定できなくなる。
+e2e を使ったなら e2e の volume も残っているので、2ファイルを重ねた形で落とす。
 
 ```bash
-cd <worktree>
-<compose> down -v   # コンテナとボリュームを削除
-cd <元のリポジトリディレクトリ>
-git worktree remove ../<repo-name>-pr<N>
+<wt-compose> down -v   # コンテナとボリュームを削除
+git worktree remove z-ai/<repo-name>-pr<N>
 ```
 
 手元の main を進めるときは fast-forward で済ませたい。マージした PR のコミットは
@@ -332,6 +342,7 @@ fast-forward で済む場面でも `Merge branch 'main' of https://github.com/..
 - **rebase 先**: `<SHA>` (<コミットメッセージ>)
 - **テストコマンド**: `<compose> run --rm web bin/rails test`
 - **結果**: ✅ 全テスト通過 (XX runs, XX assertions, 0 failures, 0 errors, 0 skips)
+- <e2e を走らせたならそのコマンドと結果>
 
 ### 確認内容
 - <変更内容の要約>
