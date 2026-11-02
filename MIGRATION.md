@@ -18,11 +18,11 @@ Defect check: off; no planted defect was authorized or used.
 | csp_disable_browser_test.rb | tests/csp-disable.e2e.ts | retired | 4 → 8 | Chromium 3/3 per test | not run | 2 tests; user approved deletion; adds DOM presence and image completion checks |
 | xss_stored_img_browser_test.rb | tests/xss-stored-img.e2e.ts | retired | 8 → 14 | Chromium 3/3 per test | not run | 4 tests; user approved deletion; image helper extracted |
 
-This migration covers the Ferrum browser suite only. HTTP and other Minitest tests remain outside its scope. Initial Minitest runtime collection reported 10 browser tests across four files, without skips or browser branches, with 20 assertions. All four source files are retired with user approval. e2e has ten tests with 34 assertions covering every source assertion. No CI workflow exists in this repository; README.md and CLAUDE.md document the runner commands.
+This migration covers the Ferrum browser suite only. HTTP and other Minitest tests remain outside its scope. Initial Minitest runtime collection reported 10 browser tests across four files, without skips or browser branches, with 20 assertions. All four source files are retired with user approval. e2e has ten tests with 34 assertions covering every source assertion. `.github/workflows/ci.yml` runs both suites; README.md and CLAUDE.md document the runner commands.
 
 ## Docker setup and validation
 
-The e2e image adds Node 24 to the existing development image. Its dependencies and Chromium use named Docker volumes, keeping host node_modules separate. Prepare test and development databases as documented in README.md before running the old suite.
+The e2e image adds Node 24 and the Debian `chromium` package to the existing development image. The package only supplies shared libraries such as libglib; e2e launches the Chromium that `@e2e-dev/web install` downloads. Its dependencies and Chromium use named Docker volumes, keeping host node_modules separate. Prepare test and development databases as documented in README.md before running the old suite.
 
 - Build: `docker compose -f compose.yaml -f compose.e2e.yaml build e2e`
 - Install dependencies: `docker compose -f compose.yaml -f compose.e2e.yaml run --rm e2e npm ci`
@@ -45,7 +45,7 @@ SAFE rendering checks were verified against a temporary HTTP 500 response: the o
 
 The data helper invokes existing Ruby HTTP helpers without booting Rails. Each server boots in a temporary app copy because each Rails boot clears generated vulnerability templates. The copies share the Docker storage volume but have independent generated views, logs, and temporary files. The harness checks each child's exit status and health endpoint before starting the next server. It archives Rails and Puma logs under `.e2e/logs/` before removing the app copies. Do not run the two suites concurrently: they still share database storage.
 
-Image setup uses the extracted ImageTaskHelper directly without booting Rails or loading any source test class. browser_helper.rb was removed after its three remaining consumers were retired. The existing HTTP e2e_helper.rb remains shared with Minitest. Ferrum's Gemfile entry is outside this approved cleanup and remains unchanged.
+Image setup uses the extracted ImageTaskHelper directly without booting Rails or loading any source test class. browser_helper.rb was removed after its three remaining consumers were retired. The existing HTTP e2e_helper.rb remains shared with Minitest. A later cleanup removed the Ferrum gem and moved the `chromium` package from the development image to the e2e image.
 
 ## Gaps
 
