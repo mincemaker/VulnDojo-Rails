@@ -10,8 +10,7 @@ WORKDIR /rails
 
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y \
-      build-essential git pkg-config libsqlite3-dev curl libyaml-dev \
-      chromium && \
+      build-essential git pkg-config libsqlite3-dev curl libyaml-dev && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 ENV BUNDLE_PATH="/usr/local/bundle"
@@ -28,6 +27,10 @@ CMD ["./bin/rails", "server", "-b", "0.0.0.0"]
 FROM node:24-bookworm-slim AS e2e-node
 
 FROM development AS e2e
+# e2e launches Playwright's own Chromium; this package only supplies its shared libraries.
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y chromium && \
+    rm -rf /var/lib/apt/lists /var/cache/apt/archives
 COPY --from=e2e-node /usr/local/bin/node /usr/local/bin/node
 COPY --from=e2e-node /usr/local/lib/node_modules /usr/local/lib/node_modules
 RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
