@@ -24,8 +24,12 @@ The current browser tests are deterministic and require no model credentials.
 Do not run `e2e init` for a fresh checkout: the project is already initialized.
 
 Agent skills are managed by `apm.yml` and `apm.lock.yaml`. Run
-`apm install --frozen` on the host to deploy the e2e and migration skills for
-Claude Code and Codex. Do not commit the generated skill directories.
+`apm install --frozen` on the host to deploy the e2e, migration, and PR merge
+skills for Claude Code, Pi, and Codex. Targets are `claude` and `agent-skills`;
+Pi and Codex share `.agents/skills/`. Do not commit the generated skill directories.
+Project-owned skill sources live in `skills/<name>/SKILL.md` and are local
+APM dependencies. Edit those sources, then run `apm install` to update deployed
+skills and the lockfile; do not edit the deployed copies.
 Read `.agents/skills/e2e/SKILL.md` before writing or running browser tests;
 `npx e2e guide <topic>` inside the e2e container also provides the installed
 package's instructions.

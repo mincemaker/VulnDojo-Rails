@@ -1,7 +1,6 @@
 ---
 name: merge-pr-rails
 description: "git worktree を使って GitHub PR を安全に取り込むワークフロー。worktree 作成・コンテナ内フルテスト・main へ rebase・レビューコメント投稿・マージ確認まで一連で実施する。「PR を取り込む」「PR をマージしたい」「依存関係の更新 PR を確認・マージしたい」「Renovate の PR をレビューしたい」などの文脈で積極的にトリガーすること。PR 番号を引数として受け取るか、引数なしでオープン PR 一覧から対話的に選択できる。"
-allowed-tools: Bash
 ---
 
 # PR 取り込みワークフロー (merge-pr)
@@ -29,16 +28,16 @@ which docker && docker --version
 gh auth status
 ```
 
-- **`<compose>`**: podman があれば `podman compose`、なければ `docker compose`。
+- **`<compose>`**: `podman compose` を使う。Docker はユーザーが明示的に指定した場合のみ使う。
   以降の例に出てくる `<compose>` はここで確定した方に置き換える
   （`<repo-name>` や `<N>` と同じくプレースホルダ）
 - テストコマンド: `<compose> run --rm web bin/rails test`
-- **`git push` はフックでブロックされる** → ユーザーに `! git -C <worktree> push ...` 形式で実行を依頼する
+- **push はユーザーが実行する**。エージェントは実行しない。
+- コミットが必要な場合は staged diff とコミットメッセージ案を提示し、ユーザーの承認を待つ。
+- 削除は対象のパスや volume と理由を提示し、ユーザーの承認を待つ。Step 5・9 も例外ではない。
 
-コマンドは1つずつ単独で実行する。サンドボックスの除外設定は、コマンドが先頭から
-一致したときにしか効かない。`cd` を前に付けたり、`&&`・`;`・パイプで繋いだり、
-`> file` でリダイレクトしたりすると、サンドボックス内で実行されてしまう。
-podman ならソケットのある `/run/user` が read-only になり、gh なら認証情報が読めなくなって失敗する。
+実行環境の権限やサンドボックスで操作が拒否された場合は、原因を報告してユーザーに確認する。
+権限制限を迂回しない。sudo や root が必要な操作も、目的・コマンド・破壊性を説明して承認を待つ。
 
 ---
 
@@ -50,7 +49,7 @@ podman ならソケットのある `/run/user` が read-only になり、gh な�
 
 - **`<repo>`** — 元のリポジトリ（例: `/mnt/development/VulnDojo-Rails`）。作業はずっとここに立って行う
 - **`<worktree>`** — `z-ai/<repo-name>-pr<N>`。PR の内容が反映されているのはこちら。
-  `../` はサンドボックスの書き込み範囲外なので作れない。`z-ai/` は gitignore 済み
+  `z-ai/` は gitignore 済み
 
 `cd` はしない。git は `git -C <worktree>` を使い、コンテナは compose ファイルを
 `-f` で指定して worktree を対象にする。以降の例に出てくる `<wt-compose>` は次の形を指す。
@@ -80,8 +79,7 @@ git fetch origin
 git diff --stat origin/main...origin/<branch>
 ```
 
-`gh pr diff` はサンドボックス内で認証に失敗することがある。変更ファイルは git で取れば足りる。
-Renovate の本文は長く、出力がファイルに逃がされることがある。その場合は保存先を grep する。
+変更ファイルは git で取得する。PR 本文の出力が長く、ファイルに保存された場合は、その保存先を読む。
 
 - ブランチ名（`headRefName`）を記録する
 - `state` が `OPEN`、`mergeable` が `MERGEABLE` であることを確認する。違えばここで中断してユーザーに報告する
@@ -143,10 +141,10 @@ git -C z-ai/<repo-name>-pr<N> rebase origin/main
 
 **`Gemfile.lock`** は最も頻繁にコンフリクトする:
 ```bash
-git checkout --theirs Gemfile.lock
+git -C <worktree> checkout --theirs Gemfile.lock
 # 必要なバージョン行（RUBY VERSION、BUNDLED WITH 等）を手動で確認・修正
-git add Gemfile.lock
-git rebase --continue
+git -C <worktree> add Gemfile.lock
+git -C <worktree> rebase --continue
 ```
 
 **`Gemfile`**: 両方の変更を活かして手動マージ（gem バージョン指定の競合が多い）。
@@ -159,8 +157,8 @@ grep 'ARG RUBY_VERSION' Dockerfile   # => ARG RUBY_VERSION=3.4.9 (古いまま)
 
 # 修正してコミット
 # Edit Dockerfile の ARG RUBY_VERSION を Gemfile のバージョンに合わせる
-git add Dockerfile
-git commit -m "chore: update Dockerfile RUBY_VERSION to X.Y.Z"
+git -C <worktree> add Dockerfile
+# staged diff とメッセージ案を提示し、承認後にコミットする
 ```
 
 ### Step 5: rebase 後テスト
@@ -179,6 +177,7 @@ volume はイメージ内の `/usr/local/bundle` を覆い隠すので、volume 
 が走るため、その後に `bundle install` を足す必要はない。
 
 ```bash
+# 対象の volume と削除理由を提示し、承認後に実行する
 <wt-compose> down -v          # bundle_cache を含む全ボリュームを削除
 <wt-compose> build --no-cache web
 ```
@@ -199,9 +198,8 @@ CLAUDE.md の手順で e2e のビルド、`npm ci`、chromium のインストー
 
 テストの出力は全部残す。`tail` や `head` で切り詰めると、失敗したテスト名が
 途中に埋もれて消え、特定のためだけに走らせ直すことになる。リダイレクトで
-ファイルに書くとサンドボックスの除外から外れるので、コマンドは素のまま実行する。
-出力が大きいと保存先のファイルパスが返ってくるので、絞り込みはそのファイルへの
-`grep` で行う。e2e は進捗表示を何度も描き直すので、最後の集計行と `failed` の件数を見る。
+ファイルに書く場合も全出力を保存する。
+実行ツールが出力をファイルに保存した場合は、そのファイルを読んで確認する。e2e は進捗表示を何度も描き直すので、最後の集計行と `failed` の件数を見る。
 
 **テスト失敗の場合**: 原因を調査してユーザーに報告する。rebase によるコンフリクト解決が不完全な場合は修正して再テスト。
 
@@ -250,10 +248,10 @@ rebase したなら、手元のブランチと GitHub 上の PR がずれてい�
 
 Step 3 の判定が 0 で rebase していないなら、ずれていないのでこの Step は起きない。
 
-`git push` はフックでブロックされるため、ユーザーに実行してもらう:
+push はユーザーに実行してもらう:
 
 ```
-! git -C z-ai/<repo-name>-pr<N> push origin HEAD:<branch> --force-with-lease
+git -C z-ai/<repo-name>-pr<N> push origin HEAD:<branch> --force-with-lease
 ```
 
 反映されたことを確かめてから次へ進む。手元の HEAD と `origin/<branch>` の SHA が
@@ -266,8 +264,7 @@ gh pr review <N> --comment --body-file z-ai/pr<N>-review.md
 ```
 
 本文は `z-ai/pr<N>-review.md` に書き、ユーザーに見せたものをそのまま投稿する。
-gh の書き込み系コマンドはサンドボックス内で認証に失敗するので、合意を取った後に
-サンドボックスを外して実行する。Step 8 の `gh pr merge` も同じ。
+投稿前にユーザーの合意を取る。認証や権限の問題があれば、迂回せずユーザーに報告する。
 
 このコメントは後から読み返される記録になる。なぜマージしてよいと判断したのかが、
 根拠つきで残っている状態にしたい。どの状態を基準にテストしたのか（`git log --oneline
@@ -302,6 +299,8 @@ gh pr merge <N> --merge
 コンテナと volume は worktree 側の compose プロジェクトに紐づいているので、
 worktree を消す前に片付ける。compose ファイルが消えると、`<wt-compose>` で指定できなくなる。
 e2e を使ったなら e2e の volume も残っているので、2ファイルを重ねた形で落とす。
+
+削除する worktree のパスと volume、削除理由を提示し、承認を得てから実行する。
 
 ```bash
 <wt-compose> down -v   # コンテナとボリュームを削除

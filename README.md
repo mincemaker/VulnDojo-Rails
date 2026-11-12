@@ -30,7 +30,7 @@ bin/rails db:seed   # デモユーザ作成: demo@example.com / password123
 
 ### エージェントを使った開発の初期セットアップ
 
-Claude Code または Codex を使う場合は、[APM 0.33](https://github.com/microsoft/apm) 以降を用意し、リポジトリのルートで次を実行してください。ホスト側に `e2e` と `migrate-to-e2e` のスキルを導入します。
+Claude Code、Pi、Codex を使う場合は、[APM 0.33](https://github.com/microsoft/apm) 以降を用意し、リポジトリのルートで次を実行してください。ホスト側に `e2e`、`migrate-to-e2e`、`merge-pr-rails` のスキルを導入します。
 
 ```bash
 apm install --frozen
@@ -316,13 +316,17 @@ Minitest と e2e は DB を共有するため順番に実行してください�
 
 ### エージェント用スキルの導入
 
-`e2e` と `migrate-to-e2e` は `apm.yml` で管理し、取得元を `apm.lock.yaml` に固定しています。[APM 0.33](https://github.com/microsoft/apm) 以降で、ホスト側から次を実行してください。
+`e2e`、`migrate-to-e2e`、`merge-pr-rails` は `apm.yml` で管理し、依存情報を `apm.lock.yaml` に記録しています。[APM 0.33](https://github.com/microsoft/apm) 以降で、ホスト側から次を実行してください。
 
 ```bash
 apm install --frozen
 ```
 
-Claude Code 向けの `.claude/skills/` と Codex 向けの `.agents/skills/` に両スキルが配置されます。これらの生成ファイルはコミットせず、`apm.yml` と `apm.lock.yaml` を共有します。APM はスキルを導入し、上記の `npm ci` はテスト実行に必要な npm パッケージを導入します。テストの実行だけならスキルの導入は不要です。
+`targets` は `claude` と `agent-skills` を指定しています。Claude Code 向けの `.claude/skills/` と Pi・Codex 共用の `.agents/skills/` にスキルが配置されます。これらの生成ファイルはコミットせず、`apm.yml` と `apm.lock.yaml` を共有します。
+
+プロジェクト独自のスキルの原本は `skills/<name>/SKILL.md` に置き、Git 管理します。`merge-pr-rails` は `./skills/merge-pr-rails` をローカル依存として登録しています。編集は原本に対して行い、`apm install` で配布先と lockfile に反映してください。配布先のファイルは直接編集しません。
+
+APM はスキルを導入し、上記の `npm ci` はテスト実行に必要な npm パッケージを導入します。テストの実行だけならスキルの導入は不要です。
 
 パッケージに同梱された手順は Docker 内の `npx e2e guide` でも確認できます。MCP 接続は任意で、このテストスイートの実行には必要ありません。
 

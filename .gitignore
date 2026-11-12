@@ -37,9 +37,8 @@
 # Generated vulnerable view templates (recreated at runtime from challenge code)
 /lib/vulnerabilities/views/
 
-# Only track .claude/skills/ (ignore everything else in .claude/)
-/.claude/*
-!/.claude/skills/
+# Local Claude Code configuration and generated skills
+/.claude/
 /.github/*
 !/.github/workflows/
 
@@ -52,10 +51,7 @@
 
 # APM dependencies
 apm_modules/
-/.agents/skills/e2e/
-/.agents/skills/migrate-to-e2e/
-/.claude/skills/e2e
-/.claude/skills/migrate-to-e2e/
+/.agents/skills/
 
 # Node.js dependencies
 node_modules/
