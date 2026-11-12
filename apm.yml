@@ -6,10 +6,11 @@ author: mincemaker
 # Resolution order: --target flag > this field > auto-detect from filesystem.
 # Accepted values: agent-skills, antigravity, claude, codex, copilot, cursor, gemini, grok-build, hermes, kiro, opencode, vscode, windsurf
 targets:
-  - codex
+  - agent-skills
   - claude
 dependencies:
   apm:
+    - ./skills/merge-pr-rails
     - tester-army/e2e/skills/migrate-to-e2e#cad17c3200ceb5439a261f9c24e6e7ebbf85ddff
     - tester-army/e2e/skills/e2e#cad17c3200ceb5439a261f9c24e6e7ebbf85ddff
   mcp: []
