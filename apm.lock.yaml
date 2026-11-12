@@ -11,11 +11,11 @@ dependencies:
   - .claude/skills/merge-pr-rails
   - .claude/skills/merge-pr-rails/SKILL.md
   deployed_file_hashes:
-    .agents/skills/merge-pr-rails/SKILL.md: sha256:66b47c14c6edfbfcc8eb92a745f84b0965d26caa091ee2d2e2dfc046c27669ad
-    .claude/skills/merge-pr-rails/SKILL.md: sha256:66b47c14c6edfbfcc8eb92a745f84b0965d26caa091ee2d2e2dfc046c27669ad
+    .agents/skills/merge-pr-rails/SKILL.md: sha256:89e23032f3c7d9d87719d0f77e8b299e9f384bf7d6362cc98d63b6949e2c67dd
+    .claude/skills/merge-pr-rails/SKILL.md: sha256:89e23032f3c7d9d87719d0f77e8b299e9f384bf7d6362cc98d63b6949e2c67dd
   source: local
   local_path: ./skills/merge-pr-rails
-  content_hash: sha256:2b919ca157afec02b388699b2edf6232c04974dd0a615d3003e25b68348aa255
+  content_hash: sha256:7d8bb7156fb5ef46401f881fc5b5fb9e98c71935369035b80d855fa848860998
 - repo_url: tester-army/e2e
   name: e2e
   host: github.com
@@ -192,7 +192,7 @@ deployments:
   owners:
   - ./skills/merge-pr-rails
   active_owner: ./skills/merge-pr-rails
-  content_hash: sha256:66b47c14c6edfbfcc8eb92a745f84b0965d26caa091ee2d2e2dfc046c27669ad
+  content_hash: sha256:89e23032f3c7d9d87719d0f77e8b299e9f384bf7d6362cc98d63b6949e2c67dd
 - kind: project-relative
   target: agent-skills
   value: .agents/skills/migrate-to-e2e
@@ -318,7 +318,7 @@ deployments:
   owners:
   - ./skills/merge-pr-rails
   active_owner: ./skills/merge-pr-rails
-  content_hash: sha256:66b47c14c6edfbfcc8eb92a745f84b0965d26caa091ee2d2e2dfc046c27669ad
+  content_hash: sha256:89e23032f3c7d9d87719d0f77e8b299e9f384bf7d6362cc98d63b6949e2c67dd
 - kind: project-relative
   target: claude
   value: .claude/skills/migrate-to-e2e

@@ -39,6 +39,25 @@ gh auth status
 実行環境の権限やサンドボックスで操作が拒否された場合は、原因を報告してユーザーに確認する。
 権限制限を迂回しない。sudo や root が必要な操作も、目的・コマンド・破壊性を説明して承認を待つ。
 
+### 手元の main が origin/main と揃っていること
+
+このフローのマージは GitHub 上で起き、最後に手元の main を fast-forward で追いつかせて
+終わる。成り立つのは、手元の main に origin/main に無いコミットが無いときだけだ。
+push していないローカルマージなどが残ったまま PR をマージすると、手元と GitHub が
+別々の線に分かれ、どちらかを書き換えないと一本に戻せなくなる。書き換えには署名の
+やり直しやコンフリクト解決が伴い、ユーザーの手を大きく取る。
+
+だから PR に触る前に揃っていることを確かめる。
+
+```bash
+git fetch origin
+git status -sb   # main...origin/main に ahead が無いこと
+```
+
+`behind` だけなら `git merge --ff-only origin/main` で追いつけばよい。`ahead` があるなら、
+そのコミットが何で、push するのか捨てるのかはユーザーにしか決められない。状態を報告し、
+解消されてから PR の処理に入る。
+
 ---
 
 ## 各 PR の処理ステップ
@@ -322,6 +341,11 @@ fast-forward で済む場面でも `Merge branch 'main' of https://github.com/..
 
 既にできてしまったマージコミットには手を出さない。履歴を書き換えて消すのは、
 残す方針で運用しているリポジトリでは筋が悪い。
+
+`--ff-only` が失敗したら、手元の main が origin/main から分かれている。ここで reset や
+`git merge origin/main`、rebase で辻褄を合わせると、どれを選んでも何かのコミットが
+消えるか、履歴に意図しないマージが残る。どちらを正とするかはユーザーが決めることなので、
+`git log --graph --oneline main origin/main` で分岐の形を見せて報告し、そこで止まる。
 
 ---
 
