@@ -24,7 +24,7 @@ ENTRYPOINT ["/rails/bin/docker-entrypoint"]
 EXPOSE 3000
 CMD ["./bin/rails", "server", "-b", "0.0.0.0"]
 
-FROM node:24-bookworm-slim AS e2e-node
+FROM node:26-bookworm-slim AS e2e-node
 
 FROM development AS e2e
 # e2e launches Playwright's own Chromium; this package only supplies its shared libraries.
