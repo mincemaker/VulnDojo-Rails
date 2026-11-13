@@ -15,6 +15,38 @@ class CsrfSkipTest < ActiveSupport::TestCase
     @vuln_cookie = setup_session(@vuln_server)
   end
 
+  test "SAFE: signup issues a SameSite=Lax HttpOnly session cookie" do
+    cookie = signup_cookie(ServerPool.acquire(vuln_challenges: "", tls: true))
+
+    assert_match(/; samesite=lax/i, cookie)
+    assert_match(/; httponly/i, cookie)
+  end
+
+  test "VULN: signup issues a SameSite=None Secure HttpOnly session cookie" do
+    cookie = signup_cookie(ServerPool.acquire(vuln_challenges: "csrf_skip", tls: true))
+
+    assert_match(/; samesite=none/i, cookie)
+    assert_match(/; secure(?:;|$)/i, cookie)
+    assert_match(/; httponly/i, cookie)
+  end
+
+  test "VULN: HTTP signup retains SameSite=Lax without Secure" do
+    cookie = signup_cookie(@vuln_server)
+
+    assert_match(/; samesite=lax/i, cookie)
+    refute_match(/; secure(?:;|$)/i, cookie)
+  end
+
+  # SameSite=None は Cookie を送れる条件を広げるだけ。検証は TasksController に限定されている。
+  test "VULN: logout keeps CSRF verification under HTTPS" do
+    server = ServerPool.acquire(vuln_challenges: "csrf_skip", tls: true)
+    cookie = signup_cookie(server)
+
+    res = server.delete("/logout", headers: { "Cookie" => cookie })
+    assert_equal "422", res.code, "CSRF token must still be verified outside TasksController"
+    assert_equal "200", server.get("/tasks", headers: { "Cookie" => cookie }).code
+  end
+
   # ---- RED: 脆弱性 OFF では CSRF トークンなしの POST が拒否される ----
 
   test "SAFE: POST without CSRF token is rejected (422)" do
@@ -55,5 +87,22 @@ class CsrfSkipTest < ActiveSupport::TestCase
 
     res = @vuln_server.get("/tasks", headers: { "Cookie" => @vuln_cookie })
     assert_includes res.body, "CSRF Created Task", "Task must be created via CSRF attack"
+  end
+
+  private
+
+  def signup_cookie(server)
+    email = "csrf_#{SecureRandom.hex(6)}@example.com"
+    signup = server.get("/signup")
+    created = server.post("/signup", headers: { "Cookie" => latest_cookie(signup) },
+      body: URI.encode_www_form(
+        "authenticity_token" => extract_csrf_token(signup.body),
+        "user[name]" => email,
+        "user[email]" => email,
+        "user[password]" => TEST_USER_PASSWORD,
+        "user[password_confirmation]" => TEST_USER_PASSWORD
+      ))
+    assert_equal "302", created.code
+    created["set-cookie"]
   end
 end

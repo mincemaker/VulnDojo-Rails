@@ -31,7 +31,7 @@ class ClaimNoSideEffectsTest < ActiveSupport::TestCase
   end
 
   test "csrf_skip slot name matches declaration" do
-    assert_equal ["TasksController.forgery_protection"],
+    assert_equal ["TasksController.forgery_protection", "ApplicationController.csrf_session_cookie"],
                  Vulnerabilities::Challenges::CsrfSkip.new.claim!
   end
 

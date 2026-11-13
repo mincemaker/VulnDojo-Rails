@@ -5,6 +5,7 @@ require "uri"
 require "timeout"
 require "securerandom"
 require "socket"
+require_relative "tls_helper"
 
 # E2E テスト用ヘルパー
 # 脆弱性 ON/OFF の別プロセスで Rails サーバーを起動し HTTP で検証する
@@ -14,10 +15,11 @@ module E2EHelper
   class ServerProcess
     attr_reader :port
 
-    def initialize(port:, vuln_challenges: "", rails_env: "test")
+    def initialize(port:, vuln_challenges: "", rails_env: "test", tls: false)
       @port = port
       @vuln_challenges = vuln_challenges
       @rails_env = rails_env
+      @tls = tls
       @pid = nil
     end
 
@@ -31,11 +33,14 @@ module E2EHelper
       log = "/tmp/e2e_server_#{@port}.log"
       pid_file = "/tmp/e2e_server_#{@port}.pid"
       FileUtils.rm_f(pid_file)
+      command = ["bundle", "exec", "rails", "server", "-b", "127.0.0.1", "-p", @port.to_s, "-P", pid_file]
+      if @tls
+        TLSHelper.prepare!
+        bind = "ssl://127.0.0.1:#{@port}?key=#{TLSHelper::KEY}&cert=#{TLSHelper::CERT}"
+        command = ["bundle", "exec", "puma", "-C", "/dev/null", "-b", bind, "--pidfile", pid_file]
+      end
       @pid = Process.spawn(
-        env,
-        "bundle", "exec", "rails", "server",
-        "-b", "127.0.0.1", "-p", @port.to_s,
-        "-P", pid_file,
+        env, *command,
         chdir: Rails.root.to_s,
         [:out, :err] => log,
         pgroup: true
@@ -52,40 +57,49 @@ module E2EHelper
       @pid = nil
     end
 
+    def base_url
+      @tls ? "https://localhost:#{@port}" : "http://127.0.0.1:#{@port}"
+    end
+
     # --- HTTP メソッド: cookie 自動追跡 ---
 
     def get(path, headers: {})
-      uri = URI("http://127.0.0.1:#{@port}#{path}")
+      uri = URI("#{base_url}#{path}")
       req = Net::HTTP::Get.new(uri)
       headers.each { |k, v| req[k] = v }
-      Net::HTTP.start(uri.host, uri.port) { |http| http.request(req) }
+      connection(uri) { |http| http.request(req) }
     end
 
     def post(path, body: "", headers: {})
-      uri = URI("http://127.0.0.1:#{@port}#{path}")
+      uri = URI("#{base_url}#{path}")
       req = Net::HTTP::Post.new(uri)
       req["Content-Type"] = "application/x-www-form-urlencoded"
       headers.each { |k, v| req[k] = v }
       req.body = body
-      Net::HTTP.start(uri.host, uri.port) do |http|
+      connection(uri) do |http|
         http.max_retries = 0
         http.request(req)
       end
     end
 
     def delete(path, headers: {})
-      uri = URI("http://127.0.0.1:#{@port}#{path}")
+      uri = URI("#{base_url}#{path}")
       req = Net::HTTP::Delete.new(uri)
       headers.each { |k, v| req[k] = v }
-      Net::HTTP.start(uri.host, uri.port) { |http| http.request(req) }
+      connection(uri) { |http| http.request(req) }
     end
 
     private
 
+    def connection(uri, &block)
+      options = @tls ? { use_ssl: true, cert_store: TLSHelper.store } : {}
+      Net::HTTP.start(uri.host, uri.port, **options, &block)
+    end
+
     def wait_for_ready!
       Timeout.timeout(30) do
         loop do
-          res = Net::HTTP.get_response(URI("http://127.0.0.1:#{@port}/up"))
+          res = get("/up")
           break if res.code.to_i == 200
         rescue Errno::ECONNREFUSED, Errno::EADDRNOTAVAIL
           sleep 0.3
@@ -206,12 +220,12 @@ module E2EHelper
     @servers = {}
 
     class << self
-      def acquire(vuln_challenges: "", rails_env: "test")
-        key = "#{vuln_challenges}|#{rails_env}"
+      def acquire(vuln_challenges: "", rails_env: "test", tls: false)
+        key = "#{vuln_challenges}|#{rails_env}|#{tls}"
         @mutex.synchronize do
           @servers[key] ||= begin
             port = allocate_port
-            server = ServerProcess.new(port: port, vuln_challenges: vuln_challenges, rails_env: rails_env)
+            server = ServerProcess.new(port: port, vuln_challenges: vuln_challenges, rails_env: rails_env, tls: tls)
             server.start!
             server
           end

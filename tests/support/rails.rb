@@ -15,14 +15,17 @@ if ARGV.first == "serve"
   trap("INT") { exit }
   begin
     source = File.expand_path("../..", __dir__)
+    TLSHelper.prepare!
     [
+      [3107, "csrf_skip", true],
+      [3108, "", true],
       [3101, ""],
       [3102, "css_injection"],
       [3103, "xss_raw"],
       [3104, "xss_raw,csp_disable"],
       [3105, "xss_stored_img"],
       [3106, "xss_stored_img,csp_disable"]
-    ].each do |port, challenges|
+    ].each do |port, challenges, tls|
       root = Dir.mktmpdir("rails-e2e-")
       process_log = "/tmp/e2e_server_#{port}.log"
       servers << { root: root, port: port, process_log: process_log }
@@ -35,9 +38,9 @@ if ARGV.first == "serve"
       FileUtils.mkdir_p([File.join(root, "log"), File.join(root, "tmp")])
       # SQLite and uploads are shared, so the two suites must run sequentially.
       FileUtils.ln_s(File.join(source, "storage"), File.join(root, "storage"))
-      children << Process.spawn("bundle", "exec", "ruby", __FILE__, "server", root, port.to_s, challenges)
+      children << Process.spawn("bundle", "exec", "ruby", __FILE__, "server", root, port.to_s, challenges, tls.to_s)
       RailsHarness.wait_for_server(port: port, challenges: challenges, pid: children.last,
-        log_dir: log_dir, process_log: process_log)
+        log_dir: log_dir, process_log: process_log, tls: tls)
     end
     sleep
   ensure
@@ -58,10 +61,10 @@ if ARGV.first == "serve"
     servers.each { |server| RailsHarness.cleanup_server(**server, log_dir: log_dir) }
   end
 elsif ARGV.first == "server"
-  root, port, challenges = ARGV.drop(1)
+  root, port, challenges, tls = ARGV.drop(1)
   ENV["VULN_CHALLENGES"] = challenges
   require File.join(root, "config/environment")
-  server = E2EHelper::ServerProcess.new(port: Integer(port), vuln_challenges: challenges)
+  server = E2EHelper::ServerProcess.new(port: Integer(port), vuln_challenges: challenges, tls: tls == "true")
   trap("TERM") { exit }
   trap("INT") { exit }
   begin

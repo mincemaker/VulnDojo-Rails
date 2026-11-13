@@ -17,7 +17,7 @@ module RailsHarness
     FileUtils.remove_entry(root)
   end
 
-  def wait_for_server(port:, challenges:, pid:, log_dir:, process_log:, timeout: 30)
+  def wait_for_server(port:, challenges:, pid:, log_dir:, process_log:, timeout: 30, tls: false)
     deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + timeout
     loop do
       if (exited = Process.waitpid2(pid, Process::WNOHANG))
@@ -28,7 +28,12 @@ module RailsHarness
       end
 
       begin
-        http = Net::HTTP.new("127.0.0.1", port, nil)
+        http = Net::HTTP.new(tls ? "localhost" : "127.0.0.1", port, nil)
+        if tls
+          TLSHelper.prepare!
+          http.use_ssl = true
+          http.cert_store = TLSHelper.store
+        end
         http.open_timeout = http.read_timeout = 0.5
         return if http.get("/up").code == "200"
       rescue SystemCallError, IOError, Timeout::Error

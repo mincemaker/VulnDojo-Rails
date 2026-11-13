@@ -10,7 +10,7 @@ WORKDIR /rails
 
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y \
-      build-essential git pkg-config libsqlite3-dev curl libyaml-dev && \
+      build-essential git pkg-config libsqlite3-dev libssl-dev curl libyaml-dev && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 ENV BUNDLE_PATH="/usr/local/bundle"

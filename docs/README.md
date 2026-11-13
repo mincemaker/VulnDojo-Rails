@@ -86,15 +86,37 @@ Task.where("title LIKE '%#{params[:q]}%'")
 
 ### csrf_skip — CSRF protection disabled
 
-```bash
-VULN_CHALLENGES=csrf_skip bin/rails server -b 127.0.0.1
-```
+通常時はセッション Cookie に `SameSite=Lax` を明示し、CSRF トークン検証を維持します。
+`csrf_skip` を有効にすると、`TasksController.skip_forgery_protection` でタスク操作のトークン検証を無効化します。さらに HTTPS のリクエストに限り、ログイン時からセッション Cookie を `SameSite=None; Secure` に変更します。`HttpOnly` は維持します。
 
-`TasksController.skip_forgery_protection` が呼ばれ、CSRF トークン検証が無効化されます。
-CSRF トークンなしの POST リクエストがそのまま処理されます。
+`SameSite=None` だけでは CSRF 脆弱性にはなりません。この教材ではトークン検証の無効化と組み合わせ、別 site から認証済みの POST を送れる条件を作っています。Cookie 発行直後のブラウザの例外には依存しません。
 
-再現手順:
-1. curl でトークンなしの POST を送信してタスクを作成できることを確認
+ブラウザでの再現手順:
+
+1. 開発イメージを再ビルドします。Puma の TLS サポートに必要な `libssl-dev` を含みます。
+
+   ```bash
+   podman compose build web
+   podman compose run --rm --service-ports -e VULN_CHALLENGES=csrf_skip web sh -c '
+     bundle exec ruby -r ./test/integration/vulnerabilities/tls_helper -e "TLSHelper.prepare!" &&
+     exec bundle exec puma -C /dev/null -b "ssl://0.0.0.0:3000?key=.e2e/tls/localhost.key&cert=.e2e/tls/localhost.crt"
+   '
+   ```
+
+2. `https://localhost:3000` を開き、ローカル検証用の自己署名証明書を確認してログインします。通常の HTTP サーバーがポート 3000 を使用している場合は、先に停止してください。
+3. 別のディレクトリに次の `attack.html` を保存し、そのディレクトリで `python3 -m http.server 3200 --bind 127.0.0.1` を起動します。
+
+   ```html
+   <form action="https://localhost:3000/tasks" method="post">
+     <input name="task[title]" value="CSRF injected task">
+     <button>Submit attack</button>
+   </form>
+   ```
+
+4. 同じブラウザで `http://127.0.0.1:3200/attack.html` を開いて送信し、被害者のアカウントにタスクが作成されることを確認します。`localhost` と `127.0.0.1` を使い分け、単なる別ポートではなく別 site にします。
+5. 対照試験では `VULN_CHALLENGES` を空にしてサーバーを再起動し、新しい browser context でログインします。同じ攻撃フォームからタスクが作成されないことを確認します。
+
+HTTP でもログインは可能ですが、Cookie は `SameSite=Lax` のままです。ブラウザでの cross-site POST の再現には HTTPS を使用してください。次の curl は Cookie を手動付与してトークン検証の無効化を確認するだけで、ブラウザの SameSite 制御は検証しません。
 
 ```bash
 curl -X POST http://localhost:3000/tasks \
@@ -102,9 +124,13 @@ curl -X POST http://localhost:3000/tasks \
   -b "_session_id=<セッションID>"
 ```
 
-検出ポイント: `lib/vulnerabilities/challenges/csrf_skip.rb` — `TasksController.skip_forgery_protection`
+回帰テスト `tests/csrf-skip.e2e.ts` は独立した browser context とローカル HTTPS サーバーを使います。攻撃元ページはテストが起動する 127.0.0.1 の HTTP サーバーから配信し、localhost とは別 site にしています。通常フォームの成功、Cookie 属性、攻撃 POST の `Origin` / `Sec-Fetch-Site` / Cookie の実送信を検証し、無効時は 422 で拒否され、有効時はタスクが作成されることを確認します。自己署名証明書の受け入れはこのテストの context だけに限定し、SameSite や CSRF の保護はブラウザ側で無効化しません。
 
-参考: https://guides.rubyonrails.org/security.html#cross-site-request-forgery-csrf
+検出ポイント: `lib/vulnerabilities/challenges/csrf_skip.rb` — `TasksController.skip_forgery_protection` と `CrossSiteSession#allow_csrf_session_cookie`
+
+参考:
+- https://guides.rubyonrails.org/security.html#cross-site-request-forgery-csrf
+- https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Set-Cookie
 
 ---
 
