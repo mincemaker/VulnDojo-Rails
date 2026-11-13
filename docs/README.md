@@ -98,6 +98,7 @@ Task.where("title LIKE '%#{params[:q]}%'")
    ```bash
    podman compose build web
    podman compose run --rm --service-ports -e VULN_CHALLENGES=csrf_skip web sh -c '
+     bundle exec rails db:prepare &&
      bundle exec ruby -r ./test/integration/vulnerabilities/tls_helper -e "TLSHelper.prepare!" &&
      exec bundle exec puma -C /dev/null -b "ssl://0.0.0.0:3000?key=.e2e/tls/localhost.key&cert=.e2e/tls/localhost.crt"
    '
