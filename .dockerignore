@@ -39,6 +39,7 @@
 # Ignore development and testing files.
 /test/
 /spec/
+/.e2e/
 .rspec
 /coverage/
 

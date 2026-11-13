@@ -140,6 +140,7 @@ app/ (安全なコード)                    lib/vulnerabilities/ (注入レイ�
 │ TasksController       │◄─prepend─┤ xss_raw / sql_injection /     │
 │ SessionsController    │◄─prepend─┤ idor / mass_assignment /      │
 │ ApplicationController │◄─prepend─┤ open_redirect / command_inj  │
+│                       │◄─before──┤ csrf_skip                    │
 │                       │◄─after───┤ header_removal               │
 │ Task (model)          │◄─eval────┤ regex_bypass/unsafe_upload   │
 │ Config                │◄─config──┤ csp_disable / log_leakage /  │
@@ -160,6 +161,7 @@ app/ (安全なコード)                    lib/vulnerabilities/ (注入レイ�
 | `skip_forgery_protection` | クラスメソッド呼び出しで CSRF 無効化 | csrf_skip |
 | `class_eval` | モデルのバリデーションを差し替え | regex_bypass, unsafe_file_upload |
 | `after_action` callback | レスポンス後にセキュリティヘッダを削除 | header_removal |
+| `before_action` callback | セッション Cookie を HTTPS で `SameSite=None; Secure` に変更 | csrf_skip |
 | `config` 操作 | Rails 設定を変更 | log_leakage, csp_disable, ssrf |
 | `Singleton` Registry | チャレンジの登録・有効化を一元管理 | 全チャレンジ |
 | `to_prepare` callback | dev 環境のクラスリロード時にも再注入 | 全チャレンジ |
@@ -421,7 +423,7 @@ end
 
 | メソッド | 説明 |
 |---------|------|
-| `ServerPool.acquire(vuln_challenges:)` | サーバーを取得（初回は起動、以降はキャッシュ再利用） |
+| `ServerPool.acquire(vuln_challenges:, tls:)` | サーバーを取得（初回は起動、以降はキャッシュ再利用）。`tls: true` は HTTPS で起動する |
 | `server.get(path, headers:)` | HTTP GET リクエスト |
 | `server.post(path, body:, headers:)` | HTTP POST リクエスト |
 | `setup_session(server)` | ユーザー作成・ログインしてセッション Cookie を返す |
