@@ -4,7 +4,7 @@
   "devDependencies": {
     "@herb-tools/linter": "latest",
     "@herb-tools/formatter": "latest",
-    "e2e": "^0.22.0",
+    "e2e": "^0.23.0",
     "@e2e-dev/web": "^0.15.4",
     "ai": "^7.0.0",
     "zod": "^4.1.8",
